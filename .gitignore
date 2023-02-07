@@ -1,0 +1,21 @@
+# Python cache files
+__pycache__/
+
+# PyCharm files
+.idea/
+
+# macOS dir files
+.DS_Store
+
+# Project packaging generated files
+/dist/
+*.egg-info/
+
+# pip install generated compiled files
+/build/
+
+# VS Code configuration dir
+.vscode/
+
+/figures/
+/test.py
