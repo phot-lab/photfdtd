@@ -9,7 +9,6 @@ class Waveguide:
     ylength: 波导区域y方向宽度
     zlength: 波导区域z方向宽度，通常也是波导高度
     x,y,z: 波导位置坐标（通常是矩形区域最靠近原点的点）
-    flag：参数
     width：波导宽度(在矩形波导中，波导宽度没有意义)
     refractive_index:折射率
     name:名称
@@ -39,15 +38,17 @@ class Waveguide:
         self.name = name
         self.refractive_index = refractive_index
 
-        self._grid = None
+        self._grid = None  # 用来暂存 fdtd.Grid 对象
 
-    def set_grid(self, grid_ylength=200, grid_xlength=100, grid_zlength=50, grid_spacing=0.01, total_time=1):
+    def set_grid(self, grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=0.01, total_time=1):
 
         """矩形波导"""
         permittivity = np.zeros((self.xlength, self.ylength, self.zlength))
         permittivity += self.refractive_index**2
 
-        grid = fdtd.Grid(shape=(grid_ylength, grid_xlength, grid_zlength), grid_spacing=grid_spacing)
+        self.permittivity = permittivity
+
+        grid = fdtd.Grid(shape=(grid_xlength, grid_ylength, grid_zlength), grid_spacing=grid_spacing)
         grid[
             self.x : self.x + self.xlength,
             self.y : self.y + self.ylength,
@@ -65,21 +66,22 @@ class Waveguide:
 
         self._grid = grid
 
-    def savefig(self, folder, filename, axis="x"):
+    def savefig(self, filepath, axis="x"):
         if self._grid is None:
             raise RuntimeError("The grid should be set before saving figure.")
 
         axis = axis.lower()  # 识别大写的 "X"
 
         if axis == "x":  # 判断从哪一个轴俯视画图
-            self._grid.visualize(x=0, save=True, index=filename, folder=folder)
+            self._grid.visualize(x=0)
         elif axis == "y":
-            self._grid.visualize(y=0, save=True, index=filename, folder=folder)
+            self._grid.visualize(y=0)
         elif axis == "z":
-            self._grid.visualize(z=0, save=True, index=filename, folder=folder)
+            self._grid.visualize(z=0)
         else:
             raise RuntimeError("Unknown axis parameter.")
 
+        plt.savefig(filepath)  # 保存图片
         plt.close()  # 清除画布
 
 
@@ -91,9 +93,9 @@ if __name__ == "__main__":
     )
 
     # 设置 grid 参数
-    waveguide.set_grid(grid_ylength=200, grid_xlength=100, grid_zlength=50, grid_spacing=0.01, total_time=1)
+    waveguide.set_grid(grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=0.01, total_time=1)
 
     # 保存画好的图，设置保存位置，以及从哪一个轴俯视画图（这里画了三张图）
-    waveguide.savefig(folder="./figures", filename="WaveguideX", axis="x")
-    waveguide.savefig(folder="./figures", filename="WaveguideY", axis="y")
-    waveguide.savefig(folder="./figures", filename="WaveguideZ", axis="z")
+    waveguide.savefig(filepath="figures/WaveguideX.png", axis="x")
+    waveguide.savefig(filepath="figures/WaveguideY.png", axis="y")
+    waveguide.savefig(filepath="figures/WaveguideZ.png", axis="z")

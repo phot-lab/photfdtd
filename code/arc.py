@@ -80,6 +80,7 @@ class Arc:
             "position": (self.x, self.y, self.z),
             "flag": self.flag,
         }
+        print(permittivity)
 
         return result
 
