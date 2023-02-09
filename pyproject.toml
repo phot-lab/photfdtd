@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "photfdtd"
+version = "0.0.4"
+description = "PyPhot FDTD package"
+authors = ["Chunyu Li <cyli0212@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://pypi.org/project/photfdtd/"
+repository = "https://github.com/phot-lab/photfdtd"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+fdtd = "*"
+numpy = "*"
+matplotlib = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
