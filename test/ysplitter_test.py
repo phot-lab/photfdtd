@@ -29,4 +29,4 @@ if __name__ == "__main__":
     ysplitter.set_source()
 
     # 保存画好的图，设置保存位置，以及从哪一个轴俯视画图
-    ysplitter.savefig(filepath="figures/YSplitterZ.png", axis="z")
+    ysplitter.savefig(filepath="YSplitterZ.png", axis="z")

@@ -14,6 +14,6 @@ if __name__ == "__main__":
     )
 
     # 保存画好的图，设置保存位置，以及从哪一个轴俯视画图（这里画了三张图）
-    waveguide.savefig(filepath="figures/WaveguideX.png", axis="x")
-    waveguide.savefig(filepath="figures/WaveguideY.png", axis="y")
-    waveguide.savefig(filepath="figures/WaveguideZ.png", axis="z")
+    waveguide.savefig(filepath="WaveguideX.png", axis="x")
+    waveguide.savefig(filepath="WaveguideY.png", axis="y")
+    waveguide.savefig(filepath="WaveguideZ.png", axis="z")

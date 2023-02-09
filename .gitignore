@@ -17,5 +17,7 @@ __pycache__/
 # VS Code configuration dir
 .vscode/
 
-/figures/
+# Picture files under root dir
+/*.png
+
 /test.py

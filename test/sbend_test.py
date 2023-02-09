@@ -16,4 +16,4 @@ if __name__ == "__main__":
     sbend.set_source()
 
     # 保存画好的图，设置保存位置，以及从哪一个轴俯视画图
-    sbend.savefig(filepath="figures/SbendZ.png", axis="z")
+    sbend.savefig(filepath="SbendZ.png", axis="z")
