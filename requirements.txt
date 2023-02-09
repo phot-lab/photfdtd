@@ -1,3 +1,4 @@
+# Python dependencies required for development
 fdtd
 numpy
 matplotlib
