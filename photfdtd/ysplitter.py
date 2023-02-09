@@ -121,7 +121,7 @@ class Ysplitter(Waveguide):
                 width=self.width,
                 name="%s_waveguide" % self.name,
             )
-            waveguide.set_grid()
+            # waveguide.set_grid()
             trapezoid = Trapezoid(
                 xlength=self.xlength_trapezoid,
                 ylength=self.ylength_trapezoid,
@@ -133,7 +133,7 @@ class Ysplitter(Waveguide):
                 width=self.width,
                 name="%s_trapezoid" % self.name,
             )
-            trapezoid.set_grid()
+            # trapezoid.set_grid()
             sbend1 = sbend.Sbend(
                 xlength=self.xlength_sbend,
                 ylength=self.ylength_sbend,
@@ -145,7 +145,7 @@ class Ysplitter(Waveguide):
                 width=self.width,
                 name="%s_sbend1" % self.name,
             )
-            sbend1.set_grid()
+            # sbend1.set_grid()
             sbend2 = sbend.Sbend(
                 xlength=self.xlength_sbend,
                 ylength=self.ylength_sbend,
@@ -157,7 +157,7 @@ class Ysplitter(Waveguide):
                 width=self.width,
                 name="%s_sbend2" % self.name,
             )
-            sbend2.set_grid()
+            # sbend2.set_grid()
         else:
             waveguide = Waveguide(
                 xlength=self.xlength_rectangle,
@@ -169,7 +169,7 @@ class Ysplitter(Waveguide):
                 width=self.width,
                 name="%s_waveguide" % self.name,
             )
-            waveguide.set_grid()
+            # waveguide.set_grid()
             trapezoid = Trapezoid(
                 xlength=self.xlength_trapezoid,
                 ylength=self.ylength_trapezoid,
@@ -181,7 +181,7 @@ class Ysplitter(Waveguide):
                 width=self.width,
                 name="%s_trapezoid" % self.name,
             )
-            trapezoid.set_grid()
+            # trapezoid.set_grid()
             sbend1 = sbend.Sbend(
                 xlength=self.xlength_sbend,
                 ylength=self.ylength_sbend,
@@ -193,7 +193,7 @@ class Ysplitter(Waveguide):
                 width=self.width,
                 name="%s_sbend1" % self.name,
             )
-            sbend1.set_grid()
+            # sbend1.set_grid()
             sbend2 = sbend.Sbend(
                 xlength=self.xlength_sbend,
                 ylength=self.ylength_sbend,
@@ -205,7 +205,7 @@ class Ysplitter(Waveguide):
                 width=self.width,
                 name="%s_sbend2" % self.name,
             )
-            sbend2.set_grid()
+            # sbend2.set_grid()
 
         grid = fdtd.Grid(shape=(grid_xlength, grid_ylength, grid_zlength), grid_spacing=grid_spacing)
 
@@ -234,6 +234,7 @@ class Ysplitter(Waveguide):
 
         grid[60:60, 35:45] = fdtd.LineSource(period=1550e-9 / 299792458, name="source")
 
-        grid.run(total_time=total_time)
+        # grid.run(total_time=total_time)
 
+        self._total_time = total_time
         self._grid = grid

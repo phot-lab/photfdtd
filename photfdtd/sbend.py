@@ -27,10 +27,10 @@ class Sbend(Waveguide):
         refractive_index=1.7,
         direction=-1,
     ):
-        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index)
         self.direction = direction
+        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index)
 
-    def set_grid(self, grid_ylength=80, grid_xlength=80, grid_zlength=1, grid_spacing=155e-9, total_time=200):
+    def _compute_permittivity(self):
         """
         输入波导规格，返回字典，包含名字、介电常数矩阵（规格为[ylength,xlength,zlength]）、区域规格、位置坐标、direction(=1表示形状左上至右下，=-1表示形状从左下到右上)
         """
@@ -81,27 +81,10 @@ class Sbend(Waveguide):
 
         self.permittivity = permittivity
 
-        grid = fdtd.Grid(shape=(grid_xlength, grid_ylength, grid_zlength), grid_spacing=grid_spacing)
-
-        grid[
-            self.x : self.x + self.xlength,
-            self.y : self.y + self.ylength,
-        ] = fdtd.Object(permittivity=permittivity, name=self.name)
-
-        pml_width = 5
-
-        grid[0:pml_width, :, :] = fdtd.PML(name="pml_xlow")
-        grid[-pml_width:, :, :] = fdtd.PML(name="pml_xhigh")
-        grid[:, 0:pml_width, :] = fdtd.PML(name="pml_ylow")
-        grid[:, -pml_width:, :] = fdtd.PML(name="pml_yhigh")
-
+    def set_source(self):
         if self.direction == 1:
-            grid[11:11, self.y : self.y + 10] = fdtd.LineSource(period=1550e-9 / 299792458, name="source")
+            self._grid[11:11, self.y : self.y + 10] = fdtd.LineSource(period=1550e-9 / 299792458, name="source")
         else:
-            grid[11 + self.xlength : 11 + self.xlength, self.y : self.y + 10] = fdtd.LineSource(
+            self._grid[11 + self.xlength : 11 + self.xlength, self.y : self.y + 10] = fdtd.LineSource(
                 period=1550e-9 / 299792458, name="source"
             )
-
-        grid.run(total_time=total_time)
-
-        self._grid = grid

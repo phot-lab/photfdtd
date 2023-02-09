@@ -9,7 +9,9 @@ if __name__ == "__main__":
     )
 
     # 设置 grid 参数
-    waveguide.set_grid(grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=0.01, total_time=1)
+    waveguide.set_grid(
+        grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=0.01, total_time=1, pml_width=10
+    )
 
     # 保存画好的图，设置保存位置，以及从哪一个轴俯视画图（这里画了三张图）
     waveguide.savefig(filepath="figures/WaveguideX.png", axis="x")
