@@ -21,7 +21,12 @@ if __name__ == "__main__":
     )
 
     # 设置 grid 参数
-    ysplitter.set_grid(grid_ylength=80, grid_xlength=80, grid_zlength=1, grid_spacing=155e-9, total_time=200)
+    ysplitter.set_grid(
+        grid_ylength=80, grid_xlength=80, grid_zlength=1, grid_spacing=155e-9, total_time=200, pml_width=5
+    )
+
+    # 设置光源
+    ysplitter.set_source()
 
     # 保存画好的图，设置保存位置，以及从哪一个轴俯视画图
     ysplitter.savefig(filepath="figures/YSplitterZ.png", axis="z")

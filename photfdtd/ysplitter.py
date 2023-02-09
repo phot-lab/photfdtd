@@ -28,12 +28,10 @@ class Trapezoid(Waveguide):
         refractive_index=1.7,
     ):
 
-        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index)
         self.direction = direction
-        self.ylength = ylength
-        self.xlength = xlength
+        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index)
 
-    def set_grid(self):
+    def _compute_permittivity(self):
         """输入波导规格，返回介电常数矩阵
         width:波导窄处宽度
         ylength:波导宽处宽度"""
@@ -107,7 +105,9 @@ class Ysplitter(Waveguide):
         self.xlength_sbend = xlength - xlength_rectangle - xlength_trapezoid
         self.ylength_sbend = int(ylength / 2 - ylength_trapezoid / 2 + width + 0.5)
 
-    def set_grid(self, grid_ylength=80, grid_xlength=80, grid_zlength=1, grid_spacing=155e-9, total_time=200):
+    def set_grid(
+        self, grid_ylength=80, grid_xlength=80, grid_zlength=1, grid_spacing=155e-9, total_time=200, pml_width=10
+    ):
 
         """返回四个部分的名称、介电常数矩阵、规格、位置，分别为直波导、梯形、s波导1、s波导2"""
         if self.direction == 1:
@@ -225,16 +225,13 @@ class Ysplitter(Waveguide):
             permittivity=sbend2.permittivity, name=sbend2.name
         )
 
-        pml_width = 5
-
         grid[0:pml_width, :, :] = fdtd.PML(name="pml_xlow")
         grid[-pml_width:, :, :] = fdtd.PML(name="pml_xhigh")
         grid[:, 0:pml_width, :] = fdtd.PML(name="pml_ylow")
         grid[:, -pml_width:, :] = fdtd.PML(name="pml_yhigh")
 
-        grid[60:60, 35:45] = fdtd.LineSource(period=1550e-9 / 299792458, name="source")
-
-        # grid.run(total_time=total_time)
-
         self._total_time = total_time
         self._grid = grid
+
+    def set_source(self):
+        self._grid[60:60, 35:45] = fdtd.LineSource(period=1550e-9 / 299792458, name="source")
