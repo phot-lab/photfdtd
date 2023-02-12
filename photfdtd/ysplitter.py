@@ -106,7 +106,7 @@ class Ysplitter(Waveguide):
         self.ylength_sbend = int(ylength / 2 - ylength_trapezoid / 2 + width + 0.5)
 
     def set_grid(
-        self, grid_ylength=80, grid_xlength=80, grid_zlength=1, grid_spacing=155e-9, total_time=200, pml_width=10
+        self, grid_xlength=80, grid_ylength=80, grid_zlength=1, grid_spacing=155e-9, total_time=200, pml_width=10
     ):
 
         """返回四个部分的名称、介电常数矩阵、规格、位置，分别为直波导、梯形、s波导1、s波导2"""
