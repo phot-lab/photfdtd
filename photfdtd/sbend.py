@@ -55,8 +55,7 @@ class Sbend(Waveguide):
                 - self.width / 2
                 + self.ylength / 2
             )
-
-        if self.direction == -1:
+        elif self.direction == -1:
             # direction=-1, 波导方向从左下到右上
             m1 = (
                 Y
@@ -70,6 +69,8 @@ class Sbend(Waveguide):
                 - self.width / 2
                 + self.ylength / 2
             )
+        else:
+            raise RuntimeError("Unknown direction")
 
         for i in range(self.xlength):
             for j in range(self.ylength):
