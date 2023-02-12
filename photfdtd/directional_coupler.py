@@ -143,7 +143,7 @@ class DirectionalCoupler(Waveguide):
         grid[-pml_width:, :, :] = fdtd.PML(name="pml_xhigh")
         grid[:, 0:pml_width, :] = fdtd.PML(name="pml_ylow")
         grid[:, -pml_width:, :] = fdtd.PML(name="pml_yhigh")
-        
+
         # 这一块光源代码应该拆出去
         grid[10:10, sbend1.y : sbend1.y + self.width] = fdtd.LineSource(
             period=1550e-9 / 299792458, name="source", pulse=True
