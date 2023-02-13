@@ -2,7 +2,7 @@
 
 ## Python Project Packaging
 
-我们选用了 [poetry](https://github.com/python-poetry/poetry) 来作为项目打包、上传的工具。
+我们选用了 [poetry](https://python-poetry.org/) 来作为项目打包、上传的工具。
 
 ## 打包生成 distribution 文件
 
