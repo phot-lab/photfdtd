@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "photfdtd"
-version = "0.0.4"
+version = "0.0.5"
 description = "PyPhot FDTD package"
 authors = ["Chunyu Li <cyli0212@gmail.com>"]
 license = "MIT"
