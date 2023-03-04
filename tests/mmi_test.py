@@ -1,5 +1,5 @@
 import utils
-from photfdtd import Mmi
+from photfdtd import Mmi, Grid
 
 if __name__ == "__main__":
     n = 1  # 输入端口数
@@ -26,8 +26,28 @@ if __name__ == "__main__":
         lm=5,
     )
 
-    mmi.set_box()
-    mmi.set_ports()
-    mmi.set_grid(pml_width=5, total_time=1500, grid_spacing=110e-9, permittivity=1)
+    grid_xlength = mmi.xlength + mmi.ln + mmi.lm + mmi.l_port * 2
+    grid_ylength = mmi.ylength + 2 * 5 + 10
+    grid_zlength = 1
+    grid = Grid(
+        pml_width=5,
+        total_time=1500,
+        grid_spacing=110e-9,
+        grid_xlength=grid_xlength,
+        grid_ylength=grid_ylength,
+        grid_zlength=grid_zlength,
+    )
 
-    mmi.savefig("Mmi.png", axis="z")
+    for i in range(mmi.n):
+        grid.set_source(
+            x=9,
+            xlength=0,
+            y=mmi.ports_in[i].y,
+            ylength=mmi.ports_in[i].ylength,
+            source_type="linesource",
+            period=1550e-9 / 299792458,
+        )
+
+    grid.add_object(mmi)
+
+    grid.savefig("Mmi.png", axis="z")

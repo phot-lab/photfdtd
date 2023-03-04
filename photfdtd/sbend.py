@@ -81,11 +81,3 @@ class Sbend(Waveguide):
         permittivity += m[:, :] * (self.refractive_index**2 - 1)
 
         self.permittivity = permittivity
-
-    def set_source(self):
-        if self.direction == 1:
-            self._grid[11:11, self.y : self.y + 10] = fdtd.LineSource(period=1550e-9 / 299792458, name="source")
-        else:
-            self._grid[11 + self.xlength : 11 + self.xlength, self.y : self.y + 10] = fdtd.LineSource(
-                period=1550e-9 / 299792458, name="source"
-            )

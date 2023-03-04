@@ -1,6 +1,5 @@
 from .waveguide import Waveguide
 import numpy as np
-import fdtd
 
 
 class Ring(Waveguide):
@@ -36,7 +35,12 @@ class Ring(Waveguide):
         self.length = length
         self.gap = gap
         self.direction = direction
-        super().__init__(zlength, zlength, zlength, x, y, z, width, name, refractive_index)
+        xlength = self.outer_r * 2 + self.length
+        ylength = self.outer_r * 2
+
+        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index)
+
+        self.y = self.y + self.width + self.gap
 
     def _compute_permittivity(self):
         y = np.linspace(1, 2 * self.outer_r, 2 * self.outer_r)
@@ -87,9 +91,7 @@ class Ring(Waveguide):
 
         self.permittivity = permittivity
 
-    def set_grid(
-        self, grid_xlength=120, grid_ylength=130, grid_zlength=1, grid_spacing=155e-9, total_time=1000, pml_width=5
-    ):
+    def _set_objects(self):
 
         wg_bottom = Waveguide(
             xlength=self.outer_r * 2 + self.length,
@@ -115,34 +117,4 @@ class Ring(Waveguide):
             refractive_index=self.refractive_index,
         )
 
-        grid = fdtd.Grid(shape=(grid_xlength, grid_ylength, grid_zlength), grid_spacing=grid_spacing)
-
-        x = self.x
-        xlength = self.outer_r * 2 + self.length
-        y = self.y + self.width + self.gap
-        ylength = self.outer_r * 2
-
-        grid[
-            x : x + xlength,
-            y : y + ylength,
-        ] = fdtd.Object(permittivity=self.permittivity, name=self.name)
-
-        grid[
-            wg_top.x : wg_top.x + wg_top.xlength,
-            wg_top.y : wg_top.y + wg_top.ylength,
-        ] = fdtd.Object(permittivity=wg_top.permittivity, name=wg_top.name)
-
-        grid[
-            wg_bottom.x : wg_bottom.x + wg_bottom.xlength,
-            wg_bottom.y : wg_bottom.y + wg_bottom.ylength,
-        ] = fdtd.Object(permittivity=wg_bottom.permittivity, name=wg_bottom.name)
-
-        grid[0:pml_width, :, :] = fdtd.PML(name="pml_xlow")
-        grid[-pml_width:, :, :] = fdtd.PML(name="pml_xhigh")
-        grid[:, 0:pml_width, :] = fdtd.PML(name="pml_ylow")
-        grid[:, -pml_width:, :] = fdtd.PML(name="pml_yhigh")
-
-        grid[8:8, wg_bottom.y - 1 : wg_bottom.y + 6] = fdtd.LineSource(period=1550e-9 / 299792458, name="source")
-
-        self._total_time = total_time
-        self._grid = grid
+        self._internal_objects = [self, wg_top, wg_bottom]

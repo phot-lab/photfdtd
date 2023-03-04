@@ -32,22 +32,13 @@ class DirectionalCoupler(Waveguide):
         gap=5,
     ):
         self.direction = direction
-        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index)
         self.xlength_rectangle = xlength_rectangle
         self.ylength_sbend = int((ylength - gap) / 2 + 0.5)
         self.xlength_sbend = int((xlength - xlength_rectangle) / 2 + 0.5)
         self.gap = gap
+        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index)
 
-    def set_grid(
-        self,
-        grid_xlength=175,
-        grid_ylength=120,
-        grid_zlength=1,
-        grid_spacing=155e-9,
-        total_time=1000,
-        pml_width=5,
-        permittivity=1**2,
-    ):
+    def _set_objects(self):
         # permittivity_rectangle = 应该不用写矩形波导的介电常数？
         # 左上波导sbend1
         sbend1 = sbend.Sbend(
@@ -62,6 +53,7 @@ class DirectionalCoupler(Waveguide):
             refractive_index=self.refractive_index,
             name="DC_sbend1",
         )
+
         # 左下波导sbend2
         sbend2 = sbend.Sbend(
             xlength=self.xlength_sbend,
@@ -128,26 +120,4 @@ class DirectionalCoupler(Waveguide):
             name="DC_wg2",
         )
 
-        grid = fdtd.Grid(
-            shape=(grid_xlength, grid_ylength, grid_zlength), grid_spacing=grid_spacing, permittivity=permittivity
-        )
-
-        arr = [sbend1, sbend2, sbend3, sbend4, wg1, wg2]
-
-        for i in range(6):
-            grid[arr[i].x : arr[i].x + arr[i].xlength, arr[i].y : arr[i].y + arr[i].ylength] = fdtd.Object(
-                permittivity=arr[i].permittivity, name=arr[i].name
-            )
-
-        grid[0:pml_width, :, :] = fdtd.PML(name="pml_xlow")
-        grid[-pml_width:, :, :] = fdtd.PML(name="pml_xhigh")
-        grid[:, 0:pml_width, :] = fdtd.PML(name="pml_ylow")
-        grid[:, -pml_width:, :] = fdtd.PML(name="pml_yhigh")
-
-        # 这一块光源代码应该拆出去
-        grid[10:10, sbend1.y : sbend1.y + self.width] = fdtd.LineSource(
-            period=1550e-9 / 299792458, name="source", pulse=True
-        )
-
-        self._total_time = total_time
-        self._grid = grid
+        self._internal_objects = [sbend1, sbend2, sbend3, sbend4, wg1, wg2]
