@@ -43,7 +43,6 @@ class Mmi(Waveguide):
         dn=1,
     ):
         self.direction = direction
-        super().__init__(xlength, ylength, zlength, x, y, z, ylength, name, refractive_index)
         self.n = n
         self.m = m
         self.width_port = width_port
@@ -53,8 +52,19 @@ class Mmi(Waveguide):
         self.l_port = l_port
         self.We = We
         self.dn = dn
+        super().__init__(xlength, ylength, zlength, x, y, z, ylength, name, refractive_index)
 
-    def set_box(self):
+    def _set_objects(self):
+        self._set_box()
+        self._set_ports()
+
+        self._internal_objects = [self.waveguide]
+        self._internal_objects.extend(self.ports_in)
+        self._internal_objects.extend(self.ports_out)
+        self._internal_objects.extend(self.waveguides_in)
+        self._internal_objects.extend(self.waveguides_out)
+
+    def _set_box(self):
 
         """设置多模波导"""
 
@@ -71,7 +81,7 @@ class Mmi(Waveguide):
         )
         self.waveguide = waveguide
 
-    def set_ports(self):
+    def _set_ports(self):
 
         """输入及输出端口"""
 
@@ -205,63 +215,3 @@ class Mmi(Waveguide):
         self.ports_out = ports_out
         self.waveguides_in = waveguides_in
         self.waveguides_out = waveguides_out
-
-    def set_grid(self, pml_width=5, total_time=1500, grid_spacing=110e-9, permittivity=1):
-
-        ports_in, ports_out, waveguides_in, waveguides_out = (
-            self.ports_in,
-            self.ports_out,
-            self.waveguides_in,
-            self.waveguides_out,
-        )
-
-        grid = fdtd.Grid(
-            shape=(self.xlength + self.ln + self.lm + self.l_port * 2, self.ylength + 2 * pml_width + 10, 1),
-            grid_spacing=grid_spacing,
-            permittivity=permittivity,
-        )
-
-        for i in range(self.n):
-            grid[
-                ports_in[i].x : ports_in[i].x + ports_in[i].xlength,
-                ports_in[i].y : ports_in[i].y + ports_in[i].ylength,
-                :,
-            ] = fdtd.Object(permittivity=ports_in[i].permittivity, name=ports_in[i].name)
-
-            grid[
-                waveguides_in[i].x : waveguides_in[i].x + waveguides_in[i].xlength,
-                waveguides_in[i].y : waveguides_in[i].y + waveguides_in[i].ylength,
-                :,
-            ] = fdtd.Object(permittivity=waveguides_in[i].permittivity, name=waveguides_in[i].name)
-
-        for i in range(self.m):
-            grid[
-                ports_out[i].x : ports_out[i].x + ports_out[i].xlength,
-                ports_out[i].y : ports_out[i].y + ports_out[i].ylength,
-                :,
-            ] = fdtd.Object(permittivity=ports_out[i].permittivity, name=ports_out[i].name)
-
-            grid[
-                waveguides_out[i].x : waveguides_out[i].x + waveguides_out[i].xlength,
-                waveguides_out[i].y : waveguides_out[i].y + waveguides_out[i].ylength,
-                :,
-            ] = fdtd.Object(permittivity=waveguides_out[i].permittivity, name=waveguides_out[i].name)
-
-        grid[
-            self.waveguide.x : self.waveguide.x + self.waveguide.xlength,
-            self.waveguide.y : self.waveguide.y + self.waveguide.ylength,
-            :,
-        ] = fdtd.Object(permittivity=self.waveguide.permittivity, name=self.waveguide.name)
-
-        grid[0:pml_width, :, :] = fdtd.PML(name="pml_xlow")
-        grid[-pml_width:, :, :] = fdtd.PML(name="pml_xhigh")
-        grid[:, 0:pml_width, :] = fdtd.PML(name="pml_ylow")
-        grid[:, -pml_width:, :] = fdtd.PML(name="pml_yhigh")
-
-        for i in range(self.n):
-            grid[9:9, ports_in[i].y : ports_in[i].y + ports_in[i].ylength, :] = fdtd.LineSource(
-                period=1550e-9 / 299792458, name="source%d" % i
-            )
-
-        self._total_time = total_time
-        self._grid = grid

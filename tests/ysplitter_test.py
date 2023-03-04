@@ -1,5 +1,5 @@
 import utils
-from photfdtd import Ysplitter
+from photfdtd import Ysplitter, Grid
 
 if __name__ == "__main__":
 
@@ -21,12 +21,12 @@ if __name__ == "__main__":
     )
 
     # 设置 grid 参数
-    ysplitter.set_grid(
-        grid_ylength=80, grid_xlength=80, grid_zlength=1, grid_spacing=155e-9, total_time=200, pml_width=5
-    )
+    grid = Grid(grid_ylength=80, grid_xlength=80, grid_zlength=1, grid_spacing=155e-9, total_time=200, pml_width=5)
 
     # 设置光源
-    ysplitter.set_source()
+    grid.set_source(x=60, xlength=0, y=35, ylength=10, source_type="linesource", period=1550e-9 / 299792458)
+
+    grid.add_object(ysplitter)
 
     # 保存画好的图，设置保存位置，以及从哪一个轴俯视画图
-    ysplitter.savefig(filepath="YSplitterZ.png", axis="z")
+    grid.savefig(filepath="YSplitterZ.png", axis="z")
