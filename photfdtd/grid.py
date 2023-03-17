@@ -32,6 +32,7 @@ class Grid:
         self._grid_zlength = grid_zlength
         self._total_time = total_time
         self._grid = grid
+        self._has_run = False
 
     def add_object(self, object: Waveguide):
         for internal_object in object._internal_objects:
@@ -129,10 +130,12 @@ class Grid:
             raise RuntimeError("Invalid source type.")
 
     def savefig(self, filepath, axis="x"):
-        self._grid.run(total_time=self._total_time)
-
         if self._grid is None:
             raise RuntimeError("The grid should be set before saving figure.")
+
+        if not self._has_run:
+            self._grid.run(total_time=self._total_time)
+            self._has_run = True
 
         axis = axis.lower()  # 识别大写的 "X", "Y", "Z"
 
