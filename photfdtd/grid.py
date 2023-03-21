@@ -5,7 +5,16 @@ from .waveguide import Waveguide
 
 class Grid:
     def __init__(
-        self, grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=0.01, total_time=1, pml_width=10
+        self,
+        grid_xlength=100,
+        grid_ylength=200,
+        grid_zlength=50,
+        grid_spacing=0.01,
+        total_time=1,
+        pml_width=10,
+        permittivity=1.0,
+        permeability=1.0,
+        courant_number=None,
     ) -> None:
         """
         Args:
@@ -15,8 +24,17 @@ class Grid:
             grid_spacing (float, optional): fdtd算法的空间步长（yee元胞的网格宽度）. Defaults to 0.01.
             total_time (int, optional): 计算时间. Defaults to 1.
             pml_width (int, optional): PML宽度. Defaults to 10.
+            permeability (float, optional): 环境磁导率 1.0
+            permittivity (float, optional): 环境介电常数，二者共同决定了环境折射率 1.0
+            courant_number: 科朗数 默认为None
         """
-        grid = fdtd.Grid(shape=(grid_xlength, grid_ylength, grid_zlength), grid_spacing=grid_spacing)
+        grid = fdtd.Grid(
+            shape=(grid_xlength, grid_ylength, grid_zlength),
+            grid_spacing=grid_spacing,
+            permittivity=permittivity,
+            permeability=permeability,
+            courant_number=courant_number,
+        )
 
         grid[0:pml_width, :, :] = fdtd.PML(name="pml_xlow")
         grid[-pml_width:, :, :] = fdtd.PML(name="pml_xhigh")
