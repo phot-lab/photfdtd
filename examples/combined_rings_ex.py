@@ -45,4 +45,4 @@ if __name__ == "__main__":
     grid.add_object(ring)
     grid.add_object(ring1)
 
-    grid.savefig("CombinedRings.png", axis="z")
+    grid.savefig("CombinedRings.png", z=0)

@@ -29,4 +29,4 @@ if __name__ == "__main__":
     grid.add_object(ysplitter)
 
     # 保存画好的图，设置保存位置，以及从哪一个轴俯视画图
-    grid.savefig(filepath="YSplitterZ.png", axis="z")
+    grid.savefig(filepath="YSplitterZ.png", z=0)

@@ -147,7 +147,7 @@ class Grid:
         else:
             raise RuntimeError("Invalid source type.")
 
-    def savefig(self, filepath, axis="x"):
+    def savefig(self, filepath, x: int = None, y: int = None, z: int = None):
         if self._grid is None:
             raise RuntimeError("The grid should be set before saving figure.")
 
@@ -155,16 +155,8 @@ class Grid:
             self._grid.run(total_time=self._total_time)
             self._has_run = True
 
-        axis = axis.lower()  # 识别大写的 "X", "Y", "Z"
-
-        if axis == "x":  # 判断从哪一个轴俯视画图
-            self._grid.visualize(x=0)
-        elif axis == "y":
-            self._grid.visualize(y=0)
-        elif axis == "z":
-            self._grid.visualize(z=0)
-        else:
-            raise RuntimeError("Unknown axis parameter.")
+        # 不设置 save 参数，因为 visualize 把路径设置死了，不好修改，选择在外面调用 plt.savefig()
+        self._grid.visualize(x=x, y=y, z=z)  
 
         plt.savefig(filepath)  # 保存图片
-        plt.close()  # 清除画布
+        plt.clf()  # 清除画布
