@@ -18,18 +18,18 @@ class DirectionalCoupler(Waveguide):
     # TODO 只需要输出两个s波导的矩阵，另外两个S波导的矩阵与他们一样，关键在于确定位置（未完成）
     def __init__(
         self,
-        xlength=60,
-        ylength=10,
-        zlength=10,
-        x=50,
-        y=50,
-        z=50,
-        direction=1,
-        width=10,
-        name="waveguide",
-        refractive_index=1.7,
-        xlength_rectangle=30,
-        gap=5,
+        xlength: int = 60,
+        ylength: int = 10,
+        zlength: int = 10,
+        x: int = 50,
+        y: int = 50,
+        z: int = 50,
+        direction: int = 1,
+        width: int = 10,
+        name: str = "dc",
+        refractive_index: float = 1.7,
+        xlength_rectangle: int = 30,
+        gap: int = 5,
     ):
         self.direction = direction
         self.xlength_rectangle = xlength_rectangle
@@ -51,7 +51,7 @@ class DirectionalCoupler(Waveguide):
             direction=1,
             width=self.width,
             refractive_index=self.refractive_index,
-            name="DC_sbend1",
+            name=f"{self.name}_sbend1",
         )
 
         # 左下波导sbend2
@@ -65,7 +65,7 @@ class DirectionalCoupler(Waveguide):
             direction=-1,
             width=self.width,
             refractive_index=self.refractive_index,
-            name="DC_sbend2",
+            name=f"{self.name}_sbend2",
         )
 
         # 右上波导sbend3
@@ -79,7 +79,7 @@ class DirectionalCoupler(Waveguide):
             direction=-1,
             width=self.width,
             refractive_index=self.refractive_index,
-            name="DC_sbend3",
+            name=f"{self.name}_sbend3",
         )
 
         # 右下波导sbend4
@@ -93,7 +93,7 @@ class DirectionalCoupler(Waveguide):
             direction=1,
             width=self.width,
             refractive_index=self.refractive_index,
-            name="DC_sbend4",
+            name=f"{self.name}_sbend4",
         )
 
         wg1 = Waveguide(
@@ -105,7 +105,7 @@ class DirectionalCoupler(Waveguide):
             z=self.z,
             width=self.width,
             refractive_index=self.refractive_index,
-            name="DC_wg1",
+            name=f"{self.name}_wg1",
         )
 
         wg2 = Waveguide(
@@ -117,7 +117,7 @@ class DirectionalCoupler(Waveguide):
             z=self.z,
             width=self.width,
             refractive_index=self.refractive_index,
-            name="DC_wg2",
+            name=f"{self.name}_wg2",
         )
 
         self._internal_objects = [sbend1, sbend2, sbend3, sbend4, wg1, wg2]

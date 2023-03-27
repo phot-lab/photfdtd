@@ -18,17 +18,17 @@ class Ring(Waveguide):
 
     def __init__(
         self,
-        outer_radius=60,
-        zlength=10,
-        x=50,
-        y=50,
-        z=50,
-        width=5,
-        length=0,
-        gap=0,
-        name="ring",
-        refractive_index=3.47,
-        direction=1,
+        outer_radius: int = 60,
+        zlength: int = 10,
+        x: int = 50,
+        y: int = 50,
+        z: int = 50,
+        width: int = 5,
+        length: int = 0,
+        gap: int = 0,
+        name: str = "ring",
+        refractive_index: float = 3.47,
+        direction: int = 1,
     ):
 
         self.outer_r = outer_radius
@@ -101,7 +101,7 @@ class Ring(Waveguide):
             y=self.y,
             z=self.z,
             width=self.width,
-            name="waveguide_bottom_%s" % self.name,
+            name=f"waveguide_bottom_{self.name}",
             refractive_index=self.refractive_index,
         )
 
@@ -113,7 +113,7 @@ class Ring(Waveguide):
             y=self.y + self.width + self.gap * 2 + self.outer_r * 2,
             z=self.z,
             width=self.width,
-            name="waveguide_top_%s" % self.name,
+            name=f"waveguide_top_{self.name}",
             refractive_index=self.refractive_index,
         )
 

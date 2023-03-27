@@ -16,16 +16,16 @@ class Sbend(Waveguide):
 
     def __init__(
         self,
-        xlength=60,
-        ylength=10,
-        zlength=10,
-        x=50,
-        y=50,
-        z=50,
-        width=10,
-        name="waveguide",
-        refractive_index=1.7,
-        direction=-1,
+        xlength: int = 60,
+        ylength: int = 10,
+        zlength: int = 10,
+        x: int = 50,
+        y: int = 50,
+        z: int = 50,
+        width: int = 10,
+        name: str = "waveguide",
+        refractive_index: float = 1.7,
+        direction: int = -1,
     ):
         self.direction = direction
         super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index)

@@ -6,15 +6,15 @@ from .waveguide import Waveguide
 class Grid:
     def __init__(
         self,
-        grid_xlength=100,
-        grid_ylength=200,
-        grid_zlength=50,
-        grid_spacing=0.01,
-        total_time=1,
-        pml_width=10,
-        permittivity=1.0,
-        permeability=1.0,
-        courant_number=None,
+        grid_xlength: int = 100,
+        grid_ylength: int = 200,
+        grid_zlength: int = 50,
+        grid_spacing: float = 0.01,
+        total_time: float = 1,
+        pml_width: int = 10,
+        permittivity: float = 1.0,
+        permeability: float = 1.0,
+        courant_number: int = None,
     ) -> None:
         """
         Args:
