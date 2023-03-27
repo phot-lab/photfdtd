@@ -15,6 +15,6 @@ if __name__ == "__main__":
     grid.add_object(waveguide)
 
     # 保存画好的图，设置保存位置，以及从哪一个轴俯视画图（这里画了三张图）
-    grid.savefig(filepath="WaveguideX.png", axis="x")
-    grid.savefig(filepath="WaveguideY.png", axis="y")
-    grid.savefig(filepath="WaveguideZ.png", axis="z")
+    grid.savefig(filepath="WaveguideX.png", x=0)
+    grid.savefig(filepath="WaveguideY.png", y=0)
+    grid.savefig(filepath="WaveguideZ.png", z=0)

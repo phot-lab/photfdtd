@@ -20,4 +20,4 @@ if __name__ == "__main__":
     grid.add_object(sbend)
 
     # 保存图片
-    grid.savefig(filepath="SbendZ.png", axis="z")
+    grid.savefig(filepath="SbendZ.png", z=0)

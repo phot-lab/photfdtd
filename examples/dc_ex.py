@@ -25,4 +25,4 @@ if __name__ == "__main__":
 
     grid.add_object(dc)
 
-    grid.savefig("DirectionalCoupler.png", axis="z")
+    grid.savefig("DirectionalCoupler.png", z=0)
