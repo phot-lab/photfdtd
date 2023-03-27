@@ -16,16 +16,16 @@ class Trapezoid(Waveguide):
 
     def __init__(
         self,
-        xlength=60,
-        ylength=10,
-        zlength=10,
-        x=50,
-        y=50,
-        z=50,
-        direction=1,
-        width=10,
-        name="waveguide",
-        refractive_index=1.7,
+        xlength: int = 60,
+        ylength: int = 10,
+        zlength: int = 10,
+        x: int = 50,
+        y: int = 50,
+        z: int = 50,
+        direction: int = 1,
+        width: int = 10,
+        name: str = "waveguide",
+        refractive_index: float = 1.7,
     ):
 
         self.direction = direction
@@ -118,7 +118,7 @@ class Ysplitter(Waveguide):
                 y=self.y + int(self.ylength / 2 - self.width / 2 + 0.5),
                 z=self.z,
                 width=self.width,
-                name="%s_waveguide" % self.name,
+                name=f"{self.name}_waveguide",
             )
             trapezoid = Trapezoid(
                 xlength=self.xlength_trapezoid,
@@ -129,7 +129,7 @@ class Ysplitter(Waveguide):
                 z=self.z,
                 direction=self.direction,
                 width=self.width,
-                name="%s_trapezoid" % self.name,
+                name=f"{self.name}_trapezoid",
             )
             sbend1 = sbend.Sbend(
                 xlength=self.xlength_sbend,
@@ -140,7 +140,7 @@ class Ysplitter(Waveguide):
                 z=self.z,
                 direction=-self.direction,
                 width=self.width,
-                name="%s_sbend1" % self.name,
+                name=f"{self.name}_sbend1",
             )
             sbend2 = sbend.Sbend(
                 xlength=self.xlength_sbend,
@@ -151,7 +151,7 @@ class Ysplitter(Waveguide):
                 z=self.z,
                 direction=self.direction,
                 width=self.width,
-                name="%s_sbend2" % self.name,
+                name=f"{self.name}_sbend2",
             )
         else:
             waveguide = Waveguide(
@@ -162,7 +162,7 @@ class Ysplitter(Waveguide):
                 y=self.y + int(self.ylength / 2 - self.width / 2 + 0.5),
                 z=self.z,
                 width=self.width,
-                name="%s_waveguide" % self.name,
+                name=f"{self.name}_waveguide",
             )
             trapezoid = Trapezoid(
                 xlength=self.xlength_trapezoid,
@@ -173,7 +173,7 @@ class Ysplitter(Waveguide):
                 z=self.z,
                 direction=self.direction,
                 width=self.width,
-                name="%s_trapezoid" % self.name,
+                name=f"{self.name}_trapezoid",
             )
             sbend1 = sbend.Sbend(
                 xlength=self.xlength_sbend,
@@ -184,7 +184,7 @@ class Ysplitter(Waveguide):
                 z=self.z,
                 direction=-self.direction,
                 width=self.width,
-                name="%s_sbend1" % self.name,
+                name=f"{self.name}_sbend1",
             )
             sbend2 = sbend.Sbend(
                 xlength=self.xlength_sbend,
@@ -195,7 +195,7 @@ class Ysplitter(Waveguide):
                 z=self.z,
                 direction=self.direction,
                 width=self.width,
-                name="%s_sbend2" % self.name,
+                name=f"{self.name}_sbend2",
             )
 
         self._internal_objects = [waveguide, trapezoid, sbend1, sbend2]
