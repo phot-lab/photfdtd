@@ -1,5 +1,5 @@
 import utils
-from photfdtd import Ring, Grid, DirectionalCoupler
+from photfdtd import Grid, DirectionalCoupler
 
 if __name__ == "__main__":
     dc1 = DirectionalCoupler(
@@ -47,4 +47,4 @@ if __name__ == "__main__":
         pulse=False,
     )
 
-    grid.savefig(filepath="CombinedWaveguides.png", z=0)
+    grid.savefig(filepath="CombinedDirectionalCouplers.png", z=0)
