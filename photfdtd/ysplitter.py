@@ -83,19 +83,19 @@ class Ysplitter(Waveguide):
 
     def __init__(
         self,
-        xlength=60,
-        ylength=10,
-        zlength=10,
-        x=50,
-        y=50,
-        z=50,
-        direction=-1,
-        width=10,
-        name="ysplitter",
-        refractive_index=1.7,
-        xlength_rectangle=30,
-        xlength_trapezoid=10,
-        ylength_trapezoid=30,
+        xlength: int = 60,
+        ylength: int = 10,
+        zlength: int = 10,
+        x: int = 50,
+        y: int = 50,
+        z: int = 50,
+        direction: int = -1,
+        width: int = 10,
+        name: str = "ysplitter",
+        refractive_index: float = 1.7,
+        xlength_rectangle: int = 30,
+        xlength_trapezoid: int = 10,
+        ylength_trapezoid: int = 30,
     ):
         self.direction = direction
         self.xlength_rectangle = xlength_rectangle

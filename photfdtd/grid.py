@@ -10,7 +10,7 @@ class Grid:
         grid_ylength: int = 200,
         grid_zlength: int = 50,
         grid_spacing: float = 0.01,
-        total_time: float = 1,
+        total_time: int = 1,
         pml_width: int = 10,
         permittivity: float = 1.0,
         permeability: float = 1.0,
@@ -147,7 +147,7 @@ class Grid:
         else:
             raise RuntimeError("Invalid source type.")
 
-    def savefig(self, filepath, x: int = None, y: int = None, z: int = None):
+    def savefig(self, filepath: str, x: int = None, y: int = None, z: int = None):
         if self._grid is None:
             raise RuntimeError("The grid should be set before saving figure.")
 
@@ -156,7 +156,7 @@ class Grid:
             self._has_run = True
 
         # 不设置 save 参数，因为 visualize 把路径设置死了，不好修改，选择在外面调用 plt.savefig()
-        self._grid.visualize(x=x, y=y, z=z)  
+        self._grid.visualize(x=x, y=y, z=z)
 
         plt.savefig(filepath)  # 保存图片
         plt.clf()  # 清除画布
