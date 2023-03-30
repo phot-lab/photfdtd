@@ -2,7 +2,7 @@
 
 ## Python Project Packaging
 
-我们选用了 [poetry](https://python-poetry.org/) 来作为项目打包、上传的工具。
+本项目使用 [poetry](https://python-poetry.org/) 来作为 Python 项目打包、上传的工具。
 
 ## 打包生成 distribution 文件
 
@@ -18,6 +18,7 @@ poetry build
 首先设置 `poetry` 的 credentials:
 
 ```shell
+# username 和 password 是你注册的 PyPI 账号
 poetry config http-basic.pypi <username> <password>
 ```
 

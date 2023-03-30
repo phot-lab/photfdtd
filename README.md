@@ -1,6 +1,6 @@
 # PhotFDTD
 
-Phot FDTD 目前包含了基础器件和光器件的实现和测试用例，使用了fdtd库已经实现了的 Finite-difference time-domain method （时域有限差分）算法。
+Phot FDTD 目前包含了基础器件和光器件的实现和测试用例，使用了 [fdtd](https://github.com/flaport/fdtd) 库已经实现了的 Finite-difference time-domain method （时域有限差分）算法。
 
 ## 基础器件
 
@@ -24,12 +24,14 @@ Phot FDTD 目前包含了基础器件和光器件的实现和测试用例，使�
 1. 两个微环相连
 2. 两个方向耦合器相连
 
-## 安装
-
-在命令行界面输入以下命令即可
+## 运行代码
 
 ```shell
-pip install photfdtd
+# 安装相关依赖
+pip install -r requirements.txt
+
+# 运行代码示例
+python examples/sbend_ex.py
 ```
 
 ## Demo
