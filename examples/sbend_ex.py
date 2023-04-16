@@ -19,5 +19,8 @@ if __name__ == "__main__":
     # 添加器件
     grid.add_object(sbend)
 
+    # Run a FDTD simulation
+    grid.run()
+
     # 保存图片
     grid.savefig(filepath="SbendZ.png", z=0)

@@ -50,4 +50,6 @@ if __name__ == "__main__":
 
     grid.add_object(mmi)
 
+    grid.run()
+
     grid.savefig("Mmi.png", z=0)

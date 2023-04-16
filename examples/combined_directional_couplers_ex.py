@@ -47,4 +47,6 @@ if __name__ == "__main__":
         pulse=False,
     )
 
+    grid.run()
+
     grid.savefig(filepath="CombinedDirectionalCouplers.png", z=0)
