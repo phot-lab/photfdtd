@@ -50,9 +50,8 @@ class Grid:
         self._grid_zlength = grid_zlength
         self._total_time = total_time
         self._grid = grid
-        self._has_run = False
 
-    def add_object(self, object: Waveguide):
+    def add_object(self, object: Waveguide) -> None:
         for internal_object in object._internal_objects:
             if internal_object.zlength != 1:
                 self._grid[
@@ -83,7 +82,7 @@ class Grid:
         xlength: int = 5,
         ylength: int = 5,
         zlength: int = 5,
-    ):
+    ) -> None:
         """
 
         :param source_type: 光源种类：点或线或面
@@ -147,16 +146,15 @@ class Grid:
         else:
             raise RuntimeError("Invalid source type.")
 
-    def savefig(self, filepath: str, x: int = None, y: int = None, z: int = None):
-        if self._grid is None:
-            raise RuntimeError("The grid should be set before saving figure.")
-
-        if not self._has_run:
-            self._grid.run(total_time=self._total_time)
-            self._has_run = True
-
+    def savefig(self, filepath: str, x: int = None, y: int = None, z: int = None) -> None:
         # 不设置 save 参数，因为 visualize 把路径设置死了，不好修改，选择在外面调用 plt.savefig()
         self._grid.visualize(x=x, y=y, z=z)
 
         plt.savefig(filepath)  # 保存图片
         plt.clf()  # 清除画布
+
+    def run(self) -> None:
+        if self._grid is None:
+            raise RuntimeError("The grid should be set before running.")
+
+        self._grid.run(total_time=self._total_time)

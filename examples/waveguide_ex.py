@@ -14,6 +14,8 @@ if __name__ == "__main__":
     # 往 grid 里添加一个器件
     grid.add_object(waveguide)
 
+    grid.run()
+
     # 保存画好的图，设置保存位置，以及从哪一个轴俯视画图（这里画了三张图）
     grid.savefig(filepath="WaveguideX.png", x=0)
     grid.savefig(filepath="WaveguideY.png", y=0)

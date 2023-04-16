@@ -30,4 +30,6 @@ if __name__ == "__main__":
 
     grid.add_object(ring)
 
+    grid.run()
+
     grid.savefig("Ring.png", z=0)
