@@ -167,7 +167,7 @@ class Mmi(Waveguide):
                 z=self.z,
                 direction=1,
                 width=self.width_wg,
-                name=f"port_input{i}",
+                name=f"{self.name}_port_input{i}",
                 refractive_index=self.refractive_index,
             )
             wg = Waveguide(
@@ -178,7 +178,7 @@ class Mmi(Waveguide):
                 y=y_port_in[i] + int(self.width_port / 2 - self.width_wg / 2 + 0.5),
                 z=self.z,
                 width=self.width_wg,
-                name=f"waveguide_input{i}",
+                name=f"{self.name}_waveguide_input{i}",
                 refractive_index=self.refractive_index,
             )
             ports_in[i] = port
@@ -194,7 +194,7 @@ class Mmi(Waveguide):
                 z=self.z,
                 direction=-1,
                 width=self.width_port,
-                name=f"port_output{i}",
+                name=f"{self.name}_port_output{i}",
                 refractive_index=self.refractive_index,
             )
             wg = Waveguide(
@@ -205,7 +205,7 @@ class Mmi(Waveguide):
                 y=y_port_out[i] + int(self.width_port / 2 - self.width_wg / 2 + 0.5),
                 z=self.z,
                 width=self.width_wg,
-                name=f"waveguide_output{i}",
+                name=f"{self.name}_waveguide_output{i}",
                 refractive_index=self.refractive_index,
             )
             ports_out[i] = port
