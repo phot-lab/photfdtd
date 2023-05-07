@@ -26,7 +26,7 @@ class DirectionalCoupler(Waveguide):
         z: int = 50,
         direction: int = 1,
         width: int = 10,
-        name: str = "dc",
+        name: str = "waveguide",
         refractive_index: float = 1.7,
         xlength_rectangle: int = 30,
         gap: int = 5,
