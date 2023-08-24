@@ -27,9 +27,10 @@ class Trapezoid(Waveguide):
         name: str = "waveguide",
         refractive_index: float = 1.7,
     ):
-
         self.direction = direction
-        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index)
+        super().__init__(
+            xlength, ylength, zlength, x, y, z, width, name, refractive_index
+        )
 
     def _compute_permittivity(self):
         """输入波导规格，返回介电常数矩阵
@@ -61,11 +62,15 @@ class Trapezoid(Waveguide):
             for i in range(self.xlength):
                 for j in range(self.ylength):
                     if (
-                        X[self.xlength - i - 1, j] * (self.width / 2 - self.ylength / 2) / self.xlength
+                        X[self.xlength - i - 1, j]
+                        * (self.width / 2 - self.ylength / 2)
+                        / self.xlength
                         + self.ylength / 2
                         - self.width / 2
                         <= Y[i, j]
-                        <= X[self.xlength - i - 1, j] * (-self.width / 2 + self.ylength / 2) / self.xlength
+                        <= X[self.xlength - i - 1, j]
+                        * (-self.width / 2 + self.ylength / 2)
+                        / self.xlength
                         + self.ylength / 2
                         + self.width / 2
                     ):
@@ -104,10 +109,11 @@ class Ysplitter(Waveguide):
         self.xlength_sbend = xlength - xlength_rectangle - xlength_trapezoid
         self.ylength_sbend = int(ylength / 2 - ylength_trapezoid / 2 + width + 0.5)
 
-        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index)
+        super().__init__(
+            xlength, ylength, zlength, x, y, z, width, name, refractive_index
+        )
 
     def _set_objects(self):
-
         """返回四个部分的名称、介电常数矩阵、规格、位置，分别为直波导、梯形、s波导1、s波导2"""
         if self.direction == 1:
             waveguide = Waveguide(

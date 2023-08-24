@@ -28,7 +28,9 @@ class Sbend(Waveguide):
         direction: int = -1,
     ):
         self.direction = direction
-        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index)
+        super().__init__(
+            xlength, ylength, zlength, x, y, z, width, name, refractive_index
+        )
 
     def _compute_permittivity(self):
         """
@@ -44,14 +46,18 @@ class Sbend(Waveguide):
 
             m1 = (
                 Y
-                <= 0.5 * (self.ylength - self.width) * np.sin((X / self.xlength - 0.5) * np.pi)
+                <= 0.5
+                * (self.ylength - self.width)
+                * np.sin((X / self.xlength - 0.5) * np.pi)
                 + self.width / 2
                 + self.ylength / 2
             )
 
             m2 = (
                 Y
-                >= 0.5 * (self.ylength - self.width) * np.sin((X / self.xlength - 0.5) * np.pi)
+                >= 0.5
+                * (self.ylength - self.width)
+                * np.sin((X / self.xlength - 0.5) * np.pi)
                 - self.width / 2
                 + self.ylength / 2
             )
@@ -59,13 +65,17 @@ class Sbend(Waveguide):
             # direction=-1, 波导方向从左下到右上
             m1 = (
                 Y
-                <= -0.5 * (self.ylength - self.width) * np.sin((X / self.xlength - 0.5) * np.pi)
+                <= -0.5
+                * (self.ylength - self.width)
+                * np.sin((X / self.xlength - 0.5) * np.pi)
                 + self.width / 2
                 + self.ylength / 2
             )
             m2 = (
                 Y
-                >= -0.5 * (self.ylength - self.width) * np.sin((X / self.xlength - 0.5) * np.pi)
+                >= -0.5
+                * (self.ylength - self.width)
+                * np.sin((X / self.xlength - 0.5) * np.pi)
                 - self.width / 2
                 + self.ylength / 2
             )

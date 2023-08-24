@@ -22,6 +22,6 @@ __pycache__/
 
 /test.py
 
-# examples/fdtd_output
-# examples/*.png
+examples/fdtd_output
+examples/*.png
 *.pdf
