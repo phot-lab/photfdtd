@@ -31,7 +31,7 @@ if __name__ == "__main__":
         direction=1,
     )
 
-    grid = Grid(grid_xlength=200, grid_ylength=200, grid_zlength=1, grid_spacing=155e-9, total_time=1500, pml_width=5)
+    grid = Grid(grid_xlength=200, grid_ylength=200, grid_zlength=1, grid_spacing=155e-9, total_time=1500, pml_width_x=5, pml_width_y=5, pml_width_z=5)
 
     grid.set_source(
         source_type="linesource",

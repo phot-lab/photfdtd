@@ -362,7 +362,9 @@ if __name__ == "__main__":
         grid_zlength=20,
         grid_spacing=11e-9,
         total_time=1,
-        pml_width=10,
+        pml_width_x=10,
+        pml_width_y=10,
+        pml_width_z=10,
     )
 
     # 往 grid 里添加一个器件

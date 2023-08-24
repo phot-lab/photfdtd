@@ -17,7 +17,7 @@ if __name__ == "__main__":
         gap=1,
     )
 
-    grid = Grid(grid_xlength=175, grid_ylength=120, grid_zlength=1, grid_spacing=155e-9, total_time=1000, pml_width=5)
+    grid = Grid(grid_xlength=175, grid_ylength=120, grid_zlength=1, grid_spacing=155e-9, total_time=1000, pml_width_x=5, pml_width_y=5, pml_width_z=5)
 
     grid.set_source(
         x=10, xlength=0, y=dc.y, ylength=dc.width, source_type="linesource", period=1550e-9 / 299792458, pulse=True
