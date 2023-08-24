@@ -32,7 +32,7 @@ if __name__ == "__main__":
         gap=1,
     )
 
-    grid = Grid(grid_xlength=280, grid_ylength=150, grid_zlength=1, grid_spacing=155e-9, total_time=800, pml_width=9)
+    grid = Grid(grid_xlength=280, grid_ylength=150, grid_zlength=1, grid_spacing=155e-9, total_time=800, pml_width_x=9, pml_width_y=9, pml_width_z=9)
 
     grid.add_object(dc1)
     grid.add_object(dc2)

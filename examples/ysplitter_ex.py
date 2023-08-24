@@ -21,7 +21,7 @@ if __name__ == "__main__":
     )
 
     # 设置 grid 参数
-    grid = Grid(grid_ylength=80, grid_xlength=80, grid_zlength=1, grid_spacing=155e-9, total_time=200, pml_width=5)
+    grid = Grid(grid_ylength=80, grid_xlength=80, grid_zlength=1, grid_spacing=155e-9, total_time=200, pml_width_x=5, pml_width_y=5, pml_width_z=5)
 
     # 设置光源
     grid.set_source(x=60, xlength=0, y=35, ylength=10, source_type="linesource", period=1550e-9 / 299792458)

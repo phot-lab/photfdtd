@@ -30,7 +30,9 @@ if __name__ == "__main__":
     grid_ylength = mmi.ylength + 2 * 5 + 10
     grid_zlength = 1
     grid = Grid(
-        pml_width=5,
+        pml_width_x=5,
+        pml_width_y=5,
+        pml_width_z=5,
         total_time=1500,
         grid_spacing=110e-9,
         grid_xlength=grid_xlength,

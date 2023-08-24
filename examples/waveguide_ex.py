@@ -9,7 +9,7 @@ if __name__ == "__main__":
     )
 
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=0.01, total_time=1, pml_width=10)
+    grid = Grid(grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=0.01, total_time=1, pml_width_x=10, pml_width_y=10, pml_width_z=10)
 
     # 往 grid 里添加一个器件
     grid.add_object(waveguide)
