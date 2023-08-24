@@ -3,7 +3,6 @@ from .waveguide import Waveguide
 
 
 class Circle(Waveguide):
-    # TODO: 由于在设置的波导中，非波导部分折射率都为1，因此目前设置空间折射率来改变包层折射率并无意义
     """圆波导
     radius: 半径
     length: 长度
@@ -23,38 +22,35 @@ class Circle(Waveguide):
         refractive_index: float,
         name: str,
         axis: str,
+        background_index: float = 1,
     ) -> None:
         self.radius = radius
         self.length = length
         self.axis = axis
-        if self.axis == "x":
-            # 在调用fdtd包时，仍然需要把x,y,z转换为最靠近原点的端点
-            super().__init__(
-                x=x - self.length / 2,
-                y=y - self.radius,
-                z=z - self.radius,
-                name=name,
-                refractive_index=refractive_index,
-            )
+        if self.axis.lower() == "x":
+            # 波导沿x轴
+            self.x = x - int(self.length / 2)
+            self.y = y - int(self.radius * 2)
+            self.z = z - int(self.radius * 2)
 
-        elif self.axis == "y":
-            # 在调用fdtd包时，仍然需要把x,y,z转换为最靠近原点的端点
-            super().__init__(
-                x=x - self.radius,
-                y=y - self.length / 2,
-                z=z - self.radius,
-                name=name,
-                refractive_index=refractive_index,
-            )
-        elif self.axis == "z":
-            # 在调用fdtd包时，仍然需要把x,y,z转换为最靠近原点的端点
-            super().__init__(
-                x=x - self.radius,
-                y=y - self.radius,
-                z=z - self.length / 2,
-                name=name,
-                refractive_index=refractive_index,
-            )
+        elif self.axis.lower() == "y":
+            # 波导沿y轴
+            self.y = y - int(self.length / 2)
+            self.x = x - int(self.radius)
+            self.z = z - int(self.radius)
+
+        elif self.axis.lower() == "z":
+            # 波导沿z轴
+            self.z = z - int(self.length / 2)
+            self.y = y - int(self.radius)
+            self.x = x - int(self.radius)
+
+        self.name = name
+        self.refractive_index = refractive_index
+        self.background_index = background_index
+
+        self._compute_permittivity()
+        self._set_objects()
 
     def _compute_permittivity(self):
         # 这里+2的原因：稍微扩大一点矩阵的大小，可以保证水平和竖直方向最边上的点不被丢出
@@ -73,6 +69,7 @@ class Circle(Waveguide):
             )
             for i in range(self.length):
                 self.permittivity[i] += m[:, :] * (self.refractive_index**2 - 1)
+                self.permittivity[i] += (1 - m[:, :]) * (self.background_index**2 - 1)
 
         elif self.axis.lower() == "y":
             # 波导沿y轴
@@ -84,6 +81,9 @@ class Circle(Waveguide):
             )
             for i in range(self.length):
                 self.permittivity[:, i] += m[:, :] * (self.refractive_index**2 - 1)
+                self.permittivity[:, i] += (1 - m[:, :]) * (
+                    self.background_index**2 - 1
+                )
 
         elif self.axis.lower() == "z":
             # 波导沿z轴
@@ -95,3 +95,9 @@ class Circle(Waveguide):
             )
             for i in range(self.length):
                 self.permittivity[:, :, i] += m[:, :] * (self.refractive_index**2 - 1)
+                self.permittivity[:, :, i] += (1 - m[:, :]) * (
+                    self.background_index**2 - 1
+                )
+
+    def _set_objects(self):
+        self._internal_objects = [self]

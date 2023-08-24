@@ -14,20 +14,22 @@ class SbendShape(Waveguide):
     refractive_index:折射率"""
 
     def __init__(
-            self,
-            xlength: int = 60,
-            ylength: int = 10,
-            zlength: int = 10,
-            x: int = 50,
-            y: int = 50,
-            z: int = 50,
-            width: int = 10,
-            name: str = "waveguide",
-            refractive_index: float = 1.7,
-            direction: int = -1,
+        self,
+        xlength: int = 60,
+        ylength: int = 10,
+        zlength: int = 10,
+        x: int = 50,
+        y: int = 50,
+        z: int = 50,
+        width: int = 10,
+        name: str = "waveguide",
+        refractive_index: float = 1.7,
+        direction: int = -1,
     ):
         self.direction = direction
-        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index)
+        super().__init__(
+            xlength, ylength, zlength, x, y, z, width, name, refractive_index
+        )
 
     # def _compute_permittivity(self):
     #     """
@@ -95,31 +97,39 @@ class SbendShape(Waveguide):
             # direction=1, 波导方向从左上到右下
 
             m1 = (
-                    Y
-                    <= 0.5 * (self.ylength - self.width) * np.sin((X / self.xlength - 0.5) * np.pi)
-                    + self.width / 2
-                    + self.ylength / 2
+                Y
+                <= 0.5
+                * (self.ylength - self.width)
+                * np.sin((X / self.xlength - 0.5) * np.pi)
+                + self.width / 2
+                + self.ylength / 2
             )
 
             m2 = (
-                    Y
-                    >= 0.5 * (self.ylength - self.width) * np.sin((X / self.xlength - 0.5) * np.pi)
-                    - self.width / 2
-                    + self.ylength / 2
+                Y
+                >= 0.5
+                * (self.ylength - self.width)
+                * np.sin((X / self.xlength - 0.5) * np.pi)
+                - self.width / 2
+                + self.ylength / 2
             )
         elif self.direction == -1:
             # direction=-1, 波导方向从左下到右上
             m1 = (
-                    Y
-                    <= -0.5 * (self.ylength - self.width) * np.sin((X / self.xlength - 0.5) * np.pi)
-                    + self.width / 2
-                    + self.ylength / 2
+                Y
+                <= -0.5
+                * (self.ylength - self.width)
+                * np.sin((X / self.xlength - 0.5) * np.pi)
+                + self.width / 2
+                + self.ylength / 2
             )
             m2 = (
-                    Y
-                    >= -0.5 * (self.ylength - self.width) * np.sin((X / self.xlength - 0.5) * np.pi)
-                    - self.width / 2
-                    + self.ylength / 2
+                Y
+                >= -0.5
+                * (self.ylength - self.width)
+                * np.sin((X / self.xlength - 0.5) * np.pi)
+                - self.width / 2
+                + self.ylength / 2
             )
         else:
             raise RuntimeError("Unknown direction")
@@ -142,7 +152,14 @@ class SbendShape(Waveguide):
             if border_t != -1:
                 # print(border_d)
                 # print(border_t)
-                waveguide = Waveguide(xlength=1, ylength=border_d - border_t + 1, zlength=1,
-                                      x=self.x + i, y=self.y + border_t, z=0,
-                                      name="ArcShape" + str(i), refractive_index=self.refractive_index)
+                waveguide = Waveguide(
+                    xlength=1,
+                    ylength=border_d - border_t + 1,
+                    zlength=1,
+                    x=self.x + i,
+                    y=self.y + border_t,
+                    z=0,
+                    name="ArcShape" + str(i),
+                    refractive_index=self.refractive_index,
+                )
                 self._internal_objects.append(waveguide)

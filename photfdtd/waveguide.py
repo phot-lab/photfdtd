@@ -27,7 +27,6 @@ class Waveguide:
         name: str = "waveguide",
         refractive_index: float = 1.7,
     ):
-
         self.xlength = xlength
         self.ylength = ylength
         self.zlength = zlength

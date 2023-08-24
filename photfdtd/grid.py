@@ -1,11 +1,11 @@
 import fdtd
 import matplotlib.pyplot as plt
 from .waveguide import Waveguide
-
 import numpy as np
+from datetime import datetime
 from numpy import savez
 import os
-from os import path, makedirs
+from os import path, makedirs, chdir, remove
 from .analyse import Analyse
 from .index import Index
 
@@ -13,29 +13,32 @@ from .index import Index
 class Grid:
     def __init__(
         self,
-        grid_xlength: int = 100,
-        grid_ylength: int = 200,
-        grid_zlength: int = 50,
-        grid_spacing: float = 0.01,  # TODO: raw中是0.001，疑似有误
-        total_time: int = 1,
-        pml_width_x=10,
-        pml_width_y=10,
-        pml_width_z=10,
-        permittivity: float = 1.0,
-        permeability: float = 1.0,
-        courant_number: int = None,
+        grid_xlength=100,
+        grid_ylength=200,
+        grid_zlength=50,
+        grid_spacing=0.001,
+        total_time=1,
+        pml_width_x=1,
+        pml_width_y=1,
+        pml_width_z=1,
+        permittivity=1.0,
+        permeability=1.0,
+        courant_number=None,
+        foldername=" ",
     ) -> None:
         """
         Args:
             grid_xlength (int, optional): _description_. Defaults to 100.
             grid_ylength (int, optional): _description_. Defaults to 200.
             grid_zlength (int, optional): _description_. Defaults to 50.
-            grid_spacing (float, optional): fdtd算法的空间步长（yee元胞的网格宽度）. Defaults to 0.01. （单位为米）
+            grid_spacing (float, optional): fdtd算法的空间步长（yee元胞的网格宽度）. Defaults to 0.01. 单位为m
             total_time (int, optional): 计算时间. Defaults to 1.
             pml_width (int, optional): PML宽度. Defaults to 10.
             permeability (float, optional): 环境磁导率 1.0
             permittivity (float, optional): 环境介电常数，二者共同决定了环境折射率 1.0
             courant_number: 科朗数 默认为None
+            foldername: 文件夹名称, 将在目录下创建该文件夹
+        23.4.17 现在可以分别设置三个维度的pml宽度了
         """
         grid = fdtd.Grid(
             shape=(grid_xlength, grid_ylength, grid_zlength),
@@ -60,15 +63,26 @@ class Grid:
         self._total_time = total_time
         self._grid = grid
 
-    def add_object(self, object: Waveguide) -> None:
+        makedirs(foldername, exist_ok=True)  # Output master folder declaration
+        current_dir = os.getcwd()
+
+        # self.folder: 保存结果的文件夹
+        self.folder = os.path.join(current_dir, foldername)
+        makedirs(self.folder, exist_ok=True)
+
+    def add_object(self, object: Waveguide):
         for internal_object in object._internal_objects:
-            self._grid[
-                internal_object.x : internal_object.x + internal_object.xlength,
-                internal_object.y : internal_object.y + internal_object.ylength,
-                internal_object.z : internal_object.z + internal_object.zlength,
-            ] = fdtd.Object(
-                permittivity=internal_object.permittivity, name=internal_object.name
-            )
+            # 23.04.14: 删去了不必要的判断语句
+            if internal_object == 0:
+                continue
+            else:
+                self._grid[
+                    internal_object.x : internal_object.x + internal_object.xlength,
+                    internal_object.y : internal_object.y + internal_object.ylength,
+                    internal_object.z : internal_object.z + internal_object.zlength,
+                ] = fdtd.Object(
+                    permittivity=internal_object.permittivity, name=internal_object.name
+                )
 
     def set_source(
         self,
@@ -78,18 +92,21 @@ class Grid:
         phase_shift: float = 0.0,
         name: str = None,
         pulse: bool = False,
+        pulse_type: str = "gaussian",
         cycle: int = 5,
         hanning_dt: float = 10.0,
         polarization: str = "z",
+        pulse_length: float = 39e-15,
+        offset: float = 112e-15,
         x: int = 5,
         y: int = 5,
         z: int = 5,
         xlength: int = 5,
         ylength: int = 5,
         zlength: int = 5,
-    ) -> None:
+    ):
         """
-
+        编辑于23.5.15 加入pulse_type: str = "gaussian",  pulse_length: float = 39e-15,offset: float = 112e-15,
         :param source_type: 光源种类：点或线或面
         :param period: 周期
         :param amplitude: 振幅
@@ -99,6 +116,9 @@ class Grid:
         :param cycle: 脉冲周期
         :param hanning_dt: 汉宁窗宽度（定义脉冲）
         :param polarization: 偏振
+        :param pulse_length:脉宽 fs
+        :param pulse_type: 脉冲类型 "gaussian" 或 "hanning" 或 None
+        :param offset: 脉冲中心 fs
         :param x:
         :param y:
         :param z:
@@ -126,9 +146,10 @@ class Grid:
                     amplitude=amplitude,
                     phase_shift=phase_shift,
                     name=name,
-                    pulse=pulse,
+                    pulse=pulse_type,
                     cycle=cycle,
-                    hanning_dt=hanning_dt,
+                    pulse_length=pulse_length,
+                    offset=offset,
                 )
             else:
                 self._grid[
@@ -138,9 +159,10 @@ class Grid:
                     amplitude=amplitude,
                     phase_shift=phase_shift,
                     name=name,
-                    pulse=pulse,
+                    pulse=pulse_type,
                     cycle=cycle,
-                    hanning_dt=hanning_dt,
+                    pulse_length=pulse_length,
+                    offset=offset,
                 )
 
         elif source_type == "planesource":
@@ -182,73 +204,76 @@ class Grid:
         else:
             raise RuntimeError("Invalid detector type.")
 
-    def savefig(  # TODO: 保存图片，详细参数需要进一步对接，比如是否需要Folder？
-        self, filepath: str, x: int = None, y: int = None, z: int = None
-    ) -> None:
-        if self._grid is None:
-            raise RuntimeError("The grid should be set before saving figure.")
-        # 不设置 save 参数，因为 visualize 把路径设置死了，不好修改，选择在外面调用 plt.savefig()
-        self._grid.visualize(
-            x=x, y=y, z=z, index=f"_(x={x},y={y},z={z}), total_time={self._total_time}"
-        )
-
-        plt.savefig(filepath)  # 保存图片
-        plt.clf()  # 清除画布
-
-    def run(self) -> None:
-        if self._grid is None:
-            raise RuntimeError("The grid should be set before running.")
-
+    def run(self):
         self._grid.run(total_time=self._total_time)
 
-    def save_simulation(self, filename: str = "test"):
-        """保存监视器数据。
-        调用了fdtd库的grid.save_simulation函数, 会在当前目录下新建一个fdtd_output文件夹，在里面新建名称为fdtd_output_2023-4-3-15-27-58 (filename)的文件夹
-        ，在其中创建detector_readings.npz来保存监视器数据"""
-        self._grid.save_simulation(filename)
-        self._grid.save_data()
-
-    def read_simulation(self, filepath: str = ""):
-        """读取保存的监视器数据
-        filepath: 保存监视器数据的文件路径（即save_simulation中创建的detector_readings.npz）
-        例："D:/下载内容/photfdtd-main/tests/fdtd_output/fdtd_output_2023-4-3-15-27-58 (test0403)/detector_readings.npz "
+    def save_fig(self, axis="x", axis_number=0):
         """
-        readings = np.load(filepath, allow_pickle=True)
-        self.detector_E, self.detector_H = np.zeros(len(self._grid.detectors))
-        for i in range(len(self._grid.detectors)):
-            self.detector_E[i], self.detector_H[i] = (
-                readings["%s (E)" % self._grid.detectors[i].name],
-                readings["%s (H)" % self._grid.detectors[i].name],
-            )
+        保存图片
+        :param axis: 轴(若为二维模拟，则axis只能='z')
+        :param axis_number: 索引
+        :return:
+        23.4.13: 删除了变量index, 修改了保存图片的名称为 index=":%s=%d, total_time=%d" % (axis, axis_number, self._total_time)
+        """
+        # TODO: grid.visualize函数还有animate等功能，尚待加入
 
-    def calulate_T(self) -> None:
+        if self._grid is None:
+            raise RuntimeError("The grid should be set before saving figure.")
+
+        axis = axis.lower()  # 识别大写的 "X"
+        folder = self.folder
+        if axis == "x":  # 判断从哪一个轴俯视画图
+            self._grid.visualize(
+                x=axis_number,
+                save=True,
+                index="_%s=%d, total_time=%d" % (axis, axis_number, self._total_time),
+                folder=folder,
+            )
+        elif axis == "y":
+            self._grid.visualize(
+                y=axis_number,
+                save=True,
+                index="_%s=%d, total_time=%d" % (axis, axis_number, self._total_time),
+                folder=folder,
+            )
+        elif axis == "z":
+            self._grid.visualize(
+                z=axis_number,
+                save=True,
+                index="_%s=%d, total_time=%d" % (axis, axis_number, self._total_time),
+                folder=folder,
+            )
+        else:
+            raise RuntimeError("Unknown axis parameter.")
+
+        plt.close()  # 清除画布
+
+    def calculate_T(self, full_path: str = "") -> None:
         """
         读取detector_readings_sweep.npz文件，计算透过率T
+        full_path: npz文件的完整地址
         """
         # 只能设置一个除光源
-        p = np.load(self.full_path, allow_pickle=True)
+        p = np.load(full_path, allow_pickle=True)
         # 遍历.npz文件中的所有数据，若为监视器数据（即带有(E)或(H)), 则读取之
+        source_power = []
 
         for f in p.files:
             # 遍历detector_readings_sweep.npz中的所有数据
+            # 这样写只能设置一个光源，也只能设置一个除光源外的监视器，并且光源处的监视器名称必须含有"source"
             if "source" in f:
                 # 筛选出光源监视器
+                # print(p[f])
                 if "(E)" in f:
-                    d_E = p["%s" % f]
+                    d_E = p[f]
+                    continue
                 elif "(H)" in f:
-                    d_H = p["%s" % f]
-
-        d_E_split = np.split(d_E, self.points, axis=0)  # 沿着第0个轴分割为points个小矩阵
-        d_H_split = np.split(d_H, self.points, axis=0)  # 沿着第0个轴分割为points个小矩阵
-        # ！！！这样写只能设置一个光源，也只能设置一个除光源外的监视器，并且光源处的监视器名称必须含有"source"！！！
-
-        source_power = []
-        for i in range(len(d_E_split)):
-            # 计算光源功率
-            calculate = Analyse(d_E_split[i], d_H_split[i])
-            calculate.caculate_P()
-            calculate.calculate_Power()
-            source_power.append(calculate.Power)
+                    d_H = p[f]
+                calculate = Analyse(d_E, d_H)
+                calculate.caculate_P()
+                calculate.calculate_Power()
+                source_power.append(calculate.Power)
+                print("source_power = %f" % calculate.Power)
 
         detector_power = []
         for f in p.files:
@@ -260,34 +285,27 @@ class Grid:
             elif "(H)" in f:
                 # 能这样写是因为E保存在H之前
                 d_H = p["%s" % f]
-                # 沿着第0个轴分割为points个小矩阵
-                d_E_split = np.split(d_E, self.points, axis=0)
-                # 沿着第0个轴分割为points个小矩阵
-                d_H_split = np.split(d_H, self.points, axis=0)
-                for i in range(len(d_E_split)):
-                    calculate = Analyse(d_E_split[i], d_H_split[i])
-                    calculate.caculate_P()
-                    calculate.calculate_Power()
-                    detector_power.append(calculate.Power)
-
-                continue
-            else:
-                continue
+                # d_E_split = np.split(d_E, self.points, axis=0)  # 沿着第0个轴分割为points个小矩阵
+                # d_H_split = np.split(d_H, self.points, axis=0)  # 沿着第0个轴分割为points个小矩阵
+            calculate = Analyse(d_E, d_H)
+            calculate.caculate_P()
+            calculate.calculate_Power()
+            detector_power.append(calculate.Power)
+            print("detector_power = %f" % calculate.Power)
 
         # 在self.T中保存透过率, 即监视器与光源功率相除
         self.T = np.divide(detector_power, source_power)
 
-    def _sweep_( #TODO: 有个e未定义？
+    def _sweep_(
         self,
         wl_start: float = 1.5,
         wl_end: float = 1.6,
         points: int = 100,
-        folder: str = "",
         material: str = "",
     ) -> None:
         """
+        #TODO: 我搞错了频率扫描的意义 这个函数应该没用了 或者需要重写
         频率扫描
-        :param folder: 保存文件夹名。先创建"fdtd_output"文件夹，然后在里面创建"fdtd_output_" + folder文件夹
         :param material: 材料
         :param wl_start: 起始波长
         :param wl_end: 结束波长
@@ -302,11 +320,12 @@ class Grid:
         self.wl_start = wl_start
         self.wl_end = wl_end
         self.points = points
-        makedirs("fdtd_output", exist_ok=True)
-        folder = "fdtd_output_" + folder
-        # 在fdtd_output文件夹下创建文件夹，
-        self.folder = os.path.abspath(path.join("fdtd_output", folder))
-        makedirs(self.folder, exist_ok=True)
+        # makedirs("fdtd_output", exist_ok=True)
+        # folder = "fdtd_output_" + folder
+        # # 在fdtd_output文件夹下创建文件夹，
+        # self.folder = os.path.abspath(path.join("fdtd_output", folder))
+        # makedirs(self.folder, exist_ok=True)
+        dic = {}
         for wl in np.linspace(wl_start, wl_end, points):
             for attr in dir(self._grid):
                 # 遍历grid的所有属性
@@ -320,35 +339,55 @@ class Grid:
                         getattr(self._grid, attr).inverse_permittivity[
                             getattr(self._grid, attr).inverse_permittivity != 1
                         ] = 1 / np.square(index.fit_function_Reindex(wl))
-                    if (
-                        isinstance(getattr(self._grid, attr), fdtd.PointSource)
-                        or isinstance(getattr(self._grid, attr), fdtd.LineSource)
-                        or isinstance(getattr(self._grid, attr), fdtd.PlaneSource)
-                    ):
-                        # 找到光源，修改波长
-                        getattr(self._grid, attr).period = wl * e - 9 / 299792458
+                        # print("已修改object")
+                    else:
+                        continue
                 except:
-                    pass
-            # reset()这个函数很重要，如果没有这个函数，会接着之前的时间往下run
-            self._grid.reset()
+                    continue
+            for i in range(len(self._grid.sources)):
+                # 修改光波长
+                self._grid.sources[i].period = self._grid._handle_time(
+                    wl * 10**-6 / 299792458
+                )
+                # print("已修改source")
+
             self.run()
 
-        dic = {}
+            # TODO: 面监视与点监视器
+            # 保存监视器数据
+            for detector in self._grid.detectors:
+                dic[detector.name + " (E)" + " %f" % wl] = [
+                    x for x in detector.detector_values()["E"]
+                ]
+                dic[detector.name + " (H)" + " %f" % wl] = [
+                    x for x in detector.detector_values()["H"]
+                ]
+                detector.E = []
+                detector.H = []
+            # for attr in dir(self._grid):
+            #     # 遍历grid的所有属性
+            #     try:
+            #         if isinstance(getattr(self._grid, attr), fdtd.LineDetector):
+            #             # 找到 LineDetectr 类型的属性并设置E与H场=0
+            #             getattr(self._grid, attr).E = []
+            #             getattr(self._grid, attr).H = []
+            #     except:
+            #         pass
+            # 重置grid
+            self._grid.reset()
 
-        # reset()函数清空了E，H和时间，但是在reset之后，监视器记录的数据不会清零，而是继续记录下去，所以只需保留最后一个监视器数据，然后切片就行
-        # TODO: 这样会占用大量内存，能不能修改？但是修改可能需要改fdtd包
-        for detector in self._grid.detectors:
-            dic[detector.name + " (E)"] = [x for x in detector.detector_values()["E"]]
-            dic[detector.name + " (H)"] = [x for x in detector.detector_values()["H"]]
         # 保存detector_readings_sweep.npz文件
         savez(path.join(self.folder, "detector_readings_sweep"), **dic)
 
-    def _plot_sweep_result(self):
-        for file_name in os.listdir(self.folder):
+    def _plot_sweep_result(self, folder: str = ""):
+        if folder == "":
+            folder = self.folder
+
+        for file_name in os.listdir(folder):
             if file_name.endswith("_sweep.npz"):
                 # 识别_sweep.npz文件
-                self.full_path = os.path.join(self.folder, file_name)
-                self.calulate_T()
+                # self.full_path = os.path.join(self.folder, file_name)
+                self.calculate_T(full_path=os.path.join(folder, file_name))
         print(self.T)
 
         x = np.linspace(self.wl_start, self.wl_end, self.points)
@@ -359,3 +398,80 @@ class Grid:
         plt.ylabel("T")
         plt.savefig(fname="%s//wl-%s.png" % (self.folder, "T"))
         plt.show()
+
+    # 保存数据
+    def save_simulation(self):
+        dic = {}
+        for detector in self._grid.detectors:
+            dic[detector.name + " (E)"] = [x for x in detector.detector_values()["E"]]
+            dic[detector.name + " (H)"] = [x for x in detector.detector_values()["H"]]
+        dic["grid_spacing"] = self._grid.grid_spacing
+
+        # 保存detector_readings_sweep.npz文件
+        savez(path.join(self.folder, "detector_readings"), **dic)
+
+    @staticmethod
+    def read_simulation(folder: str = ""):
+        """读取保存的监视器数据
+        静态方法，调用时应使用 data = Grid.read_simulation(folder="...")
+        folder: 保存监视器数据的文件路径
+        """
+
+        if not folder.endswith(".npz"):
+            folder = folder + "/detector_readings.npz"
+
+        readings = np.load(folder, allow_pickle=True)
+        names = readings.files
+        data = {}
+        i = 0
+        for name in names:
+            data[name] = readings[name]
+            i += 1
+
+        return data
+
+    def compute_frequency_domain(self, wl_start, wl_end, input_data):
+        # TODO: fdtd原作者想要让这里的输入为监视器，但是他并没有完成这一代码，现在只能输入一维数据，完成它?
+        # TODO: 傅里叶变换后的单位？
+        fr = fdtd.FrequencyRoutines(self._grid, objs=input_data)
+        spectrum_freqs, spectrum = fr.FFT(
+            freq_window_tuple=[
+                299792458 / (wl_end * (10**-6)),
+                299792458 / (wl_start * (10**-6)),
+            ],
+        )
+
+        # 绘制频谱
+        plt.plot(spectrum_freqs, spectrum)
+        plt.xlabel("frequency (Hz)")
+        plt.ylabel("spectrum")
+        plt.savefig(
+            fname="%s//f-spectrum_time=%i.png.png" % (self.folder, self._total_time)
+        )
+        plt.close()
+
+        # 绘制频率-振幅
+        plt.plot(spectrum_freqs, np.abs(spectrum))
+        plt.xlabel("frequency (Hz)")
+        plt.ylabel("amplitude")
+        plt.savefig(
+            fname="%s//f-amplitude_time=%i.png.png" % (self.folder, self._total_time)
+        )
+        plt.close()
+
+        # 绘制频率-相位
+        plt.plot(299792458 / (spectrum_freqs * (10**-6)), np.abs(spectrum))
+        plt.xlabel("wavelength (um)")
+        plt.ylabel("amplitude")
+        plt.savefig(
+            fname="%s//wl-amplitude_time=%i.png" % (self.folder, self._total_time)
+        )
+        plt.close()
+
+        # 绘制波长-透过率
+        # x = np.linspace(wl_start, wl_end, points)
+        # plt.plot(x, T)
+        # plt.xlabel('Wavelength (μm)')
+        # plt.ylabel("T")
+        # plt.savefig(fname='%s//wl-T_time=%i.png' % (grid.folder, grid._total_time))
+        # print(T)

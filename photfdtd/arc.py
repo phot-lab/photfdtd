@@ -3,7 +3,6 @@ from .waveguide import Waveguide
 
 
 class Arc(Waveguide):
-
     # TODO: 由于在设置的波导中，非波导部分折射率都为1，因此目前设置空间折射率来改变包层折射率并无意义
     """四分之一圆环
     outer_radius: 外环半径
@@ -27,10 +26,11 @@ class Arc(Waveguide):
         name: str,
         direction: int,
     ) -> None:
-
         self.direction = direction
         self.outer_radius = outer_radius
-        super().__init__(outer_radius, outer_radius, zlength, x, y, z, width, name, refractive_index)
+        super().__init__(
+            outer_radius, outer_radius, zlength, x, y, z, width, name, refractive_index
+        )
 
     def _compute_permittivity(self):
         x = y = np.linspace(1, self.outer_radius, self.outer_radius)
@@ -38,7 +38,9 @@ class Arc(Waveguide):
 
         if self.direction == 1:
             # direction=1, 圆心在左下
-            m = (X - self.outer_radius) ** 2 + Y**2 >= (self.outer_radius - self.width) ** 2
+            m = (X - self.outer_radius) ** 2 + Y**2 >= (
+                self.outer_radius - self.width
+            ) ** 2
             m1 = (X - self.outer_radius) ** 2 + Y**2 <= self.outer_radius**2
 
         elif self.direction == 2:
@@ -48,18 +50,27 @@ class Arc(Waveguide):
 
         elif self.direction == 3:
             # direction=3, 圆心在右上
-            m = X**2 + (Y - self.outer_radius) ** 2 >= (self.outer_radius - self.width) ** 2
+            m = (
+                X**2 + (Y - self.outer_radius) ** 2
+                >= (self.outer_radius - self.width) ** 2
+            )
             m1 = X**2 + (Y - self.outer_radius) ** 2 <= self.outer_radius**2
 
         elif self.direction == 4:
             # direction=4, 圆心在右下
-            m = (X - self.outer_radius) ** 2 + (Y - self.outer_radius) ** 2 >= (self.outer_radius - self.width) ** 2
-            m1 = (X - self.outer_radius) ** 2 + (Y - self.outer_radius) ** 2 <= self.outer_radius**2
+            m = (X - self.outer_radius) ** 2 + (Y - self.outer_radius) ** 2 >= (
+                self.outer_radius - self.width
+            ) ** 2
+            m1 = (X - self.outer_radius) ** 2 + (
+                Y - self.outer_radius
+            ) ** 2 <= self.outer_radius**2
 
         for i in range(self.outer_radius):
             for j in range(self.outer_radius):
                 if m1[i, j] != m[i, j]:
                     m[i, j] = 0
 
-        self.permittivity = np.ones((self.outer_radius, self.outer_radius, self.zlength))
+        self.permittivity = np.ones(
+            (self.outer_radius, self.outer_radius, self.zlength)
+        )
         self.permittivity += m[:, :, None] * (self.refractive_index**2 - 1)

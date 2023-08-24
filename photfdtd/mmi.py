@@ -52,7 +52,9 @@ class Mmi(Waveguide):
         self.l_port = l_port
         self.We = We
         self.dn = dn
-        super().__init__(xlength, ylength, zlength, x, y, z, ylength, name, refractive_index)
+        super().__init__(
+            xlength, ylength, zlength, x, y, z, ylength, name, refractive_index
+        )
 
     def _set_objects(self):
         self._set_box()
@@ -65,7 +67,6 @@ class Mmi(Waveguide):
         self._internal_objects.extend(self.waveguides_out)
 
     def _set_box(self):
-
         """设置多模波导"""
 
         waveguide = Waveguide(
@@ -82,7 +83,6 @@ class Mmi(Waveguide):
         self.waveguide = waveguide
 
     def _set_ports(self):
-
         """输入及输出端口"""
 
         x_port_in = [self.x - self.l_port] * self.n
@@ -91,7 +91,6 @@ class Mmi(Waveguide):
         y_port_in = [0] * self.n
 
         if self.n == 1:
-
             y_port_in[0] = self.y + int(self.ylength / 2 - self.width_port / 2 + 0.5)
 
             for i in range(self.m):
@@ -104,8 +103,12 @@ class Mmi(Waveguide):
 
         if self.n == 2:
             """2*m"""
-            y_port_in[0] = self.y + int(self.ylength / 2 - self.We / 6 - self.width_port / 2 + 0.5)
-            y_port_in[1] = self.y + int(self.ylength / 2 + self.We / 6 - self.width_port / 2 + 0.5)
+            y_port_in[0] = self.y + int(
+                self.ylength / 2 - self.We / 6 - self.width_port / 2 + 0.5
+            )
+            y_port_in[1] = self.y + int(
+                self.ylength / 2 + self.We / 6 - self.width_port / 2 + 0.5
+            )
 
             for i in range(self.m):
                 i += 1
@@ -129,27 +132,48 @@ class Mmi(Waveguide):
                     )
                     y_port_in[i * 2 + 1] = y_port_in[i * 2] - self.dn - self.width_port
                     y_port_out[i * 2] = int(
-                        self.y + self.ylength / self.n - self.dn / 2 - self.width_port + i * 2 * self.ylength / self.n
+                        self.y
+                        + self.ylength / self.n
+                        - self.dn / 2
+                        - self.width_port
+                        + i * 2 * self.ylength / self.n
                     )
-                    y_port_out[i * 2 + 1] = y_port_out[i * 2] + self.dn + self.width_port
+                    y_port_out[i * 2 + 1] = (
+                        y_port_out[i * 2] + self.dn + self.width_port
+                    )
             else:  # n为奇
-
                 y_port_in = [0] * self.n
 
                 for i in range(int(self.n / 2 - 0.5)):
                     y_port_in[i * 2] = int(
-                        self.x + self.ylength + self.dn / 2 - self.ylength / self.n - i * 2 * self.ylength / self.n
+                        self.x
+                        + self.ylength
+                        + self.dn / 2
+                        - self.ylength / self.n
+                        - i * 2 * self.ylength / self.n
                     )
                     y_port_in[i * 2 + 1] = y_port_in[i * 2] - self.dn - self.width_port
                     y_port_out[i * 2] = int(
-                        self.x + self.ylength / self.n - self.dn / 2 - self.width_port + i * 2 * self.ylength / self.n
+                        self.x
+                        + self.ylength / self.n
+                        - self.dn / 2
+                        - self.width_port
+                        + i * 2 * self.ylength / self.n
                     )
-                    y_port_out[i * 2 + 1] = y_port_out[i * 2] + self.dn + self.width_port
+                    y_port_out[i * 2 + 1] = (
+                        y_port_out[i * 2] + self.dn + self.width_port
+                    )
                 y_port_in[self.n - 1] = (
-                    y_port_in[self.n - 2] - int(self.ylength * 2 / self.n) + self.dn + self.width_port
+                    y_port_in[self.n - 2]
+                    - int(self.ylength * 2 / self.n)
+                    + self.dn
+                    + self.width_port
                 )
                 y_port_out[self.n - 1] = (
-                    y_port_in[self.n - 2] + int(self.ylength * 2 / self.n) - self.dn - self.width_port
+                    y_port_in[self.n - 2]
+                    + int(self.ylength * 2 / self.n)
+                    - self.dn
+                    - self.width_port
                 )
 
         ports_in = [0] * self.n

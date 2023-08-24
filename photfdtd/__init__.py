@@ -6,3 +6,8 @@ from .directional_coupler import DirectionalCoupler
 from .ring import Ring
 from .mmi import Mmi
 from .grid import Grid
+from .solve import Solve
+from .circle import Circle
+from .analyse import Analyse
+from .index import Index
+from .mzi import Mzi

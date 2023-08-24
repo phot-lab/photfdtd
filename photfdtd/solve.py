@@ -13,6 +13,7 @@ class Solve:
     绘制二维截面、计算波导模式、频率扫描，通过加入philsol包实现 https://github.com/philmain28/philsol
     """
 
+    # TODO: 让fdtd包的绘图转90度？
     def __init__(
         self,
         grid: fdtd.grid,
@@ -25,7 +26,7 @@ class Solve:
         :param grid: fdtd.grid
         """
         self.grid = grid._grid
-        geo = np.sqrt(self.grid.inverse_permittivity)
+        geo = np.sqrt(1 / self.grid.inverse_permittivity)
         for i in range(len(self.grid.objects)):
             geo[
                 self.grid.objects[i].x.start : self.grid.objects[i].x.stop,
@@ -70,7 +71,7 @@ class Solve:
 
         # 绘制
         plt.pcolor(self.n[:, :, 0], cmap=cm.jet)
-        plt.clim([1, np.amax(self.n)])
+        plt.clim([1.0, np.amax(self.n)])
         plt.colorbar()
         # 保存图片
         plt.savefig(fname="%s\\%s_%s=%d.png" % (self.filepath, "geometry", axis, index))
@@ -133,15 +134,14 @@ class Solve:
         # 保存各个模式对应的有效折射率
         # 23.3.22 将solve.py中保存有效折射率的代码由_draw_mode转移到_calculate_mode
         self.effective_index = abs(self.beta * self.lam / (2 * np.pi))
+        print(self.effective_index)
 
     def _draw_mode(
         self,
-        n_levels: int = 6,
         neigs: int = 1,
     ) -> None:
         """
         绘制模式，保存图片与相应的有效折射率
-        :param n_levels: 等高线数 # TODO: 换种画法？
         :param neigs: 绘制模式数
         :param filepath: 保存图片的路径。注：图片的名称为其对应的有效折射率
         :return: None
@@ -161,12 +161,9 @@ class Solve:
 
             # Start a plot, find the contour levels, remove the zero level, replot without zero level
             plot_matrix = np.transpose(E_fields[i].real)
-            levels = np.linspace(np.min(plot_matrix), np.max(plot_matrix), n_levels + 2)
-            c_plt = plt.contour(
-                self.x, self.y, plot_matrix, cmap=cm.inferno, levels=levels
-            )
+            plt.pcolor(self.x, self.y, plot_matrix, cmap=cm.jet)
             # 保存图片
-            plt.savefig(fname="%s\\%s%d.png" % (self.filepath, "mode", i))
+            plt.savefig(fname='%s\\%s%d.png' % (self.filepath, 'mode', i))
             # plt.show()
             plt.close()
 
@@ -190,11 +187,9 @@ class Solve:
 
             plot_matrix = np.transpose(f[i].real)
             levels = np.linspace(np.min(plot_matrix), np.max(plot_matrix), n_levels + 2)
-            c_plt = plt.contour(self.x, self.y, plot_matrix, cmap=cm.jet, levels=levels)
+            plt.pcolor(self.x, self.y, plot_matrix, cmap=cm.jet)
 
-            plt.savefig(
-                fname="%s\\%s%f.png" % (self.filepath, "EyEz", self.effective_index[i])
-            )
+            plt.savefig(fname='%s\\%s%f.png' % (self.filepath, 'EyEz', self.effective_index[i]))
             # plt.show()
             plt.close()
 
@@ -297,9 +292,7 @@ class Solve:
         # plt.show()
 
         # Do sweep
-        indices = (
-            []
-        )  # Create an array to log the original position of the fundamental (just used for debugging)
+        indices = [] # Create an array to log the original position of the fundamental (just used for debugging)
         for i in range(steps - 1):
             # Takes product of all modes with all next modes the largest value should be the same mode!
             # 使用了 numpy.einsum() 函数来计算两个电场 Ey_plot[i] 和 Ey_plot[i+1] 的张量积

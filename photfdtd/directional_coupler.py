@@ -36,7 +36,9 @@ class DirectionalCoupler(Waveguide):
         self.ylength_sbend = int((ylength - gap) / 2 + 0.5)
         self.xlength_sbend = int((xlength - xlength_rectangle) / 2 + 0.5)
         self.gap = gap
-        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index)
+        super().__init__(
+            xlength, ylength, zlength, x, y, z, width, name, refractive_index
+        )
 
     def _set_objects(self):
         # permittivity_rectangle = 应该不用写矩形波导的介电常数？
