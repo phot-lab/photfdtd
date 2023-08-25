@@ -2,3 +2,4 @@
 fdtd
 numpy
 matplotlib
+philsol
