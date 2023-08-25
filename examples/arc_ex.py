@@ -1,27 +1,78 @@
-import utils
-from photfdtd import Arc, Grid, Solve
+from photfdtd import Waveguide, Arc, Grid, Solve, constants
 
 if __name__ == "__main__":
 
     background_index=1.0
 
-    arc = Arc(outer_radius=300, zlength=1, x=500, y=500, z=0, width=20, refractive_index=3.47, name="arc", direction=4,
+    # 设置器件参数
+    waveguide1 = Waveguide(
+        xlength=100, ylength=20, zlength=20, x=50, y=150, z=11, refractive_index=3.47, name="Waveguide1",
+        background_index=background_index
+    )
+    arc = Arc(outer_radius=60, zlength=20, x=100, y=100, z=1, width=20, refractive_index=3.47, name="arc", direction=2,
               background_index=background_index)
+    waveguide2 = Waveguide(
+        xlength=20, ylength=100, zlength=20, x=150, y=50, z=11, refractive_index=3.47, name="Waveguide2",
+        background_index=background_index
+    )
 
-    grid = Grid(grid_xlength=1000, grid_ylength=1000, grid_zlength=1, grid_spacing=1550e-10, total_time=1,
+    # 新建一个 grid 对象
+    grid = Grid(grid_xlength=200, grid_ylength=200, grid_zlength=22, grid_spacing=20e-9, total_time=1200,
                 foldername="test_arc",
-                permittivity=background_index ** 2)
+                pml_width_x=25,
+                pml_width_y=25,
+                pml_width_z=0,
+                permittivity=background_index ** 2,)
 
+    # 往 grid 里添加器件
     grid.add_object(arc)
+    grid.add_object(waveguide2)
+    grid.add_object(waveguide1)
+
+    # 设置光源
+    grid.set_source(source_type="planesource",
+                    period=1550e-9/constants.c,
+                    name="source",
+                    x=30,
+                    y=150,
+                    z=11,
+                    xlength=1,
+                    ylength=waveguide1.ylength + 4,
+                    zlength=waveguide1.zlength
+                    )
+
+    # 设置监视器
+    grid.set_detector(detector_type="blockdetector",
+                      name="detector",
+                      x=150,
+                      y=30,
+                      z=11,
+                      xlength=waveguide2.xlength + 4,
+                      ylength=1,
+                      zlength=waveguide1.zlength
+                      )
 
     solve = Solve(grid=grid)
 
-    solve._plot_(axis="z",
-                 index=0,
+    # 绘制任一截面
+    solve._plot_(axis='z',
+                 index=11,
+                 filepath=grid.folder)
+    solve._plot_(axis='x',
+                 index=100,
                  filepath=grid.folder)
 
+    # 运行仿真
     grid.run()
 
-    # 保存画好的图，设置保存位置，以及从哪一个轴俯视画图
+    # 保存仿真结果
+    grid.save_simulation()
+
+    # 绘制任意截面场图
     grid.save_fig(axis="z",
-                  axis_number=0)
+                  axis_number=11)
+    grid.save_fig(axis="x",
+                  axis_number=30)
+
+    # 读取仿真结果
+    data = grid.read_simulation(folder=grid.folder)
