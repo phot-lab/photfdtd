@@ -65,6 +65,6 @@ if __name__ == "__main__":
     grid.save_fig(axis="x",
                   axis_number=30)
 
-    # 读取
-    grid.read_simulation(folder=grid.folder)
+    # 读取仿真结果
+    data = grid.read_simulation(folder=grid.folder)
 

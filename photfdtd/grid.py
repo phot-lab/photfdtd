@@ -393,7 +393,7 @@ class Grid:
         静态方法，调用时应使用 data = Grid.read_simulation(folder="...")
         folder: 保存监视器数据的文件路径
         """
-
+        # 将结果绘图
         if not folder.endswith(".npz"):
             folder = folder + "/detector_readings.npz"
 

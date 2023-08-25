@@ -6,24 +6,25 @@ class Arc(Waveguide):
     """四分之一圆环
     outer_radius: 外环半径
     zlength: 波导厚度
-    x,y,z: 位置坐标矩形区域最靠近原点的点
+    x,y,z: 位置坐标矩形区域最靠近原点的点（这一点与其他波导不同，如果）
     width: 波导宽度
     refractive_index:折射率
     name: 名称
     direction: 等于1，2，3，4，分别表示四个方向
+    background_index: 环境折射率
     """
 
     def __init__(
         self,
-        outer_radius: int,
-        zlength: int,
-        x: int,
-        y: int,
-        z: int,
-        width: int,
-        refractive_index: float,
-        name: str,
-        direction: int,
+        outer_radius: int = 60,
+        zlength: int = 20,
+        x: int = 100,
+        y: int = 100,
+        z: int = 1,
+        width: int = 20,
+        refractive_index: float = 3.47,
+        name: str = "arc",
+        direction: int = 1,
         background_index: float = 1
     ) -> None:
 
