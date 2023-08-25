@@ -3,28 +3,28 @@ import numpy as np
 
 class Waveguide:
     """
-    xlength: 波导区域x方向宽度
-    ylength: 波导区域y方向宽度
-    zlength: 波导区域z方向宽度，通常也是波导高度
+    矩形波导
+    xlength:
+    ylength:
+    zlength:
     x,y,z: 中心位置坐标
-    width：波导宽度(在矩形波导中，波导宽度没有意义)
+    width：波导宽度(在矩形波导中，波导宽度没有意义，它只是作为父类保留这个参数)
     refractive_index: 折射率
     background_index: 环境折射率
     name:名称
-    ！！！x，y仍然对应FDTD包中的x，y轴！！！
     """
-
+    # TODO: 在波导被添加进grid后，x,y,z仍然会从中心坐标变成角点坐标，如何修复这一点？
     def __init__(
             self,
-            xlength=60,
-            ylength=10,
-            zlength=10,
-            x=50,
-            y=50,
-            z=50,
+            xlength=200,
+            ylength=20,
+            zlength=20,
+            x=100,
+            y=30,
+            z=30,
             width=10,
             name="waveguide",
-            refractive_index=1.7,
+            refractive_index=3.47,
             background_index=1
     ):
 

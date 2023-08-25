@@ -115,6 +115,10 @@ class Grid:
         :param zlength:
         :return:
         """
+        # TODO：把线光源的更改运用到点光源和面光源
+        x = x - xlength // 2
+        y = y - ylength // 2
+        z = z - zlength // 2
         if source_type == "pointsource":
             # 创建一个点光源
             self._grid[x, y, z] = fdtd.PointSource(
@@ -171,6 +175,9 @@ class Grid:
                      zlength: int = 0,
                      name: str = 'detector'
                      ):
+        x = x - xlength // 2
+        y = y - ylength // 2
+        z = z - zlength // 2
         # 设置监视器
         if detector_type == 'linedetector':
             self._grid[x: x + xlength,
@@ -226,6 +233,8 @@ class Grid:
         full_path: npz文件的完整地址
         """
         # 只能设置一个除光源
+        pass
+        # TODO: 这个函数需要大改
         p = np.load(full_path, allow_pickle=True)
         # 遍历.npz文件中的所有数据，若为监视器数据（即带有(E)或(H)), 则读取之
         source_power = []
@@ -274,7 +283,7 @@ class Grid:
                 points: int = 100,
                 material: str = "") -> None:
         """
-        #TODO: 我搞错了频率扫描的意义 这个函数应该没用了 或者需要重写
+        #TODO: 这个函数需要重写
         频率扫描
         :param material: 材料
         :param wl_start: 起始波长
@@ -283,6 +292,7 @@ class Grid:
         """
         # 读取折射率数据。把文件路径替换为保存折射率数据的路径
         # TODO: 改为自动识别object的材料并修改折射率
+        pass
         index = Index('D:/下载内容/photfdtd-main/photfdtd/折射率数据/%s.csv' % material)
         index._fit_()
 
@@ -344,6 +354,8 @@ class Grid:
 
     def _plot_sweep_result(self,
                            folder: str = ""):
+        pass
+        # TODO: 完成它
         if folder == "":
             folder = self.folder
 
