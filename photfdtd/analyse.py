@@ -4,7 +4,7 @@ from . import conversions
 
 
 class Analyse:
-    """处理监视器数据：计算坡印廷矢量、计算功率、计算透过率"""
+    '''处理监视器数据：计算坡印廷矢量、计算功率、计算透过率'''
 
     def __init__(self, E, H, grid_spacing):
         """
@@ -45,33 +45,19 @@ class Analyse:
                 self.a = self.P_positive[:, :, i]
                 self.b = self.P_negative[:, :, i]
 
-                self.Power["power_positive_%s" % chr(i + 120)] = (
-                    np.sum(self.a, axis=1) / 2 * self.P.shape[1] * self.grid_spacing
-                )
-                self.Power["power_negative_%s" % chr(i + 120)] = (
-                    np.sum(self.b, axis=1) / 2 * self.P.shape[1] * self.grid_spacing
-                )
+                self.Power["power_positive_%s" % chr(i + 120)] = np.sum(self.a, axis=1) / 2 * \
+                                                            self.P.shape[1] * self.grid_spacing
+                self.Power["power_negative_%s" % chr(i + 120)] = np.sum(self.b, axis=1) / 2 * \
+                                                            self.P.shape[1] * self.grid_spacing
 
             elif self.P.ndim == 5:
                 self.a = self.P_positive[:, :, :, i]
                 self.b = self.P_positive[:, :, :, i]
 
-                self.Power["power_positive_%s" % chr(i + 120)] = (
-                    np.sum(self.a, axis=(1, 2, 3))
-                    / 2
-                    * self.P.shape[1]
-                    * self.P.shape[2]
-                    * self.P.shape[3]
-                    * (self.grid_spacing**2)
-                )
-                self.Power["power_negative_%s" % chr(i + 120)] = (
-                    np.sum(self.b, axis=(1, 2, 3))
-                    / 2
-                    * self.P.shape[1]
-                    * self.P.shape[2]
-                    * self.P.shape[3]
-                    * (self.grid_spacing**2)
-                )
+                self.Power["power_positive_%s" % chr(i + 120)] = np.sum(self.a, axis=(1, 2, 3)) / 2 * self.P.shape[1] * \
+                                                            self.P.shape[2] * self.P.shape[3] * (self.grid_spacing ** 2)
+                self.Power["power_negative_%s" % chr(i + 120)] = np.sum(self.b, axis=(1, 2, 3)) / 2 * self.P.shape[1] * \
+                                                            self.P.shape[2] * self.P.shape[3] * (self.grid_spacing ** 2)
             else:
                 raise ValueError("Invalid shape of E or H!")
 
@@ -93,18 +79,19 @@ class Analyse:
         # self.realH = conversions.simH_to_worldH(H)
 
     def plot(self):
+
         pass
-        # TODO: 完成它
+        #TODO: 完成它
         t = np.linspace(0, 1000, 1000)
-        plt.plot(t, analyse.Power["power_positive_x"], label="Px+")
-        plt.plot(t, analyse.Power["power_negative_x"], label="Px-")
-        plt.plot(t, analyse.Power["power_positive_y"], label="Py+")
-        plt.plot(t, analyse.Power["power_negative_y"], label="Py-")
-        plt.plot(t, analyse.Power["power_positive_z"], label="Pz+")
-        plt.plot(t, analyse.Power["power_negative_z"], label="Pz-")  # 绘制曲线，添加标签
-        plt.title("Power Plot")  # 添加标题
-        plt.xlabel("t")  # 添加x轴标签
-        plt.ylabel("y")  # 添加y轴标签
+        plt.plot(t, analyse.Power["power_positive_x"], label='Px+')
+        plt.plot(t, analyse.Power["power_negative_x"], label='Px-')
+        plt.plot(t, analyse.Power["power_positive_y"], label='Py+')
+        plt.plot(t, analyse.Power["power_negative_y"], label='Py-')
+        plt.plot(t, analyse.Power["power_positive_z"], label='Pz+')
+        plt.plot(t, analyse.Power["power_negative_z"], label='Pz-')  # 绘制曲线，添加标签
+        plt.title('Power Plot')  # 添加标题
+        plt.xlabel('t')  # 添加x轴标签
+        plt.ylabel('y')  # 添加y轴标签
         plt.legend()  # 添加图例
         plt.grid()  # 添加网格线
         plt.show()  # 显示图表
@@ -119,6 +106,7 @@ class Analyse:
         # self.P = np.cross(self.E, self.H, axis=-1)
 
     def calculate_Power(self):
+
         """由坡印廷矢量P计算功率power
         根据lumerical官网，功率=监视器表面的坡印廷矢量的实部的积分/2 （需不需要区分方向？）"""
 
@@ -147,18 +135,16 @@ class Analyse:
 
 if __name__ == "__main__":
     # 读取监视器保存的E、H参数
-    file_path = (
-        "D:/下载内容/photfdtd-main/tests/fdtd_output/fdtd_output_2023-4-3-15-27-58 ("
-        "test0403)/detector_readings.npz "
-    )
+    file_path = "D:/下载内容/photfdtd-main/tests/fdtd_output/fdtd_output_2023-4-3-15-27-58 (" \
+                "test0403)/detector_readings.npz "
     p = np.load(file_path, allow_pickle=True)
     print(p.files)
 
     # 光源E，H
-    ds_E, ds_H = p["detector_source (E)"], p["detector_source (H)"]
+    ds_E, ds_H = p['detector_source (E)'], p['detector_source (H)']
     # 光路末端E，H
-    d1_E = p["detector_bottom (E)"]
-    d1_H = p["detector_bottom (H)"]
+    d1_E = p['detector_bottom (E)']
+    d1_H = p['detector_bottom (H)']
 
     calculate_source = Analyse(ds_E, ds_H)
     calculate_detector = Analyse(d1_E, d1_H)
@@ -170,4 +156,4 @@ if __name__ == "__main__":
     calculate_detector.calculate_Power()
 
     T = calculate_detector.Power / calculate_source.Power
-    print("T = %f" % T)
+    print('T = %f' % T)
