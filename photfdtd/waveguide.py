@@ -1,6 +1,4 @@
 import numpy as np
-import fdtd
-import matplotlib.pyplot as plt
 
 
 class Waveguide:
@@ -8,34 +6,38 @@ class Waveguide:
     xlength: 波导区域x方向宽度
     ylength: 波导区域y方向宽度
     zlength: 波导区域z方向宽度，通常也是波导高度
-    x,y,z: 波导位置坐标（通常是矩形区域最靠近原点的点）
+    x,y,z: 中心位置坐标
     width：波导宽度(在矩形波导中，波导宽度没有意义)
-    refractive_index:折射率
+    refractive_index: 折射率
+    background_index: 环境折射率
     name:名称
     ！！！x，y仍然对应FDTD包中的x，y轴！！！
     """
 
     def __init__(
-        self,
-        xlength: int = 60,
-        ylength: int = 10,
-        zlength: int = 10,
-        x: int = 50,
-        y: int = 50,
-        z: int = 50,
-        width: int = 10,
-        name: str = "waveguide",
-        refractive_index: float = 1.7,
+            self,
+            xlength=60,
+            ylength=10,
+            zlength=10,
+            x=50,
+            y=50,
+            z=50,
+            width=10,
+            name="waveguide",
+            refractive_index=1.7,
+            background_index=1
     ):
+
         self.xlength = xlength
         self.ylength = ylength
         self.zlength = zlength
-        self.x = x
-        self.y = y
-        self.z = z
+        self.x = x - int(xlength / 2)
+        self.y = y - int(ylength / 2)
+        self.z = z - int(zlength / 2)
         self.width = width
         self.name = name
         self.refractive_index = refractive_index
+        self.background_index = background_index
 
         self._compute_permittivity()
         self._set_objects()
@@ -43,9 +45,30 @@ class Waveguide:
     def _compute_permittivity(self):
         """矩形波导"""
         permittivity = np.zeros((self.xlength, self.ylength, self.zlength))
-        permittivity += self.refractive_index**2
+        permittivity += self.refractive_index ** 2
 
         self.permittivity = permittivity
 
     def _set_objects(self):
         self._internal_objects = [self]
+
+    def _negate_binary_matrix(self,
+                              matrix):
+        # 输入矩阵，得到相反数
+        # 创建一个新的矩阵，用于存储相反数后的结果
+        result_matrix = []
+
+        # 遍历原始矩阵的每一行
+        for row in matrix:
+            # 创建一个新的行，用于存储相反数后的结果行
+            result_row = []
+
+            # 遍历原始矩阵中当前行的每个元素
+            for value in row:
+                # 将0变为1，将1变为0
+                result_row.append(1 - value)
+
+            # 将相反数后的结果行添加到结果矩阵中
+            result_matrix.append(result_row)
+
+        return result_matrix

@@ -1,36 +1,36 @@
 from .waveguide import Waveguide
 from . import sbend
 import numpy as np
-import fdtd
 
 
-class Trapezoid(Waveguide):
+
+class Taper(Waveguide):
     """梯形（锥形）耦合部分代码，继承自waveguide
-    xlength: 多模波导区域水平方向宽度 (在python fdtd包中, x方向为竖直方向，y为水平方向)
-    ylength: 多模波导区域竖直方向宽度
-    zlength: 多模波导区域z方向宽度，通常也是波导高度
-    x,y,z: 多模波导位置坐标（通常是矩形区域最靠近原点的点）
-    direction: 表示方向, direction = 1表示窄口在上（x轴负方向），direction = -1表示窄口在下（x轴正方向）
-    width：窄处宽度
+    xlength: 波导区域x方向宽度
+    ylength: 波导区域y方向宽度
+    zlength:
+    x,y,z: 中心坐标
+    direction: 表示方向, direction = 1表示窄口在x轴负方向，direction = -1表示窄口在x轴正方向
+    width：直波导宽度
     refractive_index:折射率"""
 
     def __init__(
         self,
-        xlength: int = 60,
-        ylength: int = 10,
-        zlength: int = 10,
-        x: int = 50,
-        y: int = 50,
-        z: int = 50,
-        direction: int = 1,
-        width: int = 10,
-        name: str = "waveguide",
-        refractive_index: float = 1.7,
+        xlength=60,
+        ylength=10,
+        zlength=10,
+        x=50,
+        y=50,
+        z=50,
+        direction=1,
+        width=10,
+        name="taper",
+        refractive_index=1.7,
+        background_index: float = 1
     ):
+
         self.direction = direction
-        super().__init__(
-            xlength, ylength, zlength, x, y, z, width, name, refractive_index
-        )
+        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index, background_index)
 
     def _compute_permittivity(self):
         """输入波导规格，返回介电常数矩阵
@@ -62,15 +62,11 @@ class Trapezoid(Waveguide):
             for i in range(self.xlength):
                 for j in range(self.ylength):
                     if (
-                        X[self.xlength - i - 1, j]
-                        * (self.width / 2 - self.ylength / 2)
-                        / self.xlength
+                        X[self.xlength - i - 1, j] * (self.width / 2 - self.ylength / 2) / self.xlength
                         + self.ylength / 2
                         - self.width / 2
                         <= Y[i, j]
-                        <= X[self.xlength - i - 1, j]
-                        * (-self.width / 2 + self.ylength / 2)
-                        / self.xlength
+                        <= X[self.xlength - i - 1, j] * (-self.width / 2 + self.ylength / 2) / self.xlength
                         + self.ylength / 2
                         + self.width / 2
                     ):
@@ -78,130 +74,146 @@ class Trapezoid(Waveguide):
 
         permittivity = np.ones((self.xlength, self.ylength, self.zlength))
         permittivity += m[:, :] * (self.refractive_index**2 - 1)
+        permittivity += (1 - m[:, :]) * (self.background_index ** 2 - 1)
 
         self.permittivity = permittivity
 
 
 class Ysplitter(Waveguide):
 
-    """Y分支波导，由一段直波导，一个梯形，两个S波导组成"""
+    """Y分支波导，由一段直波导，一个梯形，两个S波导组成
+    x, y, z为taper中心坐标"""
 
     def __init__(
         self,
-        xlength: int = 60,
-        ylength: int = 10,
-        zlength: int = 10,
-        x: int = 50,
-        y: int = 50,
-        z: int = 50,
-        direction: int = -1,
-        width: int = 10,
-        name: str = "ysplitter",
-        refractive_index: float = 1.7,
-        xlength_rectangle: int = 30,
-        xlength_trapezoid: int = 10,
-        ylength_trapezoid: int = 30,
+        xlength=60,
+        ylength=10,
+        zlength=10,
+        x=50,
+        y=50,
+        z=50,
+        direction=-1,
+        width=10,
+        name="ysplitter",
+        refractive_index=1.7,
+        xlength_waveguide=30,
+        xlength_taper=10,
+        ylength_taper=30,
+        width_sbend=10,
+        background_index: float = 1
     ):
         self.direction = direction
-        self.xlength_rectangle = xlength_rectangle
-        self.xlength_trapezoid = xlength_trapezoid
-        self.ylength_trapezoid = ylength_trapezoid
-        self.xlength_sbend = xlength - xlength_rectangle - xlength_trapezoid
-        self.ylength_sbend = int(ylength / 2 - ylength_trapezoid / 2 + width + 0.5)
+        self.xlength_waveguide = xlength_waveguide
+        self.xlength_taper = xlength_taper
+        self.ylength_taper = ylength_taper
+        self.xlength_sbend = xlength - xlength_waveguide - xlength_taper
+        self.ylength_sbend = int(ylength / 2 - ylength_taper / 2 + width_sbend + 0.5)
+        self.width_sbend = width_sbend
 
-        super().__init__(
-            xlength, ylength, zlength, x, y, z, width, name, refractive_index
-        )
+        x = x + int(xlength / 2)
+        y = y + int(ylength / 2)
+        z = z + int(zlength / 2)
+
+        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index, background_index)
 
     def _set_objects(self):
-        """返回四个部分的名称、介电常数矩阵、规格、位置，分别为直波导、梯形、s波导1、s波导2"""
+
+        """"""
         if self.direction == 1:
             waveguide = Waveguide(
-                xlength=self.xlength_rectangle,
+                xlength=self.xlength_waveguide,
                 ylength=self.width,
                 zlength=self.zlength,
-                x=self.x,
-                y=self.y + int(self.ylength / 2 - self.width / 2 + 0.5),
+                x=self.x - int(self.xlength_taper / 2 + self.xlength_waveguide / 2),
+                y=self.y,
                 z=self.z,
                 width=self.width,
-                name=f"{self.name}_waveguide",
+                name="%s_waveguide" % self.name,
+                background_index=self.background_index
             )
-            trapezoid = Trapezoid(
-                xlength=self.xlength_trapezoid,
-                ylength=self.ylength_trapezoid,
+            taper = Taper(
+                xlength=self.xlength_taper,
+                ylength=self.ylength_taper,
                 zlength=self.zlength,
-                x=self.x + self.xlength_rectangle,
-                y=self.y + int(self.ylength / 2 - self.ylength_trapezoid / 2 + 0.5),
+                x=self.x,
+                y=self.y,
                 z=self.z,
                 direction=self.direction,
                 width=self.width,
-                name=f"{self.name}_trapezoid",
+                name="%s_trapezoid" % self.name,
+                background_index=self.background_index
             )
             sbend1 = sbend.Sbend(
                 xlength=self.xlength_sbend,
                 ylength=self.ylength_sbend,
                 zlength=self.zlength,
-                x=self.x + self.xlength_rectangle + self.xlength_trapezoid,
-                y=self.y,
+                x=self.x + int(self.xlength_taper / 2 + self.xlength_sbend / 2),
+                y=self.y + int(self.ylength_taper / 2 + self.ylength_sbend / 2) - self.width_sbend,
                 z=self.z,
-                direction=-self.direction,
-                width=self.width,
-                name=f"{self.name}_sbend1",
+                direction=self.direction,
+                width=self.width_sbend,
+                name="%s_sbend1" % self.name,
+                background_index=self.background_index
             )
             sbend2 = sbend.Sbend(
                 xlength=self.xlength_sbend,
                 ylength=self.ylength_sbend,
                 zlength=self.zlength,
-                x=self.x + self.xlength_rectangle + self.xlength_trapezoid,
-                y=self.y + self.ylength - self.ylength_sbend,
+                x=self.x + int(self.xlength_taper / 2 + self.xlength_sbend / 2),
+                y=self.y - int(self.ylength_taper / 2 + self.ylength_sbend / 2) + self.width_sbend,
                 z=self.z,
-                direction=self.direction,
+                direction=-self.direction,
                 width=self.width,
-                name=f"{self.name}_sbend2",
+                name="%s_sbend2" % self.name,
+                background_index=self.background_index
             )
         else:
             waveguide = Waveguide(
-                xlength=self.xlength_rectangle,
+                xlength=self.xlength_waveguide,
                 ylength=self.width,
                 zlength=self.zlength,
-                x=self.x + self.xlength_sbend + self.xlength_trapezoid,
-                y=self.y + int(self.ylength / 2 - self.width / 2 + 0.5),
+                x=self.x + int(self.xlength_waveguide / 2 + self.xlength_taper / 2),
+                y=self.y,
                 z=self.z,
                 width=self.width,
-                name=f"{self.name}_waveguide",
+                name="%s_waveguide" % self.name,
+                background_index=self.background_index
             )
-            trapezoid = Trapezoid(
-                xlength=self.xlength_trapezoid,
-                ylength=self.ylength_trapezoid,
+            taper = Taper(
+                xlength=self.xlength_taper,
+                ylength=self.ylength_taper,
                 zlength=self.zlength,
-                x=self.x + self.xlength_sbend,
-                y=self.y + int(self.ylength / 2 - self.ylength_trapezoid / 2 + 0.5),
+                x=self.x,
+                y=self.y,
                 z=self.z,
                 direction=self.direction,
                 width=self.width,
-                name=f"{self.name}_trapezoid",
+                name="%s_trapezoid" % self.name,
+                background_index=self.background_index
             )
             sbend1 = sbend.Sbend(
                 xlength=self.xlength_sbend,
                 ylength=self.ylength_sbend,
                 zlength=self.zlength,
-                x=self.x,
-                y=self.y,
+                x=self.x - int(self.xlength_taper / 2) - int(self.xlength_sbend / 2),
+                y=self.y + int(self.ylength_taper / 2 + self.ylength_sbend /2 - self.width_sbend),
                 z=self.z,
-                direction=-self.direction,
+                direction=self.direction,
                 width=self.width,
-                name=f"{self.name}_sbend1",
+                name="%s_sbend1" % self.name,
+                background_index=self.background_index
             )
             sbend2 = sbend.Sbend(
                 xlength=self.xlength_sbend,
                 ylength=self.ylength_sbend,
                 zlength=self.zlength,
-                x=self.x,
-                y=self.y + self.ylength - self.ylength_sbend,
+                x=self.x - int(self.xlength_taper / 2) - int(self.xlength_sbend / 2),
+                y=self.y - int(self.ylength_taper / 2 + self.ylength_sbend /2 - self.width_sbend),
                 z=self.z,
-                direction=self.direction,
+                direction=-self.direction,
                 width=self.width,
-                name=f"{self.name}_sbend2",
+                name="%s_sbend2" % self.name,
+                background_index=self.background_index
             )
 
-        self._internal_objects = [waveguide, trapezoid, sbend1, sbend2]
+        self._internal_objects = [waveguide, taper, sbend1, sbend2]

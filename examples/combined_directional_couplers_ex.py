@@ -2,6 +2,7 @@ import utils
 from photfdtd import Grid, DirectionalCoupler
 
 if __name__ == "__main__":
+    # TODO: 更新这个案例
     dc1 = DirectionalCoupler(
         xlength=125,
         ylength=65,
