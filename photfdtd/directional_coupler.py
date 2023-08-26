@@ -6,29 +6,29 @@ class DirectionalCoupler(Waveguide):
     """方向耦合器，返回两个s波导的介电常数矩阵
     xlength: 波导区域x方向宽度
     ylength: 波导区域y方向宽度
-    zlength: 波导区域z方向宽度，通常也是波导高度
+    zlength: 波导区域厚度
     x,y,z: 中心坐标
-    direction：确定方向 TODO: 完成竖直方向
+    direction：确定方向(暂时没用) TODO: 完成竖直方向
     width：波导宽度
     refractive_index:折射率
     gap:直波导间距
-    xlength_waveguide：直波导长度(耦合长度)"""
+    xlength_waveguide：直波导长度(耦合长度)
+    background_index：环境折射率"""
 
-    # TODO 只需要输出两个s波导的矩阵，另外两个S波导的矩阵与他们一样，关键在于确定位置（未完成）
     def __init__(
         self,
-        xlength=60,
-        ylength=10,
-        zlength=10,
-        x=50,
+        xlength=200,
+        ylength=80,
+        zlength=20,
+        x=100,
         y=50,
-        z=50,
+        z=12,
         direction=1,
-        width=10,
+        width=20,
         name="waveguide",
-        refractive_index=1.7,
-        xlength_rectangle=30,
-        gap=5,
+        refractive_index=3.47,
+        xlength_rectangle=50,
+        gap=10,
         background_index=1.0
     ):
         self.direction = direction
