@@ -48,7 +48,7 @@ if __name__ == "__main__":
     # 创建solve对象
     solve = Solve(grid=grid)
 
-    # 绘制任一截面
+    # 绘制任一截面折射率分布
     solve._plot_(axis='z',
                  index=30,
                  filepath=grid.folder)
