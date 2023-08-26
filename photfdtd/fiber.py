@@ -4,24 +4,18 @@ from .waveguide import Waveguide
 
 class Fiber(Waveguide):
     """光纤
-    radius: 半径
+    radius: list，表示从里到外每一层的半径
     length: 长度
     x,y,z: 位置坐标（中心）
-    refractive_index:折射率
+    refractive_index: list，表示从里到外每一层的折射率
     name: 名称
-    axis: 'x', 'y', 'z' 波导沿哪个轴
+    axis: 'x', 'y' 光纤沿哪个轴
+    background_index：背景折射率
     """
 
     # TODO: 多芯光纤、渐变折射率光纤
-    def __init__(self,
-                 length: int, x: int, y: int, z: int,
-                 radius: list = [],
-                 refractive_index: list = [],
-                 name: str = "",
-                 axis: str = "x",
-                 background_index: float = 1,
-
-                 ) -> None:
+    def __init__(self, length: int = 100, x: int = 50, y: int = 50, z: int = 50, radius: list = [10, 40], refractive_index: list = [3.47, 1.45],
+                 name: str = "fiber", axis: str = "x", background_index: float = 1.0) -> None:
 
         self.radius = radius
         self.length = length
@@ -29,7 +23,6 @@ class Fiber(Waveguide):
         if self.axis.lower() == 'x':
             # 23.08
             # 波导沿x轴
-
             self.x = x - self.length // 2
             self.y = y - self.radius[-1]
             self.z = z - self.radius[-1]
@@ -68,14 +61,15 @@ class Fiber(Waveguide):
                 mask = (X - self.ylength // 2) ** 2 + (Y - self.ylength // 2) ** 2 <= self.radius[i] ** 2
                 matrix[mask] = i + 1
 
+            for j in range(len(self.refractive_index)):
+                matrix[matrix == j + 1] = self.refractive_index[j] ** 2
+                matrix[matrix == 0] = self.background_index ** 2
+
             for i in range(self.length):
-                for j in range(len(self.refractive_index)):
-                    matrix[matrix == j + 1] = self.refractive_index[j] ** 2
-                    matrix[matrix == 0] = self.background_index ** 2
                 self.permittivity[i] = matrix
 
         elif self.axis.lower() == 'y':
-            # 波导沿x轴
+            # 波导沿y轴
             self.xlength = 2 * self.radius[-1] + 2
             self.ylength = self.length
             self.zlength = 2 * self.radius[-1] + 2
@@ -86,22 +80,14 @@ class Fiber(Waveguide):
                 mask = (X - self.xlength // 2) ** 2 + (Y - self.xlength // 2) ** 2 <= self.radius[i] ** 2
                 matrix[mask] = i + 1
 
+            for j in range(len(self.refractive_index)):
+                matrix[matrix == j + 1] = self.refractive_index[j] ** 2
+                matrix[matrix == 0] = self.background_index ** 2
+
             for i in range(self.length):
-                for j in range(len(self.refractive_index)):
-                    matrix[matrix == j + 1] = self.refractive_index[j] ** 2
-                    matrix[matrix == 0] = self.background_index ** 2
                 self.permittivity[:, i] = matrix
             print()
-        # elif self.axis.lower() == 'y':
-        #     # 波导沿y轴
-        #     self.xlength = 2*self.radius+2
-        #     self.ylength = self.length
-        #     self.zlength = 2*self.radius+2
-        #     self.permittivity = np.ones((2*self.radius+2, self.length, 2*self.radius+2))
-        #     for i in range(self.length):
-        #         self.permittivity[:, i] += m[:, :] * (self.refractive_index ** 2 - 1)
-        #         self.permittivity[:, i] += (1 - m[:, :]) * (self.background_index ** 2 - 1)
-        #
+
         # elif self.axis.lower() == 'z':
         #     # 波导沿z轴
         #     self.xlength = 2*self.radius+2
