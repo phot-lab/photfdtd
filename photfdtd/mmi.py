@@ -62,8 +62,9 @@ class Mmi(Waveguide):
         self._set_ports()
 
         self._internal_objects = [self.waveguide]
-        self._internal_objects.extend(self.ports_in)
-        self._internal_objects.extend(self.ports_out)
+        if self.l_port != 0:
+            self._internal_objects.extend(self.ports_in)
+            self._internal_objects.extend(self.ports_out)
         self._internal_objects.extend(self.waveguides_in)
         self._internal_objects.extend(self.waveguides_out)
 
@@ -138,6 +139,7 @@ class Mmi(Waveguide):
 
         for i in range(self.n):
             # 23.3.22: 由于器件不能重名，更改了下面name的表达式
+
             port = Taper(
                 xlength=self.l_port,
                 ylength=self.width_port,
