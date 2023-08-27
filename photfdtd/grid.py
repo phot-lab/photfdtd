@@ -107,7 +107,7 @@ class Grid:
         :param pulse_length:脉宽 fs
         :param pulse_type: 脉冲类型 "gaussian" 或 "hanning" 或 None
         :param offset: 脉冲中心 fs
-        :param x:
+        :param x: 位置坐标（中心）
         :param y:
         :param z:
         :param xlength:

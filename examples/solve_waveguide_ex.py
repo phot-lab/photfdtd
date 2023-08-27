@@ -28,12 +28,12 @@ if __name__ == "__main__":
     # 计算这个截面处，波长1.55um，折射率3.47附近的10个模式
     solve._calculate_mode(lam=1.55, neff=3.47, neigs=10)
 
-    # 绘制计算的10个模式并保存，绘制时使用6个等高线
+    # 绘制计算的10个模式并保存
     solve._draw_mode(neigs=10)
 
     # 计算各个模式的TEfraction，并保存图片
     # solve._calculate_TEfraction(n_levels=6)
-
+    # 打印这些模式对应的有效折射率
     print(solve.effective_index)
 
     #频率扫描，波长范围为[1.45um, 1.55um] 一共计算五个点

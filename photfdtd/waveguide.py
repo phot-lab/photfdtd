@@ -13,6 +13,9 @@ class Waveguide:
     background_index: 环境折射率
     name:名称
     """
+    # TODO: fdtd包绘制场的代码很有问题，在3d仿真时不能正确显示
+    # TODO: z方向空间步长单独设置？
+    # TODO: 如何保存整个仿真而不仅仅是监视器数据？
     # TODO: 在波导被添加进grid后，x,y,z仍然会从中心坐标变成角点坐标，如何修复这一点？
     def __init__(
             self,
