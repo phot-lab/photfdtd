@@ -19,17 +19,17 @@ class Waveguide:
     # TODO: 在波导被添加进grid后，x,y,z仍然会从中心坐标变成角点坐标，如何修复这一点？
     def __init__(
             self,
-            xlength=200,
-            ylength=20,
-            zlength=20,
-            x=100,
-            y=30,
-            z=30,
-            width=10,
-            name="waveguide",
-            refractive_index=3.47,
-            background_index=1
-    ):
+            xlength: int = 200,
+            ylength: int = 20,
+            zlength: int = 20,
+            x: int = 100,
+            y: int = 30,
+            z: int = 30,
+            width: int = 10,
+            name: str = "waveguide",
+            refractive_index: float = 3.47,
+            background_index: float = 1
+    ) -> None:
 
         self.xlength = xlength
         self.ylength = ylength
