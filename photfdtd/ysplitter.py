@@ -3,7 +3,6 @@ from . import sbend
 import numpy as np
 
 
-
 class Taper(Waveguide):
     """梯形（锥形）耦合部分代码，继承自waveguide
     xlength: 波导区域x方向宽度
@@ -15,18 +14,18 @@ class Taper(Waveguide):
     refractive_index:折射率"""
 
     def __init__(
-        self,
-        xlength=60,
-        ylength=10,
-        zlength=10,
-        x=50,
-        y=50,
-        z=50,
-        direction=1,
-        width=10,
-        name="taper",
-        refractive_index=1.7,
-        background_index: float = 1
+            self,
+            xlength=60,
+            ylength=10,
+            zlength=10,
+            x=50,
+            y=50,
+            z=50,
+            direction=1,
+            width=10,
+            name="taper",
+            refractive_index=1.7,
+            background_index: float = 1
     ):
 
         self.direction = direction
@@ -47,13 +46,13 @@ class Taper(Waveguide):
             for i in range(self.xlength):
                 for j in range(self.ylength):
                     if (
-                        X[i, j] * (self.width / 2 - self.ylength / 2) / self.xlength
-                        + self.ylength / 2
-                        - self.width / 2
-                        <= Y[i, j]
-                        <= X[i, j] * (-self.width / 2 + self.ylength / 2) / self.xlength
-                        + self.ylength / 2
-                        + self.width / 2
+                            X[i, j] * (self.width / 2 - self.ylength / 2) / self.xlength
+                            + self.ylength / 2
+                            - self.width / 2
+                            <= Y[i, j]
+                            <= X[i, j] * (-self.width / 2 + self.ylength / 2) / self.xlength
+                            + self.ylength / 2
+                            + self.width / 2
                     ):
                         m[i, j] = True
 
@@ -62,45 +61,58 @@ class Taper(Waveguide):
             for i in range(self.xlength):
                 for j in range(self.ylength):
                     if (
-                        X[self.xlength - i - 1, j] * (self.width / 2 - self.ylength / 2) / self.xlength
-                        + self.ylength / 2
-                        - self.width / 2
-                        <= Y[i, j]
-                        <= X[self.xlength - i - 1, j] * (-self.width / 2 + self.ylength / 2) / self.xlength
-                        + self.ylength / 2
-                        + self.width / 2
+                            X[self.xlength - i - 1, j] * (self.width / 2 - self.ylength / 2) / self.xlength
+                            + self.ylength / 2
+                            - self.width / 2
+                            <= Y[i, j]
+                            <= X[self.xlength - i - 1, j] * (-self.width / 2 + self.ylength / 2) / self.xlength
+                            + self.ylength / 2
+                            + self.width / 2
                     ):
                         m[i, j] = True
 
         permittivity = np.ones((self.xlength, self.ylength, self.zlength))
-        permittivity += m[:, :] * (self.refractive_index**2 - 1)
+        permittivity += m[:, :] * (self.refractive_index ** 2 - 1)
         permittivity += (1 - m[:, :]) * (self.background_index ** 2 - 1)
 
         self.permittivity = permittivity
 
 
 class Ysplitter(Waveguide):
-
-    """Y分支波导，由一段直波导，一个梯形，两个S波导组成
-    x, y, z为taper中心坐标"""
+    """
+    Y分支波导，由一段直波导，一个梯形taper，两个S波导组成
+    x, y, z：taper中心坐标
+    xlength: 波导区域x方向全长,
+    ylength: 波导区域y方向全长,
+    zlength: 波导厚度,
+    direction=1：方向，1表示单端口在x轴负方向，-1表示单端口在x轴正方向
+    width：直波导宽度
+    name：名称
+    refractive_index：折射率
+    xlength_waveguide: 直（矩形）波导x方向长度，
+    xlength_taper：taper x方向长度,
+    ylength_taper：taper y方向长度,
+    width_sbend: sbend的波导宽度,
+    background_index: 环境折射率
+    """
 
     def __init__(
-        self,
-        xlength=60,
-        ylength=10,
-        zlength=10,
-        x=50,
-        y=50,
-        z=50,
-        direction=-1,
-        width=10,
-        name="ysplitter",
-        refractive_index=1.7,
-        xlength_waveguide=30,
-        xlength_taper=10,
-        ylength_taper=30,
-        width_sbend=10,
-        background_index: float = 1
+            self,
+            xlength: int = 200,
+            ylength: int = 160,
+            zlength: int = 20,
+            x: int = 100,
+            y: int = 100,
+            z: int = 13,
+            direction: int = 1,
+            width: int = 20,
+            name: str = "ysplitter",
+            refractive_index: float = 3.47,
+            xlength_waveguide: int = 80,
+            xlength_taper: int = 40,
+            ylength_taper: int = 40,
+            width_sbend: int = 20,
+            background_index: float = 1
     ):
         self.direction = direction
         self.xlength_waveguide = xlength_waveguide
@@ -129,6 +141,7 @@ class Ysplitter(Waveguide):
                 z=self.z,
                 width=self.width,
                 name="%s_waveguide" % self.name,
+                refractive_index=self.refractive_index,
                 background_index=self.background_index
             )
             taper = Taper(
@@ -141,6 +154,7 @@ class Ysplitter(Waveguide):
                 direction=self.direction,
                 width=self.width,
                 name="%s_trapezoid" % self.name,
+                refractive_index=self.refractive_index,
                 background_index=self.background_index
             )
             sbend1 = sbend.Sbend(
@@ -153,6 +167,7 @@ class Ysplitter(Waveguide):
                 direction=self.direction,
                 width=self.width_sbend,
                 name="%s_sbend1" % self.name,
+                refractive_index=self.refractive_index,
                 background_index=self.background_index
             )
             sbend2 = sbend.Sbend(
@@ -165,6 +180,7 @@ class Ysplitter(Waveguide):
                 direction=-self.direction,
                 width=self.width,
                 name="%s_sbend2" % self.name,
+                refractive_index=self.refractive_index,
                 background_index=self.background_index
             )
         else:
@@ -177,6 +193,7 @@ class Ysplitter(Waveguide):
                 z=self.z,
                 width=self.width,
                 name="%s_waveguide" % self.name,
+                refractive_index=self.refractive_index,
                 background_index=self.background_index
             )
             taper = Taper(
@@ -189,6 +206,7 @@ class Ysplitter(Waveguide):
                 direction=self.direction,
                 width=self.width,
                 name="%s_trapezoid" % self.name,
+                refractive_index=self.refractive_index,
                 background_index=self.background_index
             )
             sbend1 = sbend.Sbend(
@@ -196,11 +214,12 @@ class Ysplitter(Waveguide):
                 ylength=self.ylength_sbend,
                 zlength=self.zlength,
                 x=self.x - int(self.xlength_taper / 2) - int(self.xlength_sbend / 2),
-                y=self.y + int(self.ylength_taper / 2 + self.ylength_sbend /2 - self.width_sbend),
+                y=self.y + int(self.ylength_taper / 2 + self.ylength_sbend / 2 - self.width_sbend),
                 z=self.z,
                 direction=self.direction,
                 width=self.width,
                 name="%s_sbend1" % self.name,
+                refractive_index=self.refractive_index,
                 background_index=self.background_index
             )
             sbend2 = sbend.Sbend(
@@ -208,11 +227,12 @@ class Ysplitter(Waveguide):
                 ylength=self.ylength_sbend,
                 zlength=self.zlength,
                 x=self.x - int(self.xlength_taper / 2) - int(self.xlength_sbend / 2),
-                y=self.y - int(self.ylength_taper / 2 + self.ylength_sbend /2 - self.width_sbend),
+                y=self.y - int(self.ylength_taper / 2 + self.ylength_sbend / 2 - self.width_sbend),
                 z=self.z,
                 direction=-self.direction,
                 width=self.width,
                 name="%s_sbend2" % self.name,
+                refractive_index=self.refractive_index,
                 background_index=self.background_index
             )
 
