@@ -3,26 +3,29 @@ import numpy as np
 
 
 class Sbend(Waveguide):
-    """s波导代码，继承自waveguide
+    """
+    s波导代码，继承自waveguide
     xlength: 波导区域x方向宽度
     ylength: 波导区域y方向宽度
     zlength: 波导区域z方向宽度，通常也是波导高度
     x,y,z: 中心位置坐标
     direction: = 1表示形状左上至右下，=-1表示形状从左下到右上
     width：波导宽度
-    refractive_index:折射率"""
+    refractive_index: 折射率
+    background_index: 背景折射率
+    """
 
     def __init__(
             self,
-            xlength=60,
-            ylength=10,
-            zlength=10,
-            x=50,
-            y=50,
-            z=50,
-            width=10,
+            xlength=200,
+            ylength=100,
+            zlength=20,
+            x=100,
+            y=75,
+            z=13,
+            width=20,
             name="sbend",
-            refractive_index=1.7,
+            refractive_index=3.47,
             direction=-1,
             background_index: float = 1
     ):
