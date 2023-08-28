@@ -17,19 +17,19 @@ class Ring(Waveguide):
 
     def __init__(
         self,
-        outer_radius=100,
-        zlength=20,
-        x=150,
-        y=150,
-        z=13,
-        width=20,
-        length=0,
-        gap=5,
-        name="ring",
-        refractive_index=3.47,
-        direction=1,
-        background_index: float = 1
-    ):
+            outer_radius: int = 100,
+            zlength: int = 20,
+            x: int = 150,
+            y: int = 150,
+            z: int = 13,
+            width: int = 20,
+            length: int = 0,
+            gap: int = 5,
+            name: str = "ring",
+            refractive_index: float = 3.47,
+            direction: int = 1,
+            background_index: float = 1
+    ) -> None:
 
         self.outer_r = outer_radius
         self.length = length

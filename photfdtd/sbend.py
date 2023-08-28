@@ -17,18 +17,18 @@ class Sbend(Waveguide):
 
     def __init__(
             self,
-            xlength=200,
-            ylength=100,
-            zlength=20,
-            x=100,
-            y=75,
-            z=13,
-            width=20,
-            name="sbend",
-            refractive_index=3.47,
-            direction=-1,
+            xlength: int = 200,
+            ylength: int = 100,
+            zlength: int = 20,
+            x: int = 100,
+            y: int = 75,
+            z: int = 13,
+            width: int = 20,
+            name: str = "sbend",
+            refractive_index: float = 3.47,
+            direction: int = -1,
             background_index: float = 1
-    ):
+    ) -> None:
         self.direction = direction
         super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index, background_index)
 
