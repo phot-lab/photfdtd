@@ -17,20 +17,20 @@ class DirectionalCoupler(Waveguide):
 
     def __init__(
         self,
-        xlength=200,
-        ylength=80,
-        zlength=20,
-        x=100,
-        y=50,
-        z=12,
-        direction=1,
-        width=20,
-        name="waveguide",
-        refractive_index=3.47,
-        xlength_rectangle=50,
-        gap=10,
-        background_index=1.0
-    ):
+            xlength: int = 200,
+            ylength: int = 80,
+            zlength: int = 20,
+            x: int = 100,
+            y: int = 50,
+            z: int = 12,
+            direction: int = 1,
+            width: int = 20,
+            name: str = "waveguide",
+            refractive_index: float = 3.47,
+            xlength_rectangle: int = 50,
+            gap: int = 10,
+            background_index: float = 1.0
+    ) -> None:
         self.direction = direction
         self.xlength_rectangle = xlength_rectangle
         self.ylength_sbend = int((ylength - gap) / 2 + 0.5)

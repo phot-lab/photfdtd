@@ -105,7 +105,7 @@ class Grid:
         :param hanning_dt: 汉宁窗宽度（定义脉冲）
         :param polarization: 偏振
         :param pulse_length:脉宽 fs
-        :param pulse_type: 脉冲类型 "gaussian" 或 "hanning" 或 None
+        :param pulse_type: 脉冲类型 "gaussian" 或 "hanning" 或 "none"
         :param offset: 脉冲中心 fs
         :param x: 位置坐标（中心）
         :param y:

@@ -9,22 +9,23 @@ class Taper(Waveguide):
     ylength: 波导区域y方向宽度
     zlength:
     x,y,z: 中心坐标
-    direction: 表示方向, direction = 1表示窄口在x轴负方向，direction = -1表示窄口在x轴正方向
+    direction: 表示方向, direction = 1表示单端口在x轴负方向，direction = -1表示单端口在x轴正方向
     width：直波导宽度
-    refractive_index:折射率"""
+    refractive_index:折射率
+    background_index: """
 
     def __init__(
             self,
-            xlength=60,
-            ylength=10,
-            zlength=10,
-            x=50,
-            y=50,
-            z=50,
-            direction=1,
-            width=10,
-            name="taper",
-            refractive_index=1.7,
+            xlength: int = 40,
+            ylength: int = 40,
+            zlength: int = 20,
+            x: int = 50,
+            y: int = 50,
+            z: int = 50,
+            direction: int = 1,
+            width: int = 20,
+            name: str = "taper",
+            refractive_index: float = 3.47,
             background_index: float = 1
     ):
 
@@ -32,9 +33,7 @@ class Taper(Waveguide):
         super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index, background_index)
 
     def _compute_permittivity(self):
-        """输入波导规格，返回介电常数矩阵
-        width:波导窄处宽度
-        ylength:波导宽处宽度"""
+
         x = np.linspace(0, self.xlength, self.xlength)
         y = np.linspace(0, self.ylength, self.ylength)
         X, Y = np.meshgrid(x, y, indexing="ij")
@@ -175,7 +174,7 @@ class Ysplitter(Waveguide):
                 ylength=self.ylength_sbend,
                 zlength=self.zlength,
                 x=self.x + int(self.xlength_taper / 2 + self.xlength_sbend / 2),
-                y=self.y - int(self.ylength_taper / 2 + self.ylength_sbend / 2) + self.width_sbend,
+                y=self.y - int(self.ylength_taper / 2 + self.ylength_sbend / 2) + self.width_sbend - 1,# 这里-1是为了防止波导区域重叠抛出错误
                 z=self.z,
                 direction=-self.direction,
                 width=self.width,
@@ -213,7 +212,7 @@ class Ysplitter(Waveguide):
                 xlength=self.xlength_sbend,
                 ylength=self.ylength_sbend,
                 zlength=self.zlength,
-                x=self.x - int(self.xlength_taper / 2) - int(self.xlength_sbend / 2),
+                x=self.x - int(self.xlength_taper / 2) - int(self.xlength_sbend / 2) - 1, # 这里-1是为了防止波导区域重叠抛出错误
                 y=self.y + int(self.ylength_taper / 2 + self.ylength_sbend / 2 - self.width_sbend),
                 z=self.z,
                 direction=self.direction,
@@ -226,8 +225,8 @@ class Ysplitter(Waveguide):
                 xlength=self.xlength_sbend,
                 ylength=self.ylength_sbend,
                 zlength=self.zlength,
-                x=self.x - int(self.xlength_taper / 2) - int(self.xlength_sbend / 2),
-                y=self.y - int(self.ylength_taper / 2 + self.ylength_sbend / 2 - self.width_sbend),
+                x=self.x - int(self.xlength_taper / 2) - int(self.xlength_sbend / 2) - 1,
+                y=self.y - int(self.ylength_taper / 2 + self.ylength_sbend / 2 - self.width_sbend) - 1,
                 z=self.z,
                 direction=-self.direction,
                 width=self.width,
