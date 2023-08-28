@@ -7,10 +7,10 @@ if __name__ == "__main__":
 
     ring = Ring(
         outer_radius=100,
-        zlength=1,
+        zlength=20,
         x=150,
         y=150,
-        z=0,
+        z=13,
         width=20,
         length=0,
         gap=5,
@@ -20,30 +20,30 @@ if __name__ == "__main__":
         background_index=background_index
     )
 
-    grid = Grid(grid_xlength=300, grid_ylength=300, grid_zlength=1, grid_spacing=20e-9, total_time=1000,
-                pml_width_x=10, pml_width_y=10, pml_width_z=0,
+    grid = Grid(grid_xlength=300, grid_ylength=300, grid_zlength=25, grid_spacing=20e-9, total_time=1000,
+                pml_width_x=50, pml_width_y=20, pml_width_z=1,
                 permittivity=background_index ** 2, foldername="test_ring")
 
     grid.set_source(
-        source_type="linesource",
+        source_type="planesource",
         x=100,
         xlength=0,
-        y=ring.y - ring.width - ring.gap - 1,
+        y=35,
         ylength=21,
         pulse_type="None",
-        z=0,
-        zlength=0,
+        z=13,
+        zlength=22,
         period=1550e-9 / 299792458,
     )
 
-    grid.set_detector(detector_type="linedetector",
+    grid.set_detector(detector_type="blockdetector",
                       x=250,
                       xlength=0,
-                      y=ring.y - ring.width - ring.gap - 1,
+                      y=37,
                       ylength=21,
-                      z=0,
-                      zlength=0,
-                      name="linedetector")
+                      z=13,
+                      zlength=22,
+                      name="detector")
 
     grid.add_object(ring)
 
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     solve = Solve(grid=grid)
 
     solve._plot_(axis='z',
-                 index=0,
+                 index=13,
                  filepath=grid.folder)
 
     grid.run()
@@ -59,6 +59,8 @@ if __name__ == "__main__":
     grid.save_simulation()
 
     grid.save_fig(axis="z",
-                  axis_number=0)
+                  axis_number=13)
+    grid.save_fig(axis="x",
+                  axis_number=150)
 
     data = Grid.read_simulation(folder=grid.folder)
