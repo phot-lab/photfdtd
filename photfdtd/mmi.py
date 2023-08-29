@@ -15,8 +15,7 @@ class Mmi(Waveguide):
     width_port：端口宽度(端口是一个梯形，是一个Ysplitter.trapezoid类对象)
     width_wg:单模波导宽度
     ln：输入波导长度（x方向长度）
-    lm：输入波导长度（x方向长度）
-    dn: n*n MMI中，一组（一对）波导间的间距
+    lm：输出波导长度（x方向长度）
     l_port: 端口长度
     refractive_index:折射率
     background_index: 环境折射率
@@ -40,7 +39,6 @@ class Mmi(Waveguide):
             l_port: int = 0,
             name: str = "mmi",
             refractive_index: float = 3.47,
-            dn: int = 1,
             background_index: float = 1.0
     ) -> None:
         # TODO: 如果没有给定We，则算出We
@@ -53,7 +51,6 @@ class Mmi(Waveguide):
         self.lm = lm
         self.l_port = l_port
         self.We = We
-        self.dn = dn
 
         super().__init__(xlength, ylength, zlength, x + int(xlength / 2), y + int(ylength / 2), z + int(zlength / 2),
                          ylength, name, refractive_index, background_index)
