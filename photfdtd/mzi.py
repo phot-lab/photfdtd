@@ -14,15 +14,16 @@ class Mzi:
         couplelength_dc: 方向耦合器的耦合长度
         addlength_arm1: 上臂额外长度
         addlength_arm2: 下臂额外长度
-        x,y,z: 由于MZI是一个比较复杂的器件，这里的位置坐标是耦合部分的中心
+        x,y,z: 中心坐标
         width: 波导宽度
-        refractive_index:折射率
+        refractive_index: 折射率
+        background_index: 环境折射率
         name: 名称
         """
 
-    def __init__(self, gap: int, xlength_dc: int, zlength: int, x: int, y: int, z: int,
-                 width: int, refractive_index: float, name: str, couplelength: int, addlength_arm1: int,
-                 addlength_arm2: int, couplelength_dc: int, gap_dc: int, background_index: float) -> None:
+    def __init__(self, gap: int = 50, xlength_dc: int = 150, zlength: int = 1, x: int = 350, y: int = 125,
+                 z: int = 0, width: int = 20, refractive_index: float = 3.47, name: str = 'mzi', couplelength: int = 100,
+                 addlength_arm1: int = 0, addlength_arm2: int = 0, couplelength_dc: int = 10, gap_dc: int = 10, background_index: float = 1.0) -> None:
 
         self.gap = gap
         self.zlength = zlength
