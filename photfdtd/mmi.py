@@ -12,7 +12,7 @@ class Mmi(Waveguide):
     x,y,z: 多模波导位置坐标（通常是矩形区域最靠近原点的点）
     n: 输入波导数
     m：输出波导数
-    width_port：端口宽度(端口是一个梯形，是一个Ysplitter.trapezoid类对象)
+    width_port：端口宽度(端口是一个梯形，是一个Ysplitter.taper类对象)
     width_wg:单模波导宽度
     ln：输入波导长度（x方向长度）
     lm：输出波导长度（x方向长度）
@@ -42,7 +42,7 @@ class Mmi(Waveguide):
             background_index: float = 1.0
     ) -> None:
         # TODO: 如果没有给定We，则算出We
-        #　TODO: 光路沿ｙ方向？
+        # TODO: 光路沿ｙ方向？
         self.n = n
         self.m = m
         self.width_port = width_port

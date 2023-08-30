@@ -121,6 +121,10 @@ class Grid:
         z = z - zlength // 2
         if source_type == "pointsource":
             # 创建一个点光源
+            x = x + xlength // 2
+            y = y + ylength // 2
+            z = z + zlength // 2
+
             self._grid[x, y, z] = fdtd.PointSource(
                 period=period,
                 amplitude=amplitude,

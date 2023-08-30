@@ -174,7 +174,7 @@ class Ysplitter(Waveguide):
                 ylength=self.ylength_sbend,
                 zlength=self.zlength,
                 x=self.x + int(self.xlength_taper / 2 + self.xlength_sbend / 2),
-                y=self.y - int(self.ylength_taper / 2 + self.ylength_sbend / 2) + self.width_sbend - 1,# 这里-1是为了防止波导区域重叠抛出错误
+                y=self.y - int(self.ylength_taper / 2 + self.ylength_sbend / 2) + self.width_sbend,
                 z=self.z,
                 direction=-self.direction,
                 width=self.width,
@@ -212,7 +212,7 @@ class Ysplitter(Waveguide):
                 xlength=self.xlength_sbend,
                 ylength=self.ylength_sbend,
                 zlength=self.zlength,
-                x=self.x - int(self.xlength_taper / 2) - int(self.xlength_sbend / 2) - 1, # 这里-1是为了防止波导区域重叠抛出错误
+                x=self.x - int(self.xlength_taper / 2) - int(self.xlength_sbend / 2),
                 y=self.y + int(self.ylength_taper / 2 + self.ylength_sbend / 2 - self.width_sbend),
                 z=self.z,
                 direction=self.direction,
@@ -225,8 +225,8 @@ class Ysplitter(Waveguide):
                 xlength=self.xlength_sbend,
                 ylength=self.ylength_sbend,
                 zlength=self.zlength,
-                x=self.x - int(self.xlength_taper / 2) - int(self.xlength_sbend / 2) - 1,
-                y=self.y - int(self.ylength_taper / 2 + self.ylength_sbend / 2 - self.width_sbend) - 1,
+                x=self.x - int(self.xlength_taper / 2) - int(self.xlength_sbend / 2),
+                y=self.y - int(self.ylength_taper / 2 + self.ylength_sbend / 2 - self.width_sbend),
                 z=self.z,
                 direction=-self.direction,
                 width=self.width,
