@@ -47,7 +47,7 @@ class Mzi:
         dc1 = DirectionalCoupler(xlength=self.xlength_dc,
                                  ylength=self.ylength_dc,
                                  zlength=self.zlength,
-                                 x=self.x - int(self.couplelength / 2 + self.xlength_dc / 2) - 1, # -1是为了防止波导区域重叠报错
+                                 x=self.x - int(self.couplelength / 2 + self.xlength_dc / 2), # -1是为了防止波导区域重叠报错
                                  y=self.y,
                                  z=self.z,
                                  direction=1,
