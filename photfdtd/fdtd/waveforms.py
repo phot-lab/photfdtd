@@ -8,6 +8,20 @@ import numpy as np
 def hanning(f, t, n):
     return (1 / 2) * (1 - cos(f * t / n)) * (sin(f * t))
 
+# 添加于 2023.5.14
+def pulse_oscillation(frequency, t, pulselength, offset):
+    """
+    标准高斯时域脉冲
+    https://optics.ansys.com/hc/en-us/articles/360034382854-Plane-wave-and-beam-source-Simulation-object
+    :param frequency:中心频率
+    :param t
+    :param pulselength: 脉宽（半高全宽*sqrt(2)）
+    :param offset: 脉冲中心
+    :return:
+    """
+    w_center = frequency * 2 * np.pi # 中心波长
+    delta_t = pulselength / (2 * np.sqrt(np.log(2))) # sigma
+    return np.sin(-w_center * (t - offset)) * np.exp(-(t - offset) ** 2 / 2 / delta_t ** 2)
 
 """
 
