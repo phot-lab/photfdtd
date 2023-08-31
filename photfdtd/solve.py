@@ -75,7 +75,7 @@ class Solve:
         plt.clim([1.0, np.amax(self.n)])
         plt.colorbar()
         # 保存图片
-        plt.savefig(fname='%s\\%s_%s=%d.png' % (self.filepath, 'geometry', axis, index))
+        plt.savefig(fname='%s\\%s_%s=%d.png' % (self.filepath, 'index', axis, index))
         # plt.show()
         plt.close()
 
@@ -124,11 +124,12 @@ class Solve:
 
     def _draw_mode(self,
                    neigs: int = 1,
+                   component: str = "ey"
                    ) -> None:
         '''
         绘制模式，保存图片与相应的有效折射率
         :param neigs: 绘制模式数
-        :param filepath: 保存图片的路径。注：图片的名称为其对应的有效折射率
+        :param component: ey: 绘制Ey ex: 绘制Ex # TODO: Ez与磁场？
         :return: None
         '''
         self.neigs = neigs
@@ -140,14 +141,23 @@ class Solve:
             plt.pcolor(self.n[:, :, 0], cmap=cm.Blues_r)
             plt.clim([1, np.amax(self.n)])
 
-            # TODO: 暂定电场默认是Ey
-            E_fields = self.Ey_fields
+            if component == "ey":
+                E_fields = self.Ey_fields
+            elif component == "ex":
+                E_fields = self.Ex_fields
 
             # Start a plot, find the contour levels, remove the zero level, replot without zero level
             plot_matrix = np.transpose(E_fields[i].real)
             plt.pcolor(self.x, self.y, plot_matrix, cmap=cm.jet)
+            plt.xlabel('X')
+            plt.ylabel('Y')
+            if component == "ey":
+                plt.title('Ey neff=%f' % self.effective_index[i])
+            elif component == "ex":
+                plt.title('Ex neff=%f' % self.effective_index[i])
+
             # 保存图片
-            plt.savefig(fname='%s\\%s%d.png' % (self.filepath, 'mode', i))
+            plt.savefig(fname='%s\\%s%d.png' % (self.filepath, 'mode', i + 1))
             # plt.show()
             plt.close()
 
@@ -160,6 +170,7 @@ class Solve:
         :param filepath: 保存图片路径
         :return: None
         '''
+        pass
         f = [0] * self.neigs
         for i in range(self.neigs):
             f[i] = self.Ey_fields[i].real / self.Ex_fields[i].real
@@ -320,8 +331,7 @@ if __name__ == "__main__":
     solve._calculate_mode(lam=1.55, neff=3.47, neigs=10)
 
     # 绘制计算的10个模式并保存，绘制时使用6个等高线
-    solve._draw_mode(n_levels=6,
-                     neigs=10)
+    solve._draw_mode(neigs=10)
 
     # 计算各个模式的TEfraction，并保存图片
     solve._calculate_TEfraction(n_levels=6)
