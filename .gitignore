@@ -25,3 +25,4 @@ __pycache__/
 examples/fdtd_output
 examples/*.png
 *.pdf
+# /test_*/

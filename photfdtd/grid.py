@@ -1,4 +1,4 @@
-import fdtd
+import photfdtd.fdtd as fdtd
 import matplotlib.pyplot as plt
 from .waveguide import Waveguide
 import numpy as np
@@ -13,22 +13,22 @@ from .index import Index
 class Grid:
 
     def __init__(
-            self, grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=.001, total_time=1, pml_width_x=1,
-            pml_width_y=1, pml_width_z=1, permittivity=1.0, permeability=1.0, courant_number=None, foldername=" ",
+            self, grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=20e-9, total_time=1, pml_width_x=10,
+            pml_width_y=10, pml_width_z=0, permittivity=1.0, permeability=1.0, courant_number=None, foldername=" ",
     ) -> None:
         """
         Args:
             grid_xlength (int, optional): _description_. Defaults to 100.
             grid_ylength (int, optional): _description_. Defaults to 200.
             grid_zlength (int, optional): _description_. Defaults to 50.
-            grid_spacing (float, optional): fdtd算法的空间步长（yee元胞的网格宽度）. Defaults to 0.01. 单位为m
+            grid_spacing (float, optional): fdtd算法的空间步长（yee元胞的网格宽度）. 单位为m
             total_time (int, optional): 计算时间. Defaults to 1.
-            pml_width (int, optional): PML宽度. Defaults to 10.
-            permeability (float, optional): 环境磁导率 1.0
-            permittivity (float, optional): 环境介电常数，二者共同决定了环境折射率 1.0
+            pml_width (int, optional): PML宽度.
+            permeability (float, optional): 环境相对磁导率 1.0
+            permittivity (float, optional): 环境相对介电常数，二者共同决定了环境折射率 1.0
+            (refractive_index ** 2 = permeability * permittivity, 对大部分材料permeability=1.0)
             courant_number: 科朗数 默认为None
-            foldername: 文件夹名称, 将在目录下创建该文件夹
-        23.4.17 现在可以分别设置三个维度的pml宽度了
+            foldername: 文件夹名称, 若其不存在将在目录下创建该文件夹
         """
         grid = fdtd.Grid(shape=(grid_xlength, grid_ylength, grid_zlength),
                          grid_spacing=grid_spacing,
@@ -171,12 +171,12 @@ class Grid:
 
     def set_detector(self,
                      detector_type: str = 'linedetector',
-                     x: int = 0,
-                     y: int = 0,
-                     z: int = 0,
-                     xlength: int = 0,
-                     ylength: int = 0,
-                     zlength: int = 0,
+                     x: int = 5,
+                     y: int = 5,
+                     z: int = 5,
+                     xlength: int = 5,
+                     ylength: int = 5,
+                     zlength: int = 1,
                      name: str = 'detector'
                      ):
         x = x - xlength // 2
@@ -207,7 +207,6 @@ class Grid:
         :param axis: 轴(若为二维模拟，则axis只能='z')
         :param axis_number: 索引
         :return:
-        23.4.13: 删除了变量index, 修改了保存图片的名称为 index=":%s=%d, total_time=%d" % (axis, axis_number, self._total_time)
         """
         # TODO: grid.visualize函数还有animate等功能，尚待加入
 
@@ -397,7 +396,7 @@ class Grid:
         静态方法，调用时应使用 data = Grid.read_simulation(folder="...")
         folder: 保存监视器数据的文件路径
         """
-        # 将结果绘图
+        # TODO: 将结果绘图
         if not folder.endswith(".npz"):
             folder = folder + "/detector_readings.npz"
 
