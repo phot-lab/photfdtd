@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw
 from matplotlib import cm
-import fdtd
+import photfdtd.fdtd as fdtd
 
 
 class Solve:
