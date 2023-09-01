@@ -1,4 +1,4 @@
-import fdtd
+import photfdtd.fdtd as fdtd
 import matplotlib.pyplot as plt
 from .waveguide import Waveguide
 import numpy as np
