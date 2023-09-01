@@ -1,6 +1,6 @@
 from .waveguide import Waveguide
 import numpy as np
-import fdtd
+import photfdtd.fdtd as fdtd
 
 
 class SbendShape(Waveguide):
