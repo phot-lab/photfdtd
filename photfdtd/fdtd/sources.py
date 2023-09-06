@@ -21,21 +21,22 @@ from .backend import backend as bd
 from .waveforms import *
 from .detectors import CurrentDetector
 
+
 ## PointSource class
 class PointSource:
     """A source placed at a single point (grid cell) in the grid"""
+
     # TODO: 为点光源和面光源加上gaussian pulse
 
-
     def __init__(
-        self,
-        period: Number = 15,
-        amplitude: float = 1.0,
-        phase_shift: float = 0.0,
-        name: str = None,
-        pulse: bool = False,
-        cycle: int = 5,
-        hanning_dt: float = 10.0,
+            self,
+            period: Number = 15,
+            amplitude: float = 1.0,
+            phase_shift: float = 0.0,
+            name: str = None,
+            pulse: bool = False,
+            cycle: int = 5,
+            hanning_dt: float = 10.0,
     ):
         """Create a LineSource with a gaussian profile
 
@@ -133,15 +134,16 @@ class LineSource:
     """A source along a line in the FDTD grid"""
 
     def __init__(
-        self,
-        period: Number = 15,
-        amplitude: float = 1.0,
-        phase_shift: float = 0.0,
-        name: str = None,
-        pulse: str = "none",
-        cycle: int = 5,
-        pulse_length: float = 39e-15,
-        offset: float = 112e-15
+            self,
+            period: Number = 15,
+            amplitude: float = 1.0,
+            phase_shift: float = 0.0,
+            name: str = None,
+            pulse_type: str = "none",
+            cycle: int = 5,
+            pulse_length: float = 39e-15,
+            offset: float = 112e-15,
+            pulse: bool = False
     ):
         """Create a LineSource with a gaussian profile
         Args:
@@ -149,10 +151,11 @@ class LineSource:
                 as integer [timesteps] or as float [seconds]
             amplitude: The amplitude of the source in simulation units
             phase_shift: The phase offset of the source.
-            pulse: "guassian"代表高斯脉冲 "hanning"代表汉宁脉冲 "none"或者其他任何输入代表不使用脉冲 修改于23.5.14
+            pulse: bool
             cycle: cycles for Hanning window pulse.
             pulse_length: 脉宽(对于高斯脉冲：半高全宽*sqrt(2)) 修改于23.5.14 单位s
             offset: 脉冲中心时间 修改于23.5.14 单位s
+            pulse_type: "guassian"代表高斯脉冲 "hanning"代表汉宁脉冲 "none"或者其他任何输入代表不使用脉冲 修改于23.5.14
 
         """
         self.grid = None
@@ -161,13 +164,14 @@ class LineSource:
         self.phase_shift = phase_shift
         self.name = name
         self.pulse = pulse
+        self.pulse_type = pulse_type
         self.cycle = cycle
         self.frequency = 1.0 / period
         self.pulse_length = pulse_length
         self.offset = offset
 
     def _register_grid(
-        self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+            self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
         """Register a grid for the source.
 
@@ -202,16 +206,17 @@ class LineSource:
             + (bd.array(self.y) - self.y[L // 2]) ** 2
             + (bd.array(self.z) - self.z[L // 2]) ** 2,
             bd.float,
-        )
-
-        self.profile = bd.exp(-(vect ** 2) / (2 * (0.5 * vect.max()) ** 2))
-        # self.profile /= self.profile.sum()
-        # 编辑于23.5.15 将self.profile /= self.profile.sum()改为self.profile /= self.profile.max() （归一化）
-        self.profile /= self.profile.max()
+        )  # vect：这是一个包含了各个点到中心点的距离平方的三维数组。它通过计算每个点到中心点的距离平方的和来创建。
+        self.profile = bd.ones(tuple(vect.shape))
+        if self.pulse != None:
+            self.profile = bd.exp(-(vect ** 2) / (2 * (0.5 * vect.max()) ** 2))  # 这是一个高斯分布
+            # self.profile /= self.profile.sum()
+            # 编辑于23.5.15 将self.profile /= self.profile.sum()改为self.profile /= self.profile.max() （归一化）
+        self.profile /= self.profile.max()  # 在计算高斯分布之后，代码将其归一化，确保分布的最大值为1。
         self.profile *= self.amplitude
 
     def _handle_slices(
-        self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+            self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ) -> Tuple[List, List, List]:
         """Convert slices in the grid to lists
 
@@ -283,7 +288,7 @@ class LineSource:
         """Add the source to the electric field"""
         q = self.grid.time_steps_passed
         # if pulse
-        if self.pulse == "hanning":
+        if self.pulse_type == "hanning":
             t1 = int(2 * pi / (self.frequency * self.pulse_length / self.cycle))
             if q < t1:
                 vect = self.profile * hanning(
@@ -292,12 +297,14 @@ class LineSource:
             else:
                 # src = - self.grid.E[self.x, self.y, self.z, 2]
                 vect = self.profile * 0
-        elif self.pulse == "gaussian":
+        elif self.pulse_type == "gaussian":
             # 添加于2023.5.14
-            vect = self.profile * pulse_oscillation(frequency=self.frequency, t=q * self.grid.time_step, pulselength=self.pulse_length, offset=self.offset)
+            vect = self.profile * pulse_oscillation(frequency=self.frequency, t=q * self.grid.time_step,
+                                                    pulselength=self.pulse_length, offset=self.offset)
         # if not pulse
         else:
             vect = self.profile * sin(2 * pi * q / self.period + self.phase_shift)
+            # TODO: 要绘制光源图像只需绘制vect
         # do not use list indexing here, as this is much slower especially for torch backend
         # DISABLED: self.grid.E[self.x, self.y, self.z, 2] = vect
         for x, y, z, value in zip(self.x, self.y, self.z, vect):
@@ -327,12 +334,12 @@ class PlaneSource:
     """A source along a plane in the FDTD grid"""
 
     def __init__(
-        self,
-        period: Number = 15,
-        amplitude: float = 1.0,
-        phase_shift: float = 0.0,
-        name: str = None,
-        polarization: str = 'z',
+            self,
+            period: Number = 15,
+            amplitude: float = 1.0,
+            phase_shift: float = 0.0,
+            name: str = None,
+            polarization: str = 'z',
     ):
         """Create a PlaneSource.
 
@@ -351,7 +358,7 @@ class PlaneSource:
         self.polarization = polarization
 
     def _register_grid(
-        self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+            self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
         """Register a grid for the source.
 
@@ -394,7 +401,7 @@ class PlaneSource:
         self.profile = self.amplitude * profile
 
     def _handle_slices(
-        self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+            self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ) -> Tuple[List, List, List]:
         """Validate slices and calculate center of plane
 
@@ -466,12 +473,12 @@ class PlaneSource:
 
         self._Epol = 'xyz'.index(self.polarization)
         if (x.stop - x.start == 1 and self.polarization == 'x') or \
-           (y.stop - y.start == 1 and self.polarization == 'y') or \
-           (z.stop - z.start == 1 and self.polarization == 'z'):
+                (y.stop - y.start == 1 and self.polarization == 'y') or \
+                (z.stop - z.start == 1 and self.polarization == 'z'):
             raise ValueError(
                 "PlaneSource cannot be polarized perpendicular to the orientation of the plane."
             )
-        _Hpols = [(z,1,2), (z,0,2), (y,0,1)][self._Epol]
+        _Hpols = [(z, 1, 2), (z, 0, 2), (y, 0, 1)][self._Epol]
         if _Hpols[0].stop - _Hpols[0].start == 1:
             self._Hpol = _Hpols[1]
         else:
@@ -546,7 +553,7 @@ class SoftArbitraryPointSource:
     """
 
     def __init__(
-        self, waveform_array: ndarray, name: str = None, impedance: float = 0.0
+            self, waveform_array: ndarray, name: str = None, impedance: float = 0.0
     ):
         """Create
 
@@ -628,7 +635,7 @@ class SoftArbitraryPointSource:
         # right now, this does not compensate for the cell's permittivity!
 
         self.grid.E[self.x, self.y, self.z, 2] += (
-            output_voltage / self.grid.grid_spacing
+                output_voltage / self.grid.grid_spacing
         )
 
         self.input_voltage.append([[[input_voltage]]])
