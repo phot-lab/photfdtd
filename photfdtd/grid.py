@@ -143,7 +143,8 @@ class Grid:
                     amplitude=amplitude,
                     phase_shift=phase_shift,
                     name=name,
-                    pulse=pulse_type,
+                    pulse=pulse,
+                    pulse_type=pulse_type,
                     cycle=cycle,
                     pulse_length=pulse_length,
                     offset=offset
