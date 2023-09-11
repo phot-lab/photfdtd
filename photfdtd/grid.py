@@ -196,39 +196,64 @@ class Grid:
         else:
             raise RuntimeError("Invalid detector type.")
 
-    def run(self):
-
-        self._grid.run(total_time=self._total_time)
-
     def save_fig(self,
                  axis="x",
-                 axis_number=0):
+                 axis_number=0,
+                 animate=False,
+                 time=None):
         """
         保存图片
-        :param axis: 轴(若为二维模拟，则axis只能='z')
-        :param axis_number: 索引
-        :return:
+        @param axis: 轴(若为二维模拟，则axis只能='z')
+        @param axis_number: 索引
+        @param time: 绘制哪个时刻的场图（用户用不到，仅供run()使用
+        @param animate: 是否播放动画 #TODO: 这个参数的作用？
+        :
         """
         # TODO: grid.visualize函数还有animate等功能，尚待加入
-
+        if time == None:
+            time = self._total_time
         if self._grid is None:
             raise RuntimeError("The grid should be set before saving figure.")
 
         axis = axis.lower()  # 识别大写的 "X"
         folder = self.folder
         if axis == "x":  # 判断从哪一个轴俯视画图
-            self._grid.visualize(x=axis_number, save=True,
-                                 index="_%s=%d, total_time=%d" % (axis, axis_number, self._total_time), folder=folder)
+            self._grid.visualize(x=axis_number, save=True, animate=animate,
+                                 index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder)
         elif axis == "y":
-            self._grid.visualize(y=axis_number, save=True,
-                                 index="_%s=%d, total_time=%d" % (axis, axis_number, self._total_time), folder=folder)
+            self._grid.visualize(y=axis_number, save=True, animate=animate,
+                                 index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder)
         elif axis == "z":
-            self._grid.visualize(z=axis_number, save=True,
-                                 index="_%s=%d, total_time=%d" % (axis, axis_number, self._total_time), folder=folder)
+            self._grid.visualize(z=axis_number, save=True, animate=animate,
+                                 index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder)
         else:
             raise RuntimeError("Unknown axis parameter.")
 
         plt.close()  # 清除画布
+
+    def run(self,
+            animate: bool = False,
+            step: int = 5,
+            axis="x",
+            axis_number=0,
+            ):
+        """
+
+        @param axis: 与save_fig()相同
+        @param axis_number:
+        @param animate: 是否播放动画 %TODO: 完成它
+        @param step: 每多少个时间步绘一次图
+        """
+        if animate == False:
+            self._grid.run(total_time=self._total_time)
+        elif animate:
+            for i in range(self._total_time):
+                self._grid.step()
+                if (i+1) % step == 0:
+                    self.save_fig(axis=axis, axis_number=axis_number, time=i)
+
+
+
 
     def calculate_T(self,
                     full_path: str = "") -> None:
@@ -386,6 +411,7 @@ class Grid:
             dic[detector.name + " (E)"] = [x for x in detector.detector_values()["E"]]
             dic[detector.name + " (H)"] = [x for x in detector.detector_values()["H"]]
         dic["grid_spacing"] = self._grid.grid_spacing
+        dic["time_step"] = self._grid.time_step
 
 
         # 保存detector_readings_sweep.npz文件

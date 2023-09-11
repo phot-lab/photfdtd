@@ -88,7 +88,7 @@ class Solve:
         调用phisol包，计算模式。结果被保存在self.Ey_fields与self.Ex_fields与传播常数self.beta中。
         （若垂直于x轴的截面，Ex实际上是Ey, Ey实际上是Ez；若垂直于y轴的截面，Ex即是Ex，Ey实际上是Ez）
         :param lam: 波长（um）
-        :param neff: 有效折射率，在neff周围计算模式
+        :param neff: 在neff周围计算模式
         :param neigs: 计算模式数
         :return:
         '''
@@ -149,6 +149,8 @@ class Solve:
             # Start a plot, find the contour levels, remove the zero level, replot without zero level
             plot_matrix = np.transpose(E_fields[i].real)
             plt.pcolor(self.x, self.y, plot_matrix, cmap=cm.jet)
+            plt.clim([np.amin(plot_matrix), np.amax(plot_matrix)])
+            plt.colorbar()
             plt.xlabel('X')
             plt.ylabel('Y')
             if component == "ey":
