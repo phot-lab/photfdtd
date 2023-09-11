@@ -14,7 +14,7 @@ class Grid:
 
     def __init__(
             self, grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=20e-9, total_time=1, pml_width_x=10,
-            pml_width_y=10, pml_width_z=0, permittivity=1.0, permeability=1.0, courant_number=None, foldername=" ",
+            pml_width_y=10, pml_width_z=0, permittivity=1.0, permeability=1.0, courant_number=None, foldername=" ", folder=None
     ) -> None:
         """
         Args:
@@ -52,11 +52,13 @@ class Grid:
         self._total_time = total_time
         self._grid = grid
 
-        makedirs(foldername, exist_ok=True)  # Output master folder declaration
+        # makedirs(foldername, exist_ok=True)  # Output master folder declaration
         current_dir = os.getcwd()
 
         # self.folder: 保存结果的文件夹
         self.folder = os.path.join(current_dir, foldername)
+        if folder != "" and folder is not None:
+            self.folder = folder
         makedirs(self.folder, exist_ok=True)
 
     def add_object(self, object: Waveguide):
