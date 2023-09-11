@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     # 设置 grid 参数
     grid = Grid(grid_xlength=200, grid_ylength=150, grid_zlength=25, grid_spacing=20e-9,
-                total_time=1200,
+                total_time=600,
                 pml_width_x=20,
                 pml_width_y=10,
                 pml_width_z=1,
@@ -63,6 +63,8 @@ if __name__ == "__main__":
     # 绘制任意截面场图
     grid.save_fig(axis="z",
                   axis_number=13)
+    grid.save_fig(axis="y",
+                  axis_number=80)
     grid.save_fig(axis="x",
                   axis_number=100)
 

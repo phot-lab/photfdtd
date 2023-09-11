@@ -6,18 +6,18 @@ if __name__ == "__main__":
 
     # 设置器件参数
     waveguide1 = Waveguide(
-        xlength=100, ylength=20, zlength=20, x=50, y=150, z=11, refractive_index=3.47, name="Waveguide1",
+        xlength=100, ylength=20, zlength=20, x=50, y=149, z=11, refractive_index=3.47, name="Waveguide1",
         background_index=background_index
     )
     arc = Arc(outer_radius=60, zlength=20, x=100, y=100, z=1, width=20, refractive_index=3.47, name="arc", direction=2,
               background_index=background_index)
     waveguide2 = Waveguide(
-        xlength=20, ylength=100, zlength=20, x=150, y=50, z=11, refractive_index=3.47, name="Waveguide2",
+        xlength=20, ylength=100, zlength=20, x=149, y=50, z=11, refractive_index=3.47, name="Waveguide2",
         background_index=background_index
     )
 
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=200, grid_ylength=200, grid_zlength=22, grid_spacing=20e-9, total_time=1200,
+    grid = Grid(grid_xlength=200, grid_ylength=200, grid_zlength=22, grid_spacing=20e-9, total_time=1000,
                 foldername="test_arc",
                 pml_width_x=25,
                 pml_width_y=25,
@@ -69,10 +69,12 @@ if __name__ == "__main__":
     grid.save_simulation()
 
     # 绘制任意截面场图
+    grid.save_fig(axis="y",
+                  axis_number=150)
     grid.save_fig(axis="z",
                   axis_number=11)
     grid.save_fig(axis="x",
-                  axis_number=30)
+                  axis_number=150)
 
     # 读取仿真结果
     data = grid.read_simulation(folder=grid.folder)

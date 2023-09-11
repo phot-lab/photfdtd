@@ -26,22 +26,22 @@ from .backend import backend as bd
 
 
 def visualize(
-    grid,
-    x=None,
-    y=None,
-    z=None,
-    cmap="Blues",
-    pbcolor="C3",
-    pmlcolor=(0, 0, 0, 0.1),
-    objcolor=(1, 0, 0, 0.1),
-    srccolor="C0",
-    detcolor="C2",
-    norm="linear",
-    show=False,  # default False to allow animate to be true
-    animate=False,  # True to see frame by frame states of grid while running simulation
-    index=None,  # index for each frame of animation (visualize fn runs in a loop, loop variable is passed as index)
-    save=False,  # True to save frames (requires parameters index, folder)
-    folder=None,  # folder path to save frames
+        grid,
+        x=None,
+        y=None,
+        z=None,
+        cmap="Blues",
+        pbcolor="C3",
+        pmlcolor=(0, 0, 0, 0.1),
+        objcolor=(1, 0, 0, 0.1),
+        srccolor="C0",
+        detcolor="C2",
+        norm="linear",
+        show=False,  # default False to allow animate to be true
+        animate=False,  # True to see frame by frame states of grid while running simulation
+        index=None,  # index for each frame of animation (visualize fn runs in a loop, loop variable is passed as index)
+        save=False,  # True to save frames (requires parameters index, folder)
+        folder=None,  # folder path to save frames
 ):
     """visualize a projection of the grid and the optical energy inside the grid
 
@@ -109,11 +109,11 @@ def visualize(
         )
 
     # just to create the right legend entries:
-    plt.plot([], lw=7, color=objcolor, label="Objects")
-    plt.plot([], lw=7, color=pmlcolor, label="PML")
-    plt.plot([], lw=3, color=pbcolor, label="Periodic Boundaries")
-    plt.plot([], lw=3, color=srccolor, label="Sources")
-    plt.plot([], lw=3, color=detcolor, label="Detectors")
+    # plt.plot([], lw=7, color=objcolor, label="Objects")
+    # plt.plot([], lw=7, color=pmlcolor, label="PML")
+    # plt.plot([], lw=3, color=pbcolor, label="Periodic Boundaries")
+    # plt.plot([], lw=3, color=srccolor, label="Sources")
+    # plt.plot([], lw=3, color=detcolor, label="Detectors")
 
     # Grid energy
     grid_energy = bd.sum(grid.E ** 2 + grid.H ** 2, -1)
@@ -124,20 +124,35 @@ def visualize(
         pbx, pby = _PeriodicBoundaryY, _PeriodicBoundaryZ
         pmlxl, pmlxh, pmlyl, pmlyh = _PMLYlow, _PMLYhigh, _PMLZlow, _PMLZhigh
         grid_energy = grid_energy[x, :, :]
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.ylim(-1, Ny)
+        plt.xlim(-1, Nx)
     elif y is not None:
         assert grid.Nx > 1 and grid.Nz > 1
-        xlabel, ylabel = "z", "x"
-        Nx, Ny = grid.Nz, grid.Nx
-        pbx, pby = _PeriodicBoundaryZ, _PeriodicBoundaryX
-        pmlxl, pmlxh, pmlyl, pmlyh = _PMLZlow, _PMLZhigh, _PMLXlow, _PMLXhigh
+        xlabel, ylabel = "x", "z"
+        Nx, Ny = grid.Nx, grid.Nz
+        pbx, pby = _PeriodicBoundaryX, _PeriodicBoundaryZ
+        pmlxl, pmlxh, pmlyl, pmlyh = _PMLXlow, _PMLXhigh, _PMLZlow, _PMLZhigh
         grid_energy = grid_energy[:, y, :].T
+        plt.gca().yaxis.set_ticks_position('right')
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.ylim(-1, Ny)
+        plt.xlim(Nx, -1)
     elif z is not None:
         assert grid.Nx > 1 and grid.Ny > 1
         xlabel, ylabel = "x", "y"
         Nx, Ny = grid.Nx, grid.Ny
         pbx, pby = _PeriodicBoundaryX, _PeriodicBoundaryY
         pmlxl, pmlxh, pmlyl, pmlyh = _PMLXlow, _PMLXhigh, _PMLYlow, _PMLYhigh
-        grid_energy = grid_energy[:, :, z]
+        grid_energy = grid_energy[:, :, z].T
+        plt.gca().xaxis.set_ticks_position('top')
+        plt.gca().yaxis.set_ticks_position('right')
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.ylim(Ny, -1)
+        plt.xlim(Nx, -1)
     else:
         raise ValueError("Visualization only works for 2D grids")
 
@@ -147,23 +162,23 @@ def visualize(
                 _x = [source.y[0], source.y[-1]]
                 _y = [source.z[0], source.z[-1]]
             elif y is not None:
-                _x = [source.z[0], source.z[-1]]
-                _y = [source.x[0], source.x[-1]]
+                _x = [source.x[0], source.x[-1]]
+                _y = [source.z[0], source.z[-1]]
             elif z is not None:
                 _x = [source.x[0], source.x[-1]]
                 _y = [source.y[0], source.y[-1]]
-            plt.plot(_y, _x, lw=3, color=srccolor)
+            plt.plot(_x, _y, lw=3, color=srccolor)
         elif isinstance(source, PointSource):
             if x is not None:
                 _x = source.y
                 _y = source.z
             elif y is not None:
-                _x = source.z
-                _y = source.y
+                _x = source.x
+                _y = source.z
             elif z is not None:
                 _x = source.x
                 _y = source.y
-            plt.plot(_y - 0.5, _x - 0.5, lw=3, marker="o", color=srccolor)
+            plt.plot(_x - 0.5, _y - 0.5, lw=3, marker="o", color=srccolor)
             grid_energy[_x, _y] = 0  # do not visualize energy at location of source
         elif isinstance(source, PlaneSource):
             if x is not None:
@@ -179,30 +194,30 @@ def visualize(
                 )
             elif y is not None:
                 _x = (
-                    source.z
-                    if source.z.stop > source.z.start + 1
-                    else slice(source.z.start, source.z.start)
-                )
-                _y = (
                     source.x
                     if source.x.stop > source.x.start + 1
-                    else slice(source.x.start, source.x.start)
+                    else slice(source.x.start, source.x.stop)
+                )
+                _y = (
+                    source.z
+                    if source.z.stop > source.z.start + 1
+                    else slice(source.z.start, source.z.stop)
                 )
             elif z is not None:
                 _x = (
                     source.x
                     if source.x.stop > source.x.start + 1
-                    else slice(source.x.start, source.x.start)
+                    else slice(source.x.start, source.x.stop)
                 )
                 _y = (
                     source.y
                     if source.y.stop > source.y.start + 1
-                    else slice(source.y.start, source.y.start)
+                    else slice(source.y.start, source.y.stop)
                 )
             patch = ptc.Rectangle(
-                xy=(_y.start - 0.5, _x.start - 0.5),
-                width=_y.stop - _y.start,
-                height=_x.stop - _x.start,
+                xy=(_x.start - 0.5, _y.start - 0.5),
+                width=_x.stop - _x.start,
+                height=_y.stop - _y.start,
                 linewidth=0,
                 edgecolor="none",
                 facecolor=srccolor,
@@ -215,8 +230,8 @@ def visualize(
             _x = [detector.y[0], detector.y[-1]]
             _y = [detector.z[0], detector.z[-1]]
         elif y is not None:
-            _x = [detector.z[0], detector.z[-1]]
-            _y = [detector.x[0], detector.x[-1]]
+            _x = [detector.x[0], detector.x[-1]]
+            _y = [detector.z[0], detector.z[-1]]
         elif z is not None:
             _x = [detector.x[0], detector.x[-1]]
             _y = [detector.y[0], detector.y[-1]]
@@ -224,14 +239,14 @@ def visualize(
         if detector.__class__.__name__ == "BlockDetector":
             # BlockDetector
             plt.plot(
-                [_y[0], _y[1], _y[1], _y[0], _y[0]],
-                [_x[0], _x[0], _x[1], _x[1], _x[0]],
+                [_x[0], _x[1], _x[1], _x[0], _x[0]],
+                [_y[0], _y[0], _y[1], _y[1], _y[0]],
                 lw=3,
                 color=detcolor,
             )
         else:
             # LineDetector
-            plt.plot(_y, _x, lw=3, color=detcolor)
+            plt.plot(_x, _y, lw=3, color=detcolor)
 
     # Boundaries
     for boundary in grid.boundaries:
@@ -246,8 +261,8 @@ def visualize(
         elif isinstance(boundary, pmlyl):
             patch = ptc.Rectangle(
                 xy=(-0.5, -0.5),
-                width=boundary.thickness,
-                height=Nx,
+                width=Nx,
+                height=boundary.thickness,
                 linewidth=0,
                 edgecolor="none",
                 facecolor=pmlcolor,
@@ -256,8 +271,8 @@ def visualize(
         elif isinstance(boundary, pmlxl):
             patch = ptc.Rectangle(
                 xy=(-0.5, -0.5),
-                width=Ny,
-                height=boundary.thickness,
+                width=boundary.thickness,
+                height=Ny,
                 linewidth=0,
                 edgecolor="none",
                 facecolor=pmlcolor,
@@ -265,9 +280,9 @@ def visualize(
             plt.gca().add_patch(patch)
         elif isinstance(boundary, pmlyh):
             patch = ptc.Rectangle(
-                xy=(Ny - 0.5 - boundary.thickness, -0.5),
-                width=boundary.thickness,
-                height=Nx,
+                xy=(-0.5, Ny + 0.5 - boundary.thickness),
+                width=Nx,
+                height=boundary.thickness,
                 linewidth=0,
                 edgecolor="none",
                 facecolor=pmlcolor,
@@ -275,9 +290,9 @@ def visualize(
             plt.gca().add_patch(patch)
         elif isinstance(boundary, pmlxh):
             patch = ptc.Rectangle(
-                xy=(-0.5, Nx - boundary.thickness - 0.5),
-                width=Ny,
-                height=boundary.thickness,
+                xy=(Nx - boundary.thickness + 0.5 , -0.5),
+                width=boundary.thickness,
+                height=Ny,
                 linewidth=0,
                 edgecolor="none",
                 facecolor=pmlcolor,
@@ -285,25 +300,42 @@ def visualize(
             plt.gca().add_patch(patch)
 
     for obj in grid.objects:
-        if x is not None:
+        import numpy as np
+        permittivity = np.sqrt(obj.permittivity)
+        n = permittivity
+        if x is not None and obj.x.start <= x <= obj.x.stop:
             _x = (obj.y.start, obj.y.stop)
             _y = (obj.z.start, obj.z.stop)
-        elif y is not None:
-            _x = (obj.z.start, obj.z.stop)
-            _y = (obj.x.start, obj.x.stop)
-        elif z is not None:
+            n = permittivity[x-obj.x.start, :, :, :]
+        elif y is not None and obj.y.start <= y <= obj.y.stop:
+            _x = (obj.x.start, obj.x.stop)
+            _y = (obj.z.start, obj.z.stop)
+            n = permittivity[:, y-obj.y.start, :, :]
+        elif z is not None and obj.z.start <= z <= obj.z.stop:
             _x = (obj.x.start, obj.x.stop)
             _y = (obj.y.start, obj.y.stop)
+            n = permittivity[:, :, z-obj.z.start, :]
+        else:
+            continue
+        # print(obj)
+        px = min(_x)
+        py = min(_y)
+        # print(px, py)
+        for (mx, my), pmt in np.ndenumerate(n[:, :, 0]):
+            if pmt == 3.47:
+                # print((px + mx, py + my))
+                rect = ptc.Rectangle((px + mx, py + my), 1, 1, facecolor=objcolor)
+                plt.gca().add_patch(rect)
 
-        patch = ptc.Rectangle(
-            xy=(min(_y) - 0.5, min(_x) - 0.5),
-            width=max(_y) - min(_y),
-            height=max(_x) - min(_x),
-            linewidth=0,
-            edgecolor="none",
-            facecolor=objcolor,
-        )
-        plt.gca().add_patch(patch)
+        # patch = ptc.Rectangle(
+        #     xy=(min(_y) - 0.5, min(_x) - 0.5),
+        #     width=max(_y) - min(_y),
+        #     height=max(_x) - min(_x),
+        #     linewidth=0,
+        #     edgecolor="none",
+        #     facecolor=objcolor,
+        # )
+        # plt.gca().add_patch(patch)
 
     # visualize the energy in the grid
     cmap_norm = None
@@ -312,16 +344,12 @@ def visualize(
     plt.imshow(abs(bd.numpy(grid_energy)), cmap=cmap, interpolation="sinc", norm=cmap_norm)
 
     # finalize the plot
-    plt.ylabel(xlabel)
-    plt.xlabel(ylabel)
-    plt.ylim(Nx, -1)
-    plt.xlim(-1, Ny)
     plt.figlegend()
     plt.tight_layout()
 
     # save frame (require folder path and index)
     if save:
-        plt.savefig(os.path.join(folder, f"file{str(index).zfill(4)}.png"))
+        plt.savefig(os.path.join(folder, f"file{str(index).zfill(4)}.png"), facecolor="white", edgecolor="white")
 
     # show if not animating
     if show:
@@ -465,7 +493,6 @@ def plot_detection(detector_dict=None, specific_plot=None):
         plt.legend()
         plt.suptitle("Time-of-arrival plot")
     plt.show()
-
 
 #
 # def dump_to_vtk(pcb, filename, iteration, Ex_dump=False, Ey_dump=False, Ez_dump=False, Emag_dump=True, objects_dump=True, ports_dump=True):
