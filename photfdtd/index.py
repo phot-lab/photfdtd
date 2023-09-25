@@ -62,10 +62,10 @@ class Index:
 
 
 if __name__ == "__main__":
-    index_Si = Index('Si.csv')
+    index_Si = Index('./materials/Si.csv')
     index_Si._fit_()
     index_Si._plot_(choice=True,
-                    filepath='E:/campus/高速长距光纤传输系统软件设计平台/折射率数据/Si.csv')
+                    filepath='./')
 
     # 现在可以用拟合函数得到区域内一个波长下的折射率了
     wavelength_value = 1.6

@@ -1,4 +1,4 @@
-import utils
+# import utils
 from photfdtd import Waveguide, Grid
 import philsol as ps
 import numpy as np
@@ -31,7 +31,7 @@ class Solve:
             self.grid.objects[i].z.start:self.grid.objects[i].z.stop] = np.sqrt(self.grid.objects[i].permittivity)
         self.geometry = geo
 
-    def _plot_(self,
+    def plot(self,
                axis: str = 'x',
                index: int = 0,
                filepath: str = ''
@@ -75,11 +75,13 @@ class Solve:
         plt.clim([1.0, np.amax(self.n)])
         plt.colorbar()
         # 保存图片
-        plt.savefig(fname='%s\\%s_%s=%d.png' % (self.filepath, 'index', axis, index))
+        # plt.savefig(fname='%s\\%s_%s=%d.png' % (self.filepath, 'index', axis, index))
+        plt.savefig(fname=filepath)
         # plt.show()
+        plt.clf()
         plt.close()
 
-    def _calculate_mode(self,
+    def calculate_mode(self,
                         lam: float = 1.55,
                         neff: float = 3.47,
                         neigs: int = 1,
@@ -118,11 +120,11 @@ class Solve:
         self.beta = beta
 
         # 保存各个模式对应的有效折射率
-        # 23.3.22 将solve.py中保存有效折射率的代码由_draw_mode转移到_calculate_mode
+        # 23.3.22 将solve.py中保存有效折射率的代码由draw_mode转移到calculate_mode
         self.effective_index = abs(self.beta * self.lam / (2 * np.pi))
         print(self.effective_index)
 
-    def _draw_mode(self,
+    def draw_mode(self,
                    neigs: int = 1,
                    component: str = "ey"
                    ) -> None:
@@ -188,7 +190,7 @@ class Solve:
             # plt.show()
             plt.close()
 
-    def _sweep_(self,
+    def sweep(self,
                 steps: int = 5,
                 lams: list = []):
         # 在[lams[0], lams[1]]范围内计算steps个点, lam单位为um
@@ -214,7 +216,7 @@ class Solve:
         # 有必要计算多个模式吗？
         neigs = 5
 
-        # 由self.Ex_fields还原_calculate_mode函数中的Ex
+        # 由self.Ex_fields还原calculate_mode函数中的Ex
         Ex = np.array([np.ravel(E_field) for E_field in self.Ex_fields])
         Ex = np.reshape(Ex, (self.neigs, self.Ex_fields[0].shape[0] * self.Ex_fields[0].shape[1]))
         Ey = np.array([np.ravel(E_field) for E_field in self.Ey_fields])
@@ -255,8 +257,8 @@ class Solve:
         # Ex_plot的形状：[5,10,200,50] 指steps, neigs, x, y
         # Initialise sweep trace arrays
         beta_trace = [beta_out[0][index]]
-        Ey_plot_trace = [Ey_plot[0][index]]
-        Ex_plot_trace = [Ex_plot[0][index]]
+        Eyplottrace = [Ey_plot[0][index]]
+        Explottrace = [Ex_plot[0][index]]
 
         E_trace = []  # New reordering method. WIP
 
@@ -264,7 +266,7 @@ class Solve:
         # plt.figure()
         # xend = np.size(x)
         # yend = np.size(y)
-        # plt.pcolor(x, y, np.transpose(Ey_plot_trace[0].real), cmap=cm.jet)
+        # plt.pcolor(x, y, np.transpose(Eyplottrace[0].real), cmap=cm.jet)
         # plt.title("Initial selected mode")
         # plt.show()
 
@@ -286,8 +288,8 @@ class Solve:
             indices.append(index)  # Append the index, for debugging
 
             beta_trace.append(beta_out[i + 1][index])
-            Ey_plot_trace.append(Ey_plot[i + 1][index])
-            Ex_plot_trace.append(Ex_plot[i + 1][index])
+            Eyplottrace.append(Ey_plot[i + 1][index])
+            Explottrace.append(Ex_plot[i + 1][index])
 
         print(indices)  # Show indices, for debugging
 
@@ -305,7 +307,7 @@ class Solve:
         # some_random_point = -1  # Last value in sweep
         # xend = np.size(x)
         # yend = np.size(y)
-        # plt.pcolor(x, y, np.transpose(Ey_plot_trace[some_random_point].real), cmap=cm.inferno)
+        # plt.pcolor(x, y, np.transpose(Eyplottrace[some_random_point].real), cmap=cm.inferno)
         # plt.title("Selected mode")
         # plt.show()
 
@@ -313,10 +315,10 @@ class Solve:
 if __name__ == "__main__":
     # 设置器件参数
     waveguide = Waveguide(
-        xlength=100, ylength=20, zlength=10, x=0, y=10, z=5, width=10, refractive_index=3.47, name="Waveguide"
+        xlength=100, ylength=20, zlength=10, x=50, y=20, z=10, width=10, refractive_index=3.47, name="Waveguide"
     )
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=100, grid_ylength=40, grid_zlength=20, grid_spacing=11e-9, total_time=1, pml_width=10)
+    grid = Grid(grid_xlength=100, grid_ylength=40, grid_zlength=20, grid_spacing=11e-9, total_time=1)
 
     # 往 grid 里添加一个器件
     grid.add_object(waveguide)
@@ -325,21 +327,21 @@ if __name__ == "__main__":
     solve = Solve(grid=grid)
 
     # 绘制x=50截面
-    solve._plot_(axis='x',
+    solve.plot(axis='x',
                  index=50,
-                 filepath='D:/下载内容/photfdtd-main/tests/test0315')
+                 filepath='D:/')
 
     # 计算这个截面处，波长1.55um，折射率3.47附近的10个模式
-    solve._calculate_mode(lam=1.55, neff=3.47, neigs=10)
+    solve.calculate_mode(lam=1.55, neff=3.47, neigs=10)
 
     # 绘制计算的10个模式并保存，绘制时使用6个等高线
-    solve._draw_mode(neigs=10)
+    solve.draw_mode(neigs=10)
 
     # 计算各个模式的TEfraction，并保存图片
     solve._calculate_TEfraction(n_levels=6)
 
     # 频率扫描，波长范围为[1.45um, 1.55um] 一共计算五个点
-    solve._sweep_(steps=5,
+    solve.sweep(steps=5,
                   lams=[1.45, 1.55])
 
     # # 保存画好的图，设置保存位置，以及从哪一个轴俯视画图（这里画了三张图）

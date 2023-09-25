@@ -14,7 +14,8 @@ class Grid:
 
     def __init__(
             self, grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=20e-9, total_time=1, pml_width_x=10,
-            pml_width_y=10, pml_width_z=0, permittivity=1.0, permeability=1.0, courant_number=None, foldername=" ", folder=None
+            pml_width_y=10, pml_width_z=0, permittivity=1.0, permeability=1.0, courant_number=None, foldername=" ",
+            folder=None
     ) -> None:
         """
         Args:
@@ -61,7 +62,7 @@ class Grid:
             self.folder = folder
         makedirs(self.folder, exist_ok=True)
 
-        self.background_index = np.sqrt(permittivity*permeability)
+        self.background_index = np.sqrt(permittivity * permeability)
 
     def add_object(self, object: Waveguide):
 
@@ -253,11 +254,8 @@ class Grid:
         elif animate:
             for i in range(self._total_time):
                 self._grid.step()
-                if (i+1) % step == 0:
+                if (i + 1) % step == 0:
                     self.save_fig(axis=axis, axis_number=axis_number, time=i)
-
-
-
 
     def calculate_T(self,
                     full_path: str = "") -> None:
@@ -417,7 +415,6 @@ class Grid:
         dic["grid_spacing"] = self._grid.grid_spacing
         dic["time_step"] = self._grid.time_step
 
-
         # 保存detector_readings_sweep.npz文件
         savez(path.join(self.folder, "detector_readings"), **dic)
 
@@ -440,10 +437,10 @@ class Grid:
             i += 1
 
         return data
-    
+
     def compute_frequency_domain(self, wl_start, wl_end, input_data):
-        #TODO: fdtd原作者想要让这里的输入为监视器，但是他并没有完成这一代码，现在只能输入一维数据，完成它?
-        #TODO: 傅里叶变换后的单位？
+        # TODO: fdtd原作者想要让这里的输入为监视器，但是他并没有完成这一代码，现在只能输入一维数据，完成它?
+        # TODO: 傅里叶变换后的单位？
         fr = fdtd.FrequencyRoutines(self._grid, objs=input_data)
         spectrum_freqs, spectrum = fr.FFT(
             freq_window_tuple=[299792458 / (wl_end * (10 ** -6)), 299792458 / (wl_start * (10 ** -6))], )
@@ -521,15 +518,15 @@ class Grid:
         # relative
         from fdtd.backend import backend as bd
         from fdtd.sources import PointSource, LineSource, PlaneSource
-        from fdtd.boundaries import _PeriodicBoundaryX, _PeriodicBoundaryY, _PeriodicBoundaryZ
-        from fdtd.boundaries import (
-            _PMLXlow,
-            _PMLXhigh,
-            _PMLYlow,
-            _PMLYhigh,
-            _PMLZlow,
-            _PMLZhigh,
-        )
+        # from fdtd.boundaries import _PeriodicBoundaryX, _PeriodicBoundaryY, _PeriodicBoundaryZ
+        # from fdtd.boundaries import (
+        #     _PMLXlow,
+        #     _PMLXhigh,
+        #     _PMLYlow,
+        #     _PMLYhigh,
+        #     _PMLZlow,
+        #     _PMLZhigh,
+        # )
 
         # validate x, y and z
         if x is not None:
@@ -565,8 +562,8 @@ class Grid:
             assert grid.Ny > 1 and grid.Nz > 1
             xlabel, ylabel = "y", "z"
             Nx, Ny = grid.Ny, grid.Nz
-            pbx, pby = _PeriodicBoundaryY, _PeriodicBoundaryZ
-            pmlxl, pmlxh, pmlyl, pmlyh = _PMLYlow, _PMLYhigh, _PMLZlow, _PMLZhigh
+            pbx, pby = "_PeriodicBoundaryY", "_PeriodicBoundaryZ"
+            pmlxl, pmlxh, pmlyl, pmlyh = "_PMLYlow", "_PMLYhigh", "_PMLZlow", "_PMLZhigh"
             grid_energy = grid_energy[x, :, :].T
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
@@ -576,25 +573,26 @@ class Grid:
             assert grid.Nx > 1 and grid.Nz > 1
             xlabel, ylabel = "x", "z"
             Nx, Ny = grid.Nx, grid.Nz
-            pbx, pby = _PeriodicBoundaryX, _PeriodicBoundaryZ
-            pmlxl, pmlxh, pmlyl, pmlyh = _PMLXlow, _PMLXhigh, _PMLZlow, _PMLZhigh
+            pbx, pby = "_PeriodicBoundaryX", "_PeriodicBoundaryZ"
+            pmlxl, pmlxh, pmlyl, pmlyh = "_PMLXlow", "_PMLXhigh", "_PMLZlow", "_PMLZhigh"
             grid_energy = grid_energy[:, y, :].T
-            plt.gca().yaxis.set_ticks_position('right')
+
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
+            plt.gca().yaxis.set_ticks_position('right')
             plt.ylim(-1, Ny)
             plt.xlim(Nx, -1)
         elif z is not None:
             assert grid.Nx > 1 and grid.Ny > 1
             xlabel, ylabel = "x", "y"
             Nx, Ny = grid.Nx, grid.Ny
-            pbx, pby = _PeriodicBoundaryX, _PeriodicBoundaryY
-            pmlxl, pmlxh, pmlyl, pmlyh = _PMLXlow, _PMLXhigh, _PMLYlow, _PMLYhigh
+            pbx, pby = "_PeriodicBoundaryX", "_PeriodicBoundaryY"
+            pmlxl, pmlxh, pmlyl, pmlyh = "_PMLXlow", "_PMLXhigh", "_PMLYlow", "_PMLYhigh"
             grid_energy = grid_energy[:, :, z].T
-            plt.gca().xaxis.set_ticks_position('top')
-            plt.gca().yaxis.set_ticks_position('right')
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
+            plt.gca().xaxis.set_ticks_position('top')
+            plt.gca().yaxis.set_ticks_position('right')
             plt.ylim(Ny, -1)
             plt.xlim(Nx, -1)
         else:
@@ -658,7 +656,6 @@ class Grid:
                         if source.y.stop > source.y.start + 1
                         else slice(source.y.start, source.y.start)
                     )
-                print(_x,_y)
                 patch = ptc.Rectangle(
                     xy=(_x.start - 0.5, _y.start - 0.5),
                     width=_x.stop - _x.start,
@@ -695,15 +692,16 @@ class Grid:
 
         # Boundaries
         for boundary in grid.boundaries:
-            if isinstance(boundary, pbx):
+            print(type(boundary))
+            if type(boundary).__name__ == pbx:
                 _x = [-0.5, -0.5, float("nan"), Nx - 0.5, Nx - 0.5]
                 _y = [-0.5, Ny - 0.5, float("nan"), -0.5, Ny - 0.5]
                 plt.plot(_y, _x, color=pbcolor, linewidth=3)
-            elif isinstance(boundary, pby):
+            elif type(boundary).__name__ == pby:
                 _x = [-0.5, Nx - 0.5, float("nan"), -0.5, Nx - 0.5]
                 _y = [-0.5, -0.5, float("nan"), Ny - 0.5, Ny - 0.5]
                 plt.plot(_y, _x, color=pbcolor, linewidth=3)
-            elif isinstance(boundary, pmlyl):
+            elif type(boundary).__name__ == pmlyl:
                 patch = ptc.Rectangle(
                     xy=(-0.5, -0.5),
                     width=Nx,
@@ -713,7 +711,7 @@ class Grid:
                     facecolor=pmlcolor,
                 )
                 plt.gca().add_patch(patch)
-            elif isinstance(boundary, pmlxl):
+            elif type(boundary).__name__ == pmlxl:
                 patch = ptc.Rectangle(
                     xy=(-0.5, -0.5),
                     width=boundary.thickness,
@@ -723,7 +721,7 @@ class Grid:
                     facecolor=pmlcolor,
                 )
                 plt.gca().add_patch(patch)
-            elif isinstance(boundary, pmlyh):
+            elif type(boundary).__name__ == pmlyh:
                 patch = ptc.Rectangle(
                     xy=(-0.5, Ny + 0.5 - boundary.thickness),
                     width=Nx,
@@ -733,7 +731,7 @@ class Grid:
                     facecolor=pmlcolor,
                 )
                 plt.gca().add_patch(patch)
-            elif isinstance(boundary, pmlxh):
+            elif type(boundary).__name__ == pmlxh:
                 patch = ptc.Rectangle(
                     xy=(Nx - boundary.thickness + 0.5, -0.5),
                     width=boundary.thickness,
@@ -802,10 +800,10 @@ class Grid:
         if save:
             if filePath is None:
                 fileName = "file_"
-                fileName += "x="+str(x)+"," if x is not None else ""
-                fileName += "y=" + str(y)+"," if y is not None else ""
-                fileName += "z=" + str(z)+"," if z is not None else ""
-                fileName += "show_energy="+str(showEnergy)+","
+                fileName += "x=" + str(x) + "," if x is not None else ""
+                fileName += "y=" + str(y) + "," if y is not None else ""
+                fileName += "z=" + str(z) + "," if z is not None else ""
+                fileName += "show_energy=" + str(showEnergy) + ","
                 fileName += "time=" + str(self._total_time) if self._total_time is not None else ""
                 filePath = os.path.join(self.folder, f"{fileName}.png")
             plt.savefig(filePath)
@@ -813,3 +811,4 @@ class Grid:
         # show if not animating
         if show:
             plt.show()
+        plt.clf()
