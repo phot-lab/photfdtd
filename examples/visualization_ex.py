@@ -6,7 +6,7 @@ if __name__ == "__main__":
     background_index = 1.0
 
     waveguide0 = Waveguide(
-        xlength=50, ylength=50, zlength=50, x=50, y=50, z=40, refractive_index=3.47, name="Waveguide0",
+        xlength=50, ylength=50, zlength=50, x=50, y=50, z=50, refractive_index=3.47, name="Waveguide0",
         background_index=background_index
     )
     # 设置器件参数
@@ -26,7 +26,7 @@ if __name__ == "__main__":
     # )
 
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=100, grid_ylength=100, grid_zlength=80, grid_spacing=20e-9, total_time=10,
+    grid = Grid(grid_xlength=100, grid_ylength=100, grid_zlength=100, grid_spacing=20e-9, total_time=10,
                 foldername="test_visualization",
                 pml_width_x=15,
                 pml_width_y=10,
@@ -54,10 +54,10 @@ if __name__ == "__main__":
     # 设置监视器
     grid.set_detector(detector_type="blockdetector",
                       name="detector",
-                      x=80,
+                      x=50,
                       y=50,
-                      z=40,
-                      xlength=0,
+                      z=50,
+                      xlength=waveguide0.xlength + 8,
                       ylength=waveguide0.ylength + 8,
                       zlength=waveguide0.xlength + 8
                       )
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     #              filepath=grid.folder)
 
     # 运行仿真
-    grid.run()
+    # grid.run()
 
     # 保存仿真结果
     grid.save_simulation()
