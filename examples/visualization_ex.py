@@ -6,7 +6,7 @@ if __name__ == "__main__":
     background_index = 1.0
 
     waveguide0 = Waveguide(
-        xlength=50, ylength=50, zlength=50, x=50, y=50, z=50, refractive_index=3.47, name="Waveguide0",
+        xlength=20, ylength=20, zlength=20, x=25, y=25, z=25, refractive_index=3.47, name="Waveguide0",
         background_index=background_index
     )
     # 设置器件参数
@@ -26,10 +26,10 @@ if __name__ == "__main__":
     # )
 
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=100, grid_ylength=100, grid_zlength=100, grid_spacing=20e-9, total_time=10,
+    grid = Grid(grid_xlength=50, grid_ylength=50, grid_zlength=50, grid_spacing=20e-9, total_time=300,
                 foldername="test_visualization",
-                pml_width_x=15,
-                pml_width_y=10,
+                pml_width_x=5,
+                pml_width_y=5,
                 pml_width_z=5,
                 permittivity=background_index ** 2, )
 
@@ -43,25 +43,33 @@ if __name__ == "__main__":
     grid.set_source(source_type="planesource",
                     period=1550e-9 / constants.c,
                     name="source",
-                    x=20,
-                    y=50,
-                    z=40,
+                    x=10,
+                    y=25,
+                    z=25,
                     xlength=1,
-                    ylength=waveguide0.ylength + 12,
-                    zlength=waveguide0.zlength + 12
+                    ylength=waveguide0.ylength + 4,
+                    zlength=waveguide0.zlength + 4
                     )
 
     # 设置监视器
     grid.set_detector(detector_type="blockdetector",
                       name="detector",
-                      x=50,
-                      y=50,
-                      z=50,
-                      xlength=waveguide0.xlength + 8,
-                      ylength=waveguide0.ylength + 8,
-                      zlength=waveguide0.xlength + 8
+                      x=25,
+                      y=25,
+                      z=25,
+                      xlength=waveguide0.xlength + 2,
+                      ylength=waveguide0.ylength + 2,
+                      zlength=waveguide0.zlength + 2
                       )
-    print(grid)
+    grid.set_detector(detector_type="linedetector",
+                      name="detector1",
+                      x=25,
+                      y=25,
+                      z=25,
+                      xlength=waveguide0.xlength,
+                      ylength=0,
+                      zlength=0
+                      )
     solve = Solve(grid=grid)
 
     # 绘制任一截面
@@ -73,7 +81,7 @@ if __name__ == "__main__":
     #              filepath=grid.folder)
 
     # 运行仿真
-    # grid.run()
+    grid.run()
 
     # 保存仿真结果
     grid.save_simulation()
@@ -85,16 +93,39 @@ if __name__ == "__main__":
     #               axis_number=50)
     # grid.save_fig(axis="x",
     #               axis_number=50)
-    stime = time.time()
-    grid.visualize(x=50, showEnergy=True, show=True, save=True)
-    sstime_1 = time.time()
-    grid.visualize(y=50, showEnergy=True, show=True, save=True)
-    sstime_2 = time.time()
-    grid.visualize(z=50, showEnergy=True, show=True, save=True)
-    sstime_3 = time.time()
-    print(sstime_1-stime)
-    print(sstime_2 - sstime_1)
-    print(sstime_3 - sstime_2)
+    stime = [time.time()]
+    grid.visualize(x=25, showEnergy=True, show=True, save=True)
+    stime.append(time.time())
+    grid.visualize(y=25, showEnergy=True, show=True, save=True)
+    stime.append(time.time())
+    grid.visualize(z=25, showEnergy=True, show=True, save=True)
+    stime.append(time.time())
+    grid.visualize_detector("detector", "x", "E", show=True, save=True)
+    stime.append(time.time())
+    grid.visualize_detector("detector", "y", "E", show=True, save=True)
+    stime.append(time.time())
+    grid.visualize_detector("detector", "z", "E", show=True, save=True)
+    stime.append(time.time())
+    grid.visualize_detector("detector", "x", "H", show=True, save=True)
+    stime.append(time.time())
+    grid.visualize_detector("detector", "y", "H", show=True, save=True)
+    stime.append(time.time())
+    grid.visualize_detector("detector", "z", "H", show=True, save=True)
+    stime.append(time.time())
+    grid.visualize_detector("detector1", "x", "E", show=True, save=True)
+    stime.append(time.time())
+    grid.visualize_detector("detector1", "y", "E", show=True, save=True)
+    stime.append(time.time())
+    grid.visualize_detector("detector1", "z", "E", show=True, save=True)
+    stime.append(time.time())
+    grid.visualize_detector("detector1", "x", "H", show=True, save=True)
+    stime.append(time.time())
+    grid.visualize_detector("detector1", "y", "H", show=True, save=True)
+    stime.append(time.time())
+    grid.visualize_detector("detector1", "z", "H", show=True, save=True)
+    stime.append(time.time())
+    for index in range(1, len(stime)):
+        print(stime[index] - stime[index-1])
 
     # grid.visualize(x=50, showEnergy=False, show=True, save=True)
     # grid.visualize(y=50, showEnergy=False, show=True, save=True)
