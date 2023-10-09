@@ -222,7 +222,7 @@ class Grid:
 
         axis = axis.lower()  # 识别大写的 "X"
         folder = self.folder
-        if axis == "x":  # 判断从哪一个轴俯视画图
+        if axis == "x":  # 绘制截面/剖面场图
             self._grid.visualize(x=axis_number, save=True, animate=animate,
                                  index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder)
         elif axis == "y":
@@ -249,13 +249,67 @@ class Grid:
         @param animate: 是否播放动画 %TODO: 完成它
         @param step: 每多少个时间步绘一次图
         """
+        axis = axis.lower()
         if animate == False:
             self._grid.run(total_time=self._total_time)
         elif animate:
             for i in range(self._total_time):
                 self._grid.step()
                 if (i + 1) % step == 0:
-                    self.save_fig(axis=axis, axis_number=axis_number, time=i)
+                    if axis == "x":
+                        self.visualize(x=axis_number, showEnergy=True, show=False, save=True, time=i)
+                    elif axis == "y":
+                        self.visualize(y=axis_number, showEnergy=True, show=False, save=True, time=i)
+                    elif axis == "z":
+                        self.visualize(z=axis_number, showEnergy=True, show=False, save=True, time=i)
+                    else:continue
+
+
+    def animate(self,
+                axis: str = "z",
+                number: int = 0):
+        # TODO: 完成它，让正则表达式能识别完整地址
+        import re
+        from PIL import Image
+        import imageio
+
+        # 文件夹路径
+        folder_path = self.folder
+
+        # 用户定义的 "z" 字符串和 "z=" 后面的数字
+        z_str = "z"  # 用户定义的 "z" 字符串
+        z_equals_value = 0  # 用户定义的 "z=" 后面的数字
+
+        # 定义正则表达式模式，匹配文件名中的 "file_z=" 和 "total_time=" 后面的数字
+        pattern = re.compile(fr'file_{z_str}={z_equals_value}, total_time=(\d+).png')
+
+        # 获取文件夹中所有图片文件
+        image_files = [os.path.join(folder_path, file) for file in os.listdir(folder_path)]
+
+        # 过滤出满足用户定义条件的图片文件，并按 "total_time" 后面的数字从大到小排序
+        # filtered_images = sorted([file for file in image_files if pattern.match(file)],
+        #                          key=lambda x: int(pattern.match(x).group(1)), reverse=True)
+        filtered_images = sorted([file for file in image_files if pattern.match(os.path.basename(file))],
+                                 key=lambda x: int(pattern.match(x).group(1)), reverse=True)
+
+        print(self.folder)
+        print(filtered_images)
+        # 创建一个图像列表
+        images = []
+
+        # 逐个读取筛选后的图片文件并添加到图像列表中
+        for file_path in filtered_images:
+            img = imageio.imread(file_path)
+            images.append(img)
+
+        output_file = 'output_animation.mp4'
+
+        # 使用 get_writer() 函数创建视频写入对象，设置帧之间的持续时间（秒）
+        with imageio.get_writer(output_file, fps=10) as writer:
+            for img in images:
+                writer.append_data(img)
+
+        print(f'动画已保存为 {output_file}')
 
     def calculate_T(self,
                     full_path: str = "") -> None:
@@ -490,7 +544,8 @@ class Grid:
             legend=False,
             show=False,  # default False to allow animate to be true
             save=False,  # True to save frames (requires parameters index, folder)
-            filePath=None
+            filePath=None,
+            time=None
     ):
         """visualize a projection of the grid and the optical energy inside the grid
 
@@ -508,6 +563,7 @@ class Grid:
             show: call pyplot.show() at the end of the function
             save: save frames in a folder
             folder: path to folder to save frames
+            showEnergy: 是否显示场
         """
         if norm not in ("linear", "lin", "log"):
             raise ValueError("Color map normalization should be 'linear' or 'log'.")
@@ -528,6 +584,8 @@ class Grid:
         #     _PMLZhigh,
         # )
 
+        if time == None:
+            time = self._total_time
         # validate x, y and z
         if x is not None:
             if not isinstance(x, int):
@@ -568,7 +626,7 @@ class Grid:
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
             plt.ylim(-1, Ny)
-            plt.xlim(-1, Nx)
+            # plt.xlim(-1, Nx)
         elif y is not None:
             assert grid.Nx > 1 and grid.Nz > 1
             xlabel, ylabel = "x", "z"
@@ -576,12 +634,12 @@ class Grid:
             pbx, pby = "_PeriodicBoundaryX", "_PeriodicBoundaryZ"
             pmlxl, pmlxh, pmlyl, pmlyh = "_PMLXlow", "_PMLXhigh", "_PMLZlow", "_PMLZhigh"
             grid_energy = grid_energy[:, y, :].T
-
+            # plt.gca().yaxis.set_ticks_position('right')
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
             plt.gca().yaxis.set_ticks_position('right')
             plt.ylim(-1, Ny)
-            plt.xlim(Nx, -1)
+            # plt.xlim(Nx, -1)
         elif z is not None:
             assert grid.Nx > 1 and grid.Ny > 1
             xlabel, ylabel = "x", "y"
@@ -589,12 +647,13 @@ class Grid:
             pbx, pby = "_PeriodicBoundaryX", "_PeriodicBoundaryY"
             pmlxl, pmlxh, pmlyl, pmlyh = "_PMLXlow", "_PMLXhigh", "_PMLYlow", "_PMLYhigh"
             grid_energy = grid_energy[:, :, z].T
+            # plt.gca().xaxis.set_ticks_position('top')
+            # plt.gca().yaxis.set_ticks_position('right')
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
-            plt.gca().xaxis.set_ticks_position('top')
-            plt.gca().yaxis.set_ticks_position('right')
-            plt.ylim(Ny, -1)
-            plt.xlim(Nx, -1)
+            plt.ylim(-1, Ny)
+            # plt.ylim(Ny, -1)
+            # plt.xlim(Nx, -1)
         else:
             raise ValueError("Visualization only works for 2D grids")
 
@@ -798,18 +857,19 @@ class Grid:
         # save frame (require folder path and index)
         if save:
             if filePath is None:
-                fileName = "grid_"
-                fileName += "x=" + str(x) + "," if x is not None else ""
-                fileName += "y=" + str(y) + "," if y is not None else ""
-                fileName += "z=" + str(z) + "," if z is not None else ""
-                fileName += "show_energy=" + str(showEnergy) + ","
-                fileName += "time=" + str(self._total_time) if self._total_time is not None else ""
+                fileName = "file_"
+                fileName += "x="+str(x)+"," if x is not None else ""
+                fileName += "y=" + str(y)+"," if y is not None else ""
+                fileName += "z=" + str(z)+"," if z is not None else ""
+                fileName += "show_energy="+str(showEnergy)+","
+                fileName += "time=" + str(time) if time is not None else ""
                 filePath = os.path.join(self.folder, f"{fileName}.png")
             plt.savefig(filePath)
 
         # show if not animating
         if show:
             plt.show()
+
         plt.clf()
 
     def visualize_detector(self, name: str, axis: str = "x", field: str = "E", filepath: str = None, show=True,

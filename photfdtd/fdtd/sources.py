@@ -208,7 +208,7 @@ class LineSource:
             bd.float,
         )  # vect：这是一个包含了各个点到中心点的距离平方的三维数组。它通过计算每个点到中心点的距离平方的和来创建。
         self.profile = bd.ones(tuple(vect.shape))
-        if self.pulse != None:
+        if self.pulse:
             self.profile = bd.exp(-(vect ** 2) / (2 * (0.5 * vect.max()) ** 2))  # 这是一个高斯分布
             # self.profile /= self.profile.sum()
             # 编辑于23.5.15 将self.profile /= self.profile.sum()改为self.profile /= self.profile.max() （归一化）
@@ -308,7 +308,9 @@ class LineSource:
         # do not use list indexing here, as this is much slower especially for torch backend
         # DISABLED: self.grid.E[self.x, self.y, self.z, 2] = vect
         for x, y, z, value in zip(self.x, self.y, self.z, vect):
-            self.grid.E[x, y, z, 2] += value
+            self.grid.E[x, y, z, 0] += 3.7494e-33 * value
+            self.grid.E[x, y, z, 1] += value
+            # self.grid.E[x, y, z, 2] += value
 
     def update_H(self):
         """Add the source to the magnetic field"""

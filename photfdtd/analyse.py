@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.signal import find_peaks
 from . import conversions
+from matplotlib import pyplot as plt
 
 
 class Analyse:
@@ -80,15 +81,15 @@ class Analyse:
 
     def plot(self):
 
-        pass
+        # pass
         #TODO: 完成它
-        t = np.linspace(0, 1000, 1000)
-        plt.plot(t, analyse.Power["power_positive_x"], label='Px+')
-        plt.plot(t, analyse.Power["power_negative_x"], label='Px-')
-        plt.plot(t, analyse.Power["power_positive_y"], label='Py+')
-        plt.plot(t, analyse.Power["power_negative_y"], label='Py-')
-        plt.plot(t, analyse.Power["power_positive_z"], label='Pz+')
-        plt.plot(t, analyse.Power["power_negative_z"], label='Pz-')  # 绘制曲线，添加标签
+        t = np.linspace(0, len(self.Power["power_positive_x"]), len(self.Power["power_positive_x"]))
+        plt.plot(t, self.Power["power_positive_x"], label='Px+')
+        plt.plot(t, self.Power["power_negative_x"], label='Px-')
+        plt.plot(t, self.Power["power_positive_y"], label='Py+')
+        plt.plot(t, self.Power["power_negative_y"], label='Py-')
+        plt.plot(t, self.Power["power_positive_z"], label='Pz+')
+        plt.plot(t, self.Power["power_negative_z"], label='Pz-')  # 绘制曲线，添加标签
         plt.title('Power Plot')  # 添加标题
         plt.xlabel('t')  # 添加x轴标签
         plt.ylabel('y')  # 添加y轴标签
