@@ -75,7 +75,6 @@ class Solve:
         plt.clim([1.0, np.amax(self.n)])
         plt.colorbar()
         # 保存图片
-        # plt.savefig(fname='%s\\%s_%s=%d.png' % (self.filepath, 'index', axis, index))
         plt.savefig(fname=filepath)
         # plt.show()
         plt.clf()
@@ -165,7 +164,7 @@ class Solve:
             # plt.show()
             plt.close()
 
-    def _calculate_TEfraction(self,
+    def calculate_TEfraction(self,
                               n_levels: int = 6,
                               ) -> None:
         '''
@@ -338,7 +337,7 @@ if __name__ == "__main__":
     solve.draw_mode(neigs=10)
 
     # 计算各个模式的TEfraction，并保存图片
-    solve._calculate_TEfraction(n_levels=6)
+    solve.calculate_TEfraction(n_levels=6)
 
     # 频率扫描，波长范围为[1.45um, 1.55um] 一共计算五个点
     solve.sweep(steps=5,
