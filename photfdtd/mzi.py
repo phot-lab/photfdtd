@@ -53,7 +53,7 @@ class Mzi:
                                  z=self.z,
                                  direction=1,
                                  width=self.width,
-                                 name='dc1',
+                                 name='%s-dc1' % self.name,
                                  refractive_index=self.refractive_index,
                                  xlength_rectangle=self.couplelength_dc,
                                  gap=self.gap_dc,
@@ -66,7 +66,7 @@ class Mzi:
                                  z=self.z,
                                  direction=1,
                                  width=self.width,
-                                 name='dc2',
+                                 name='%s-dc2' % self.name,
                                  refractive_index=self.refractive_index,
                                  xlength_rectangle=self.couplelength_dc,
                                  gap=self.gap_dc,
@@ -81,7 +81,7 @@ class Mzi:
                    z=self.z - self.zlength // 2,
                    width=self.width,
                    refractive_index=self.refractive_index,
-                   name='arc1',
+                   name='%s-arc1' % self.name,
                    direction=3,
                    background_index=self.background_index)
         arc2 = Arc(outer_radius=outer_radius,
@@ -91,7 +91,7 @@ class Mzi:
                    z=self.z - self.zlength // 2,
                    width=self.width,
                    refractive_index=self.refractive_index,
-                   name='arc2',
+                   name='%s-arc2' % self.name,
                    direction=2,
                    background_index=self.background_index)
 
@@ -102,7 +102,7 @@ class Mzi:
                    z=self.z - self.zlength // 2,
                    width=self.width,
                    refractive_index=self.refractive_index,
-                   name='arc3',
+                   name='%s-arc3' % self.name,
                    direction=1,
                    background_index=self.background_index)
         arc4 = Arc(outer_radius=outer_radius,
@@ -112,7 +112,7 @@ class Mzi:
                    z=self.z - self.zlength // 2,
                    width=self.width,
                    refractive_index=self.refractive_index,
-                   name='arc4',
+                   name='%s-arc4' % self.name,
                    direction=4,
                    background_index=self.background_index)
 
@@ -123,7 +123,7 @@ class Mzi:
                    z=self.z - self.zlength // 2,
                    width=self.width,
                    refractive_index=self.refractive_index,
-                   name='arc5',
+                   name='%s-arc5' % self.name,
                    direction=2,
                    background_index=self.background_index)
         arc6 = Arc(outer_radius=outer_radius,
@@ -133,7 +133,7 @@ class Mzi:
                    z=self.z - self.zlength // 2,
                    width=self.width,
                    refractive_index=self.refractive_index,
-                   name='arc6',
+                   name='%s-arc6' % self.name,
                    direction=3,
                    background_index=self.background_index)
 
@@ -144,7 +144,7 @@ class Mzi:
                    z=self.z - self.zlength // 2,
                    width=self.width,
                    refractive_index=self.refractive_index,
-                   name='arc7',
+                   name='%s-arc7' % self.name,
                    direction=4,
                    background_index=self.background_index)
         arc8 = Arc(outer_radius=outer_radius,
@@ -154,7 +154,7 @@ class Mzi:
                    z=self.z - self.zlength // 2,
                    width=self.width,
                    refractive_index=self.refractive_index,
-                   name='arc8',
+                   name='%s-arc8' % self.name,
                    direction=1,
                    background_index=self.background_index)
 
@@ -166,7 +166,7 @@ class Mzi:
                             y=self.y + int(self.gap / 2 + self.addlength_arm1 / 2 + 0.5) + outer_radius,
                             z=self.z,
                             width=self.width,
-                            name='waveguide1',
+                            name='%s-waveguide1' % self.name,
                             refractive_index=self.refractive_index,
                             background_index=self.background_index)
             wg2 = Waveguide(xlength=self.width,
@@ -176,7 +176,7 @@ class Mzi:
                             y=self.y + int(self.gap / 2 + self.addlength_arm1 / 2 + 0.5) + outer_radius,
                             z=self.z,
                             width=self.width,
-                            name='waveguide2',
+                            name='%s-waveguide2' % self.name,
                             refractive_index=self.refractive_index,
                             background_index=self.background_index)
         else:
@@ -190,7 +190,7 @@ class Mzi:
                             y=self.y - int(self.gap / 2 + self.addlength_arm2 / 2 + 0.5) - outer_radius,
                             z=self.z,
                             width=self.width,
-                            name='waveguide3',
+                            name='%s-waveguide3' % self.name,
                             refractive_index=self.refractive_index,
                             background_index=self.background_index)
             wg4 = Waveguide(xlength=self.width,
@@ -200,7 +200,7 @@ class Mzi:
                             y=self.y - int(self.gap / 2 + self.addlength_arm2 / 2 + 0.5) - outer_radius,
                             z=self.z,
                             width=self.width,
-                            name='waveguide4',
+                            name='%s-waveguide4' % self.name,
                             refractive_index=self.refractive_index,
                             background_index=self.background_index)
         else:

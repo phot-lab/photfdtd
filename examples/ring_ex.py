@@ -50,17 +50,13 @@ if __name__ == "__main__":
     # 创建solve对象
     solve = Solve(grid=grid)
 
-    solve._plot_(axis='z',
-                 index=13,
-                 filepath=grid.folder)
+    solve.plot()
 
     grid.run()
 
     grid.save_simulation()
 
-    grid.save_fig(axis="z",
-                  axis_number=13)
-    grid.save_fig(axis="x",
-                  axis_number=150)
+    grid.visualize(x=150, showEnergy=True, show=True, save=True)
+    grid.visualize(z=13, showEnergy=True, show=True, save=True)
 
     data = Grid.read_simulation(folder=grid.folder)

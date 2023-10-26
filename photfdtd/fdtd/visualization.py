@@ -328,7 +328,8 @@ def visualize(
         plt.show()
 
 
-def dB_map_2D(block_det=None, choose_axis=2, interpolation="spline16"):
+def dB_map_2D(block_det=None, choose_axis=2, interpolation="spline16", index="x-y", save=True,
+              folder="", name_det="", total_time=0, fieldaxis="Ex"):
     """
     Displays detector readings from an 'fdtd.BlockDetector' in a decibel map spanning a 2D slice region inside the BlockDetector.
     Compatible with continuous sources (not pulse).
@@ -338,6 +339,7 @@ def dB_map_2D(block_det=None, choose_axis=2, interpolation="spline16"):
         block_det (numpy array): 5 axes numpy array (timestep, row, column, height, {x, y, z} parameter) created by 'fdtd.BlockDetector'.
         (optional) choose_axis (int): Choose between {0, 1, 2} to display {x, y, z} data. Default 2 (-> z).
         (optional) interpolation (string): Preferred 'matplotlib.pyplot.imshow' interpolation. Default "spline16".
+        index (str): "x-y" or "y-z" or "x-z"
     """
     if block_det is None:
         raise ValueError(
@@ -353,11 +355,24 @@ def dB_map_2D(block_det=None, choose_axis=2, interpolation="spline16"):
     plt.ioff()
     plt.close()
     a = []  # array to store wave intensities
-    for i in tqdm(range(len(block_det[0]))):
-        a.append([])
-        for j in range(len(block_det[0][0])):
-            temp = [x[i][j][0][choose_axis] for x in block_det]
-            a[i].append(max(temp) - min(temp))
+    if index == "x-y":
+        for i in tqdm(range(len(block_det[0]))):
+            a.append([])
+            for j in range(len(block_det[0][0])):
+                temp = [x[i][j][0][choose_axis] for x in block_det]
+                a[i].append(max(temp) - min(temp))
+    elif index == "y-z":
+        for i in tqdm(range(len(block_det[0][0]))):
+            a.append([])
+            for j in range(len(block_det[0][0][0])):
+                temp = [x[0][i][j][choose_axis] for x in block_det]
+                a[i].append(max(temp) - min(temp))
+    elif index == "x-z":
+        for i in tqdm(range(len(block_det[0]))):
+            a.append([])
+            for j in range(len(block_det[0][0][0])):
+                temp = [x[i][0][j][choose_axis] for x in block_det]
+                a[i].append(max(temp) - min(temp))
 
     peakVal, minVal = max(map(max, a)), min(map(min, a))
     print(
@@ -374,7 +389,10 @@ def dB_map_2D(block_det=None, choose_axis=2, interpolation="spline16"):
     plt.imshow(a, cmap="inferno", interpolation=interpolation)
     cbar = plt.colorbar()
     cbar.ax.set_ylabel("dB scale", rotation=270)
-    plt.show()
+    # plt.show()
+    if save:
+        plt.savefig(fname='%s//BlockDetector_%s,name=%s,time=%i.png' % (folder, fieldaxis, name_det, total_time))
+    plt.close()
 
 
 def plot_detection(detector_dict=None, specific_plot=None):

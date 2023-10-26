@@ -45,9 +45,7 @@ if __name__ == "__main__":
     # 创建solve对象
     solve = Solve(grid=grid)
 
-    solve._plot_(axis='z',
-                 index=12,
-                 filepath=grid.folder)
+    solve.plot()
 
     grid.run()
 
@@ -55,10 +53,8 @@ if __name__ == "__main__":
     grid.save_simulation()
 
     # 绘制任意截面场图
-    grid.save_fig(axis="z",
-                  axis_number=12)
-    grid.save_fig(axis="x",
-                  axis_number=100)
+    grid.visualize(x=100, showEnergy=True, show=True, save=True)
+    grid.visualize(z=12, showEnergy=True, show=True, save=True)
 
     # 读取仿真结果
     data = grid.read_simulation(folder=grid.folder)

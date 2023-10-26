@@ -10,9 +10,9 @@ import photfdtd.fdtd as fdtd
 
 class Solve:
     """
-    绘制二维截面、计算波导模式、频率扫描，通过加入philsol包实现 https://github.com/philmain28/philsol
+    绘制二维截面、计算波导模式，通过加入philsol包实现 https://github.com/philmain28/philsol
     """
-    #TODO: 让fdtd包的绘图转90度？
+
     def __init__(self,
                  grid: fdtd.grid,
                  ):
@@ -32,10 +32,10 @@ class Solve:
         self.geometry = geo
 
     def plot(self,
-               axis: str = 'x',
-               index: int = 0,
-               filepath: str = ''
-               ):
+             axis: str = 'x',
+             index: int = 0,
+             filepath: str = ''
+             ):
         """
         绘制截面图。
         :param: axis: 哪个轴的截面
@@ -44,7 +44,7 @@ class Solve:
         :return: None
         # 23.4.17: 更改了保存图片的名称
         """
-        #TODO: 在截面图上标注轴
+        # TODO: 在截面图上标注轴
 
         self.axis = axis.lower()
         self.index = index
@@ -75,16 +75,17 @@ class Solve:
         plt.clim([1.0, np.amax(self.n)])
         plt.colorbar()
         # 保存图片
-        plt.savefig(fname=filepath)
+        plt.savefig(fname='%s\\%s_%s=%d.png' % (self.filepath, 'index', axis, index))
+
         # plt.show()
         plt.clf()
         plt.close()
 
     def calculate_mode(self,
-                        lam: float = 1.55,
-                        neff: float = 3.47,
-                        neigs: int = 1,
-                        ):
+                       lam: float = 1.55,
+                       neff: float = 3.47,
+                       neigs: int = 1,
+                       ):
         '''
         调用phisol包，计算模式。结果被保存在self.Ey_fields与self.Ex_fields与传播常数self.beta中。
         （若垂直于x轴的截面，Ex实际上是Ey, Ey实际上是Ez；若垂直于y轴的截面，Ex即是Ex，Ey实际上是Ez）
@@ -124,9 +125,9 @@ class Solve:
         print(self.effective_index)
 
     def draw_mode(self,
-                   neigs: int = 1,
-                   component: str = "ey"
-                   ) -> None:
+                  neigs: int = 1,
+                  component: str = "ey"
+                  ) -> None:
         '''
         绘制模式，保存图片与相应的有效折射率
         :param neigs: 绘制模式数
@@ -165,8 +166,8 @@ class Solve:
             plt.close()
 
     def calculate_TEfraction(self,
-                              n_levels: int = 6,
-                              ) -> None:
+                             n_levels: int = 6,
+                             ) -> None:
         '''
         绘制不同模式的Ey与Ex的实部之比，并保存
         # TODO: 在lumerical中，TE fracttion 来自全区域电场的平方积分之比，得到的是一个数，并不是这种算法。是否需要改正？
@@ -190,8 +191,8 @@ class Solve:
             plt.close()
 
     def sweep(self,
-                steps: int = 5,
-                lams: list = []):
+              steps: int = 5,
+              lams: list = []):
         # 在[lams[0], lams[1]]范围内计算steps个点, lam单位为um
         lams = np.linspace(lams[0], lams[1], steps)
 
@@ -327,8 +328,8 @@ if __name__ == "__main__":
 
     # 绘制x=50截面
     solve.plot(axis='x',
-                 index=50,
-                 filepath='D:/')
+               index=50,
+               filepath='D:/')
 
     # 计算这个截面处，波长1.55um，折射率3.47附近的10个模式
     solve.calculate_mode(lam=1.55, neff=3.47, neigs=10)
@@ -341,7 +342,7 @@ if __name__ == "__main__":
 
     # 频率扫描，波长范围为[1.45um, 1.55um] 一共计算五个点
     solve.sweep(steps=5,
-                  lams=[1.45, 1.55])
+                lams=[1.45, 1.55])
 
     # # 保存画好的图，设置保存位置，以及从哪一个轴俯视画图（这里画了三张图）
     # grid.savefig(filepath="WaveguideX.png", axis="x")

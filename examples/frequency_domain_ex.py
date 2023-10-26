@@ -40,15 +40,13 @@ if __name__ == "__main__":
     # 创建solve对象
     solve = Solve(grid=grid)
 
-    solve._plot_(axis='z',
+    solve.plot(axis='z',
                  index=0,
                  filepath=grid.folder)
 
     grid.run()
 
-    grid.save_fig(axis="z",
-                  axis_number=0,
-                  )
+    grid.save_fig(axis="z", axis_number=0, animate=d)
 
     # 调用Analyse计算坡印亭矢量和功率,
     analyse = Analyse(E=grid._grid.detector_source.E, H=grid._grid.detector_source.H,

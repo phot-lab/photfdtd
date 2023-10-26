@@ -26,15 +26,13 @@ if __name__ == "__main__":
     solve = Solve(grid=grid)
 
     # 绘制截面折射率分布
-    solve._plot_(axis='x',
-                 index=100,
-                 filepath=grid.folder)
+    solve.plot()
 
     # 计算这个截面处，波长1.55um，折射率3.47附近的10个模式
-    solve._calculate_mode(lam=1.55, neff=3.47, neigs=10)
+    solve.calculate_mode(lam=1.55, neff=3.47, neigs=10)
 
     # 绘制计算的10个模式并保存
-    solve._draw_mode(neigs=10, component = "ex")
+    solve.draw_mode(neigs=10, component="ex")
 
     # 计算各个模式的TEfraction，并保存图片
     # solve._calculate_TEfraction(n_levels=6)
