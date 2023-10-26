@@ -3,7 +3,7 @@ from photfdtd import Waveguide, Grid
 
 if __name__ == "__main__":
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=100, grid_ylength=100, grid_zlength=1, grid_spacing=155e-9, total_time=1000, pml_width=2)
+    grid = Grid(grid_xlength=100, grid_ylength=100, grid_zlength=1, grid_spacing=155e-9, total_time=1000, foldername="detector_ex")
 
     # 设置器件参数
     waveguide = Waveguide(

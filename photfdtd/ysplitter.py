@@ -177,7 +177,7 @@ class Ysplitter(Waveguide):
                 y=self.y - int(self.ylength_taper / 2 + self.ylength_sbend / 2) + self.width_sbend,
                 z=self.z,
                 direction=-self.direction,
-                width=self.width,
+                width=self.width_sbend,
                 name="%s_sbend2" % self.name,
                 refractive_index=self.refractive_index,
                 background_index=self.background_index
