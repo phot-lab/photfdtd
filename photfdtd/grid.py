@@ -572,8 +572,8 @@ class Grid:
         import matplotlib.patches as ptc
         from matplotlib.colors import LogNorm
         # relative
-        from fdtd.backend import backend as bd
-        from fdtd.sources import PointSource, LineSource, PlaneSource
+        from .fdtd.backend import backend as bd
+        from .fdtd.sources import PointSource, LineSource, PlaneSource
         # from fdtd.boundaries import _PeriodicBoundaryX, _PeriodicBoundaryY, _PeriodicBoundaryZ
         # from fdtd.boundaries import (
         #     _PMLXlow,
@@ -1029,29 +1029,50 @@ class Grid:
         #     plt.close()
 
     @staticmethod
-    def plot_field(grid=None, field="E", axis=0, axis_number=0, index="xy", folder=""):
-        fig, axes = plt.subplots(squeeze=False)
-        title = ["%s%s: %s" % field, chr(axis + 120), index]
+    def plot_field(grid=None, field="E", axis=0, cross_section="z", axis_number=0, folder="", cmap="jet"):
+        # fig, ax = plt.subplots(squeeze=False)
+        title = "%s%s" % (field, chr(axis + 120))
+        grid=grid._grid
         if field == "E":
-            if index == "xy":
+            if cross_section == "z":
                 field = grid.E[:, :, axis_number, axis]
-            elif index == "xz":
+            elif cross_section == "y":
                 field = grid.E[:, axis_number, :, axis]
-            elif index == "yz":
+            elif cross_section == "x":
                 field = grid.E[axis_number, :, :, axis]
         elif field == "H":
-            if index == "xy":
+            if cross_section == "z":
                 field = grid.H[:, :, axis_number, axis]
-            elif index == "xz":
+            elif cross_section == "y":
                 field = grid.H[:, axis_number, :, axis]
-            elif index == "yz":
+            elif cross_section == "x":
                 field = grid.H[axis_number, :, :, axis]
 
         m = max(abs(field.min().item()), abs(field.max().item()))
 
-        for ax, field, title in zip(axes.ravel(), field, title):
-            ax.set_axis_off()
-            ax.set_title(title)
-            ax.imshow(np.numpy(field), vmin=-m, vmax=m, cmap="RdBu")
-        ax.savefig(fname=str(title))
+        # 创建颜色图
+        plt.figure()
+        plt.imshow(field, vmin=-m, vmax=m, cmap=cmap)  # cmap 可以选择不同的颜色映射
+
+        # 添加颜色条
+        cbar = plt.colorbar()
+        # cbar.set_label('')
+
+        # 添加标题和坐标轴标签
+        plt.title(title)
+        if cross_section == "z":
+            plt.xlabel('X/grids')
+            plt.ylabel('Y/grids')
+        elif cross_section =="x":
+            plt.xlabel('Y/grids')
+            plt.ylabel('Z/grids')
+        elif cross_section == "y":
+            plt.xlabel('X/grids')
+            plt.ylabel('Z/grids')
+
+        # ax.set_axis_off()
+        # ax.set_title(title)
+        # ax.imshow(field, vmin=-m, vmax=m, cmap="RdBu")
+
+        plt.savefig(fname="%s//%s_%s=%i.png" % (folder, title, cross_section, axis_number))
         plt.close()
