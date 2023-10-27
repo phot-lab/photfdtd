@@ -4,17 +4,17 @@ import os
 import numpy as np
 
 if __name__ == "__main__":
-    folder = "D://Github_Clone//photfdtd//test//test_sbend_1009"
+    folder = "D:/Github_Clone/photfdtd/examples/test_waveguide_2D"
     data = Grid.read_simulation(folder=folder)
 
-    analyse_source = Analyse(E=data["detector_source (E)"], H=data["detector_source (H)"], grid_spacing=20e-9)
-    # analyse_source.plot()
-    analyse_through = Analyse(E=data["detector_through (E)"], H=data["detector_through (H)"], grid_spacing=20e-9)
-    b = np.sum(analyse_through.Power["power_positive_x"])
-    a = np.sum(analyse_source.Power["power_positive_x"])
-    T = b/a
-    # print("T = %f" % b/a)
-
+    # analyse_source = Analyse(E=data["detector_source (E)"], H=data["detector_source (H)"], grid_spacing=20e-9)
+    # # analyse_source.plot()
+    # analyse_through = Analyse(E=data["detector_through (E)"], H=data["detector_through (H)"], grid_spacing=20e-9)
+    # b = np.sum(analyse_through.Power["power_positive_x"])
+    # a = np.sum(analyse_source.Power["power_positive_x"])
+    # T = b/a
+    # # print("T = %f" % b/a)
+    #
 
     # 创建一个图像和轴
     fig, ax = plt.subplots()
@@ -23,9 +23,9 @@ if __name__ == "__main__":
     # 设置X轴和Y轴标签
     ax.set_xlabel('timestep')
     
-    E_data = data["detector_through (E)"]
+    E_data = data["detector (E)"]
     for axis in range(3):
-        plt.plot(range(len(E_data)), E_data[:, 0, axis], linestyle='-', label="Experiment")
+        plt.plot(range(len(E_data)), E_data[:, 15, axis], linestyle='-', label="Experiment")
         if axis == 1:
             ax.set_ylabel('Ey')
             plt.title("photfdtd_E%s-t" % "y")

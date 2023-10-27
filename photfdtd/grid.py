@@ -262,8 +262,8 @@ class Grid:
                         self.visualize(y=axis_number, showEnergy=True, show=False, save=True, time=i)
                     elif axis == "z":
                         self.visualize(z=axis_number, showEnergy=True, show=False, save=True, time=i)
-                    else:continue
-
+                    else:
+                        continue
 
     def animate(self,
                 axis: str = "z",
@@ -858,10 +858,10 @@ class Grid:
         if save:
             if filePath is None:
                 fileName = "file_"
-                fileName += "x="+str(x)+"," if x is not None else ""
-                fileName += "y=" + str(y)+"," if y is not None else ""
-                fileName += "z=" + str(z)+"," if z is not None else ""
-                fileName += "show_energy="+str(showEnergy)+","
+                fileName += "x=" + str(x) + "," if x is not None else ""
+                fileName += "y=" + str(y) + "," if y is not None else ""
+                fileName += "z=" + str(z) + "," if z is not None else ""
+                fileName += "show_energy=" + str(showEnergy) + ","
                 fileName += "time=" + str(time) if time is not None else ""
                 filePath = os.path.join(self.folder, f"{fileName}.png")
             plt.savefig(filePath)
@@ -1004,7 +1004,7 @@ class Grid:
     #             plt.clf()
     @staticmethod
     def dB_map(folder=None, total_time=None, block_det=None, det_data=None, choose_axis=2, field="E", name_det=None,
-                           interpolation="spline16", save=True, index="x-y"):
+               interpolation="spline16", save=True, index="x-y"):
         """
 
         Args:
@@ -1020,10 +1020,38 @@ class Grid:
         else:
             data = det_data[name_det + " (%s)" % field]
         fieldaxis = field + chr(choose_axis + 120)
-        fdtd.dB_map_2D(block_det=data, choose_axis=choose_axis, interpolation=interpolation, index=index ,
+        fdtd.dB_map_2D(block_det=data, choose_axis=choose_axis, interpolation=interpolation, index=index,
                        save=save, folder=folder, name_det=name_det, total_time=total_time, fieldaxis=fieldaxis)
         # if save:
         #
         #     plt.show()
         #     plt.savefig(fname='%s//BlockDetector_%s,name=%s,time=%i.png' % (folder, fieldaxis, name_det, total_time))
         #     plt.close()
+
+    @staticmethod
+    def plot_field(grid=None, field="E", axis=0, axis_number=0, index="xy", folder=""):
+        fig, axes = plt.subplots(squeeze=False)
+        title = ["%s%s: %s" % field, chr(axis + 120), index]
+        if field == "E":
+            if index == "xy":
+                field = grid.E[:, :, axis_number, axis]
+            elif index == "xz":
+                field = grid.E[:, axis_number, :, axis]
+            elif index == "yz":
+                field = grid.E[axis_number, :, :, axis]
+        elif field == "H":
+            if index == "xy":
+                field = grid.H[:, :, axis_number, axis]
+            elif index == "xz":
+                field = grid.H[:, axis_number, :, axis]
+            elif index == "yz":
+                field = grid.H[axis_number, :, :, axis]
+
+        m = max(abs(field.min().item()), abs(field.max().item()))
+
+        for ax, field, title in zip(axes.ravel(), field, title):
+            ax.set_axis_off()
+            ax.set_title(title)
+            ax.imshow(np.numpy(field), vmin=-m, vmax=m, cmap="RdBu")
+        ax.savefig(fname=str(title))
+        plt.close()

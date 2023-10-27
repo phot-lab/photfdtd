@@ -46,9 +46,7 @@ if __name__ == "__main__":
     solve = Solve(grid=grid)
 
     # 绘制任一截面折射率分布
-    solve._plot_(axis='z',
-                 index=13,
-                 filepath=grid.folder)
+    solve.plot()
 
     # 运行仿真
     grid.run()
@@ -57,10 +55,8 @@ if __name__ == "__main__":
     grid.save_simulation()
 
     # 绘制任意截面场图
-    grid.save_fig(axis="z",
-                  axis_number=13)
-    grid.save_fig(axis="x",
-                  axis_number=100)
+    grid.visualize(x=100, showEnergy=True, show=True, save=True)
+    grid.visualize(z=13, showEnergy=True, show=True, save=True)
 
     # 读取仿真结果
     data = grid.read_simulation(folder=grid.folder)
