@@ -73,7 +73,7 @@ if __name__ == "__main__":
                     interpolation="spline16", save=True)
     except:
         pass
-    
+
     Grid.plot_field(grid=grid,field="E", axis=0, axis_number=0, index="xy", folder=grid.folder)
     Grid.plot_field(grid=grid,field="E", axis=1, axis_number=0, index="xy", folder=grid.folder)
     Grid.plot_field(grid=grid,field="E", axis=2, axis_number=0, index="xy", folder=grid.folder)
