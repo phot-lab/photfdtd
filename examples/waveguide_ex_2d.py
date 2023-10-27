@@ -13,7 +13,7 @@ if __name__ == "__main__":
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=400, grid_ylength=200, grid_zlength=1,
                 grid_spacing=20e-9,
-                total_time=2500,
+                total_time=1927,
                 pml_width_x=40,
                 pml_width_y=40,
                 pml_width_z=0,
@@ -68,12 +68,12 @@ if __name__ == "__main__":
     data = grid.read_simulation(folder=grid.folder)
     # 绘制监视器范围内光场分布
     try:
-        Grid.dB_map(folder="D:/Github_Clone/photfdtd/examples/test_waveguide_2D", total_time=1600,
+        Grid.dB_map(folder="D:/Github_Clone/photfdtd/examples/test_waveguide_2D", total_time=grid._grid.time_passed,
                     det_data=data, name_det="detector", choose_axis=0, field="E", index="x-y",
                     interpolation="spline16", save=True)
     except:
         pass
 
-    Grid.plot_field(grid=grid,field="E", axis=0, axis_number=0, index="xy", folder=grid.folder)
-    Grid.plot_field(grid=grid,field="E", axis=1, axis_number=0, index="xy", folder=grid.folder)
-    Grid.plot_field(grid=grid,field="E", axis=2, axis_number=0, index="xy", folder=grid.folder)
+    Grid.plot_field(grid=grid, field="E", axis=0, axis_number=0, cross_section="z", folder=grid.folder, cmap="jet")
+    Grid.plot_field(grid=grid, field="E", axis=1, axis_number=0, cross_section="z", folder=grid.folder)
+    Grid.plot_field(grid=grid, field="E", axis=2, axis_number=0, cross_section="z", folder=grid.folder)
