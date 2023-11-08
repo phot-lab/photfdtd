@@ -8,6 +8,7 @@ import os
 from os import path, makedirs, chdir, remove
 from .analyse import Analyse
 from .index import Index
+from photfdtd import constants
 
 
 class Grid:
@@ -80,12 +81,12 @@ class Grid:
     def set_source(
             self,
             source_type: str = "pointsource",
-            period: float = 15.0,
+            wavelength=None,
             amplitude: float = 1.0,
             phase_shift: float = 0.0,
-            name: str = None,
-            pulse: bool = False,
-            pulse_type: str = "gaussian",
+            name: str = "source",
+            waveform: str = "plane",
+            pulse_type: str = "none",
             cycle: int = 5,
             hanning_dt: float = 10.0,
             polarization: str = "z",
@@ -101,26 +102,27 @@ class Grid:
         """
         编辑于23.5.15 加入pulse_type: str = "gaussian",  pulse_length: float = 39e-15,offset: float = 112e-15,
         :param source_type: 光源种类：点或线或面
-        :param period: 周期
-        :param amplitude: 振幅
+        :param wavelength: 波长(m)
+        :param amplitude: 振幅(V/m)
         :param phase_shift: 相移
         :param name: 名称
-        :param pulse: 脉冲（默认为否）
-        :param cycle: 脉冲周期
-        :param hanning_dt: 汉宁窗宽度（定义脉冲）
+        :param waveform: 波形 "plane":平面波 "gaussian": 高斯波
+        :param cycle: 汉宁窗脉冲的周期（仅使用汉宁hanning脉冲时有用）
+        :param hanning_dt: 汉宁窗宽度（仅使用汉宁hanning脉冲时有用）
         :param polarization: 偏振
-        :param pulse_length:脉宽 fs
+        :param pulse_length:脉宽(s)
         :param pulse_type: 脉冲类型 "gaussian" 或 "hanning" 或 "none"
-        :param offset: 脉冲中心 fs
+        :param offset: 脉冲中心(s)
         :param x: 位置坐标（中心）
         :param y:
         :param z:
         :param xlength:
         :param ylength:
         :param zlength:
-        :return:
         """
-        # TODO：把线光源的更改运用到点光源和面光源
+        if wavelength != None:
+            period = wavelength / constants.c
+
         x = x - xlength // 2
         y = y - ylength // 2
         z = z - zlength // 2
@@ -130,41 +132,29 @@ class Grid:
             y = y + ylength // 2
             z = z + zlength // 2
 
-            self._grid[x, y, z] = fdtd.PointSource(
-                period=period,
-                amplitude=amplitude,
-                phase_shift=phase_shift,
-                name=name,
-                pulse=pulse,
-                cycle=cycle,
-                hanning_dt=hanning_dt,
-            )
+            self._grid[x, y, z] = fdtd.PointSource(period=period, amplitude=amplitude, phase_shift=phase_shift,
+                                                   name=name, cycle=cycle, hanning_dt=hanning_dt, pulse_type=pulse_type,
+                                                   pulse_length=pulse_length, offset=offset, polarization=polarization)
 
         elif source_type == "linesource":  # 创建一个线光源
 
             if self._grid_zlength == 1:
-                self._grid[x: x + xlength, y: y + ylength] = fdtd.LineSource(
-                    period=period,
-                    amplitude=amplitude,
-                    phase_shift=phase_shift,
-                    name=name,
-                    pulse=pulse,
-                    pulse_type=pulse_type,
-                    cycle=cycle,
-                    pulse_length=pulse_length,
-                    offset=offset
-                )
+                self._grid[x: x + xlength, y: y + ylength] = fdtd.LineSource(period=period, amplitude=amplitude,
+                                                                             phase_shift=phase_shift, name=name,
+                                                                             pulse_type=pulse_type, cycle=cycle,
+                                                                             pulse_length=pulse_length, offset=offset,
+                                                                             waveform=waveform, polarization=polarization)
             else:
-                self._grid[x: x + xlength, y: y + ylength, z: z + zlength] = fdtd.LineSource(
-                    period=period,
-                    amplitude=amplitude,
-                    phase_shift=phase_shift,
-                    name=name,
-                    pulse=pulse_type,
-                    cycle=cycle,
-                    pulse_length=pulse_length,
-                    offset=offset
-                )
+                self._grid[x: x + xlength, y: y + ylength, z: z + zlength] = fdtd.LineSource(period=period,
+                                                                                             amplitude=amplitude,
+                                                                                             phase_shift=phase_shift,
+                                                                                             name=name,
+                                                                                             pulse_type=pulse_type,
+                                                                                             cycle=cycle,
+                                                                                             pulse_length=pulse_length,
+                                                                                             offset=offset,
+                                                                                             waveform=waveform,
+                                                                                             polarization=polarization)
 
         elif source_type == "planesource":
             # 创建一个面光源
@@ -1044,7 +1034,7 @@ class Grid:
         @param cmap: matplotlib.pyplot.imshow(cmap)
         """
         title = "%s%s" % (field, chr(axis + 120))
-        grid=grid._grid
+        grid = grid._grid
         if field == "E":
             if cross_section == "z":
                 field = grid.E[:, :, axis_number, axis]
@@ -1075,7 +1065,7 @@ class Grid:
         if cross_section == "z":
             plt.xlabel('X/grids')
             plt.ylabel('Y/grids')
-        elif cross_section =="x":
+        elif cross_section == "x":
             plt.xlabel('Y/grids')
             plt.ylabel('Z/grids')
         elif cross_section == "y":
@@ -1086,7 +1076,7 @@ class Grid:
         plt.close()
 
     @staticmethod
-    def plot_fieldtime(folder=None, data=None, axis=2, field="E", index=0, index_3d=[0,0,0], name_det=None):
+    def plot_fieldtime(folder=None, data=None, axis=2, field="E", index=0, index_3d=[0, 0, 0], name_det=None):
         """
         绘制监视器某一点的时域场图
         @param index_3d: 三维数组：用于面监视器，选择读取数据的点
@@ -1101,18 +1091,18 @@ class Grid:
         plt.figure()
         if data.ndim == 3:
             plt.plot(range(len(data)), data[:, index, axis], linestyle='-', label="Experiment")
-            plt.ylabel('E%s' % chr(axis+120))
-            plt.xlabel("timesteps")
-            plt.title("E%s-t" % chr(axis+120))
-            file_name = "E%s" % chr(axis+120)
-            plt.savefig(os.path.join(folder, f"{file_name}.png"))
-            plt.close()
-        else:
-            plt.plot(range(len(data)), data[:, index_3d[0], index_3d[1], index_3d[2], axis], linestyle='-', label="Experiment")
             plt.ylabel('E%s' % chr(axis + 120))
             plt.xlabel("timesteps")
             plt.title("E%s-t" % chr(axis + 120))
             file_name = "E%s" % chr(axis + 120)
             plt.savefig(os.path.join(folder, f"{file_name}.png"))
             plt.close()
-
+        else:
+            plt.plot(range(len(data)), data[:, index_3d[0], index_3d[1], index_3d[2], axis], linestyle='-',
+                     label="Experiment")
+            plt.ylabel('E%s' % chr(axis + 120))
+            plt.xlabel("timesteps")
+            plt.title("E%s-t" % chr(axis + 120))
+            file_name = "E%s" % chr(axis + 120)
+            plt.savefig(os.path.join(folder, f"{file_name}.png"))
+            plt.close()

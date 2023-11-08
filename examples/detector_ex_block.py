@@ -22,19 +22,10 @@ if __name__ == "__main__":
     #     zlength=0,
     #     source_type="pointsource",
     #     period=1550e-9 / 299792458,
-    #     pulse=False,
+    #     waveform=False,
     # )
-    grid.set_source(
-        x=8,
-        xlength=0,
-        y=20,
-        ylength=10,
-        z=20,
-        zlength=10,
-        source_type="planesource",
-        period=1550e-9 / 299792458,
-        pulse=False,
-    )
+    grid.set_source(source_type="planesource", period=1550e-9 / 299792458, waveform=False, x=8, y=20, z=20, xlength=0,
+                    ylength=10, zlength=10)
     # print(1550e-9 / 299792458)
 
     grid.add_detector("BlockDetector", "Detector", x=5, y=5, z=5, xlength=40, ylength=40, zlength=40)

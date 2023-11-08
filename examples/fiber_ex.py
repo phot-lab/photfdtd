@@ -18,16 +18,8 @@ if __name__ == "__main__":
     grid.add_object(fiber)
 
     # 设置光源
-    grid.set_source(source_type="planesource",
-                    period=1550e-9/constants.c,
-                    name="source",
-                    x=50,
-                    y=15,
-                    z=50,
-                    xlength=20,
-                    ylength=0,
-                    zlength=20
-                    )
+    grid.set_source(source_type="planesource", period=1550e-9 / constants.c, name="source", x=50, y=15, z=50,
+                    xlength=20, ylength=0, zlength=20)
 
     # 设置监视器
     grid.set_detector(detector_type="blockdetector",

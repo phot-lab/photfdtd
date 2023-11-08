@@ -39,7 +39,6 @@ python examples/sbend_ex.py
 ```python
 from photfdtd import Sbend, Grid
 
-
 if __name__ == "__main__":
     # 设置器件参数
     sbend = Sbend(
@@ -50,9 +49,8 @@ if __name__ == "__main__":
     grid = Grid(grid_xlength=80, grid_ylength=80, grid_zlength=1, grid_spacing=155e-9, total_time=200, pml_width=10)
 
     # 设置光源
-    grid.set_source(
-        source_type="linesource", x=11 + sbend.xlength, xlength=0, y=sbend.y, ylength=10, period=1550e-9 / 299792458
-    )
+    grid.set_source(source_type="linesource", period=1550e-9 / 299792458, x=11 + sbend.xlength, y=sbend.y, xlength=0,
+                    ylength=10)
 
     # 添加器件
     grid.add_object(sbend)

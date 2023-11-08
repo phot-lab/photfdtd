@@ -7,12 +7,12 @@ if __name__ == "__main__":
 
     # 设置器件参数
     waveguide = Waveguide(
-        xlength=40, ylength=40, zlength=1, x=150, y=150, z=0, refractive_index=3.47638, name="Waveguide",
+        xlength=63, ylength=63, zlength=1, x=125, y=125, z=0, refractive_index=3.47, name="Waveguide",
         background_index=background_index
     )
 
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=300, grid_ylength=300, grid_zlength=1, grid_spacing=10e-9, total_time=1,
+    grid = Grid(grid_xlength=250, grid_ylength=250, grid_zlength=1, grid_spacing=8e-9, total_time=1,
                 pml_width_x=10,
                 pml_width_y=1,
                 pml_width_z=1,
@@ -26,15 +26,13 @@ if __name__ == "__main__":
     solve = Solve(grid=grid)
 
     # 绘制截面折射率分布
-    solve.plot(axis='z',
-               index=0,
-               filepath=grid.folder)
+    solve.plot()
 
     # 计算这个截面处，波长1.55um，折射率3.47附近的10个模式
-    solve.calculate_mode(lam=1.55, neff=3.47638, neigs=5)
+    solve.calculate_mode(lam=1.55, neff=3.47, neigs=20)
 
     # 绘制计算的10个模式并保存
-    solve.draw_mode(neigs=5, component="ey")
+    solve.draw_mode(neigs=20, component = "ex")
 
     # 计算各个模式的TEfraction，并保存图片
     # solve._calculate_TEfraction(n_levels=6)

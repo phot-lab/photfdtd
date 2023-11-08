@@ -30,16 +30,8 @@ if __name__ == "__main__":
     grid.add_object(waveguide1)
 
     # 设置光源
-    grid.set_source(source_type="planesource",
-                    period=1550e-9/constants.c,
-                    name="source",
-                    x=30,
-                    y=150,
-                    z=11,
-                    xlength=1,
-                    ylength=waveguide1.ylength + 4,
-                    zlength=waveguide1.zlength
-                    )
+    grid.set_source(source_type="planesource", period=1550e-9 / constants.c, name="source", x=30, y=150, z=11,
+                    xlength=1, ylength=waveguide1.ylength + 4, zlength=waveguide1.zlength)
 
     # 设置监视器
     grid.set_detector(detector_type="blockdetector",

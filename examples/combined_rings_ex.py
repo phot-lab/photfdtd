@@ -33,14 +33,8 @@ if __name__ == "__main__":
 
     grid = Grid(grid_xlength=200, grid_ylength=200, grid_zlength=1, grid_spacing=155e-9, total_time=1500, pml_width_x=5, pml_width_y=5, pml_width_z=5)
 
-    grid.set_source(
-        source_type="linesource",
-        x=16,
-        xlength=0,
-        y=ring.y - ring.width - ring.gap - 1,
-        ylength=7,
-        period=1550e-9 / 299792458,
-    )
+    grid.set_source(source_type="linesource", period=1550e-9 / 299792458, x=16, y=ring.y - ring.width - ring.gap - 1,
+                    xlength=0, ylength=7)
 
     grid.add_object(ring)
     grid.add_object(ring1)
