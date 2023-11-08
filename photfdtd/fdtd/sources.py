@@ -26,7 +26,7 @@ from .detectors import CurrentDetector
 class PointSource:
     """A source placed at a single point (grid cell) in the grid"""
 
-    # TODO: 为点光源和面光源加上gaussian pulse
+    # TODO: 为点光源和面光源加上gaussian waveform
 
     def __init__(
             self,
@@ -34,9 +34,12 @@ class PointSource:
             amplitude: float = 1.0,
             phase_shift: float = 0.0,
             name: str = None,
-            pulse: bool = False,
+            pulse_type: str = "None",
             cycle: int = 5,
             hanning_dt: float = 10.0,
+            pulse_length: float = 39e-15,
+            offset: float = 112e-15,
+            polarization: str = "z"
     ):
         """Create a LineSource with a gaussian profile
 
@@ -46,20 +49,26 @@ class PointSource:
             amplitude: The electric field amplitude in simulation units
             phase_shift: The phase offset of the source.
             name: name of the source.
-            pulse: Set True to use a Hanning window pulse instead of continuous wavefunction.
-            cycle: cycles for Hanning window pulse.
-            hanning_dt: timestep used for Hanning window pulse width (optional).
-
+            hanning_dt: timestep used for Hanning window waveform width (optional).
+            waveform: "plane"代表平面波，“gaussian”代表高斯波形
+            cycle: cycles for Hanning window waveform.
+            pulse_length: 脉宽(对于高斯脉冲：半高全宽*sqrt(2))单位s
+            offset: 脉冲中心时间 修改于23.5.14 单位s
+            pulse_type: "gaussian"代表高斯脉冲 "hanning"代表汉宁脉冲 "none"或者其他任何输入代表不使用脉冲
+            polarization: 电场偏振方向 "x" "y" "z"
         """
         self.grid = None
         self.period = period
         self.amplitude = amplitude
         self.phase_shift = phase_shift
         self.name = name
-        self.pulse = pulse
+        self.pulse_type = pulse_type
         self.cycle = cycle
         self.frequency = 1.0 / period
         self.hanning_dt = hanning_dt if hanning_dt is not None else 0.5 / self.frequency
+        self.offset = offset
+        self.pulse_length = pulse_length
+        self.polarization = polarization
 
     def _register_grid(self, grid: Grid, x: Number, y: Number, z: Number):
         """Register a grid for the source.
@@ -95,8 +104,8 @@ class PointSource:
     def update_E(self):
         """Add the source to the electric field"""
         q = self.grid.time_steps_passed
-        # if pulse
-        if self.pulse:
+        # if pulse = hanning
+        if self.pulse_type == "hanning":
             t1 = int(2 * pi / (self.frequency * self.hanning_dt / self.cycle))
             if q < t1:
                 src = self.amplitude * hanning(
@@ -105,10 +114,16 @@ class PointSource:
             else:
                 # src = - self.grid.E[self.x, self.y, self.z, 2]
                 src = 0
+        elif self.pulse_type == "gaussian":
+            src = pulse_oscillation(frequency=self.frequency, t=q * self.grid.time_step,
+                                                    pulselength=self.pulse_length, offset=self.offset)
+
         # if not pulse
         else:
             src = self.amplitude * sin(2 * pi * q / self.period + self.phase_shift)
-        self.grid.E[self.x, self.y, self.z, 2] += src
+        self._Epol = 'xyz'.index(self.polarization)
+        # str.index(a)方法给出str中a的所在位置
+        self.grid.E[self.x, self.y, self.z, self._Epol] += src
 
     def update_H(self):
         """Add the source to the magnetic field"""
@@ -143,7 +158,8 @@ class LineSource:
             cycle: int = 5,
             pulse_length: float = 39e-15,
             offset: float = 112e-15,
-            pulse: bool = False
+            waveform: str = "plane",
+            polarizaton: str = "z"
     ):
         """Create a LineSource with a gaussian profile
         Args:
@@ -151,24 +167,25 @@ class LineSource:
                 as integer [timesteps] or as float [seconds]
             amplitude: The amplitude of the source in simulation units
             phase_shift: The phase offset of the source.
-            pulse: bool
-            cycle: cycles for Hanning window pulse.
-            pulse_length: 脉宽(对于高斯脉冲：半高全宽*sqrt(2)) 修改于23.5.14 单位s
+            waveform: "plane"代表平面波，“gaussian”代表高斯波形
+            cycle: cycles for Hanning window waveform.
+            pulse_length: 脉宽(对于高斯脉冲：半高全宽*sqrt(2))单位s
             offset: 脉冲中心时间 修改于23.5.14 单位s
-            pulse_type: "guassian"代表高斯脉冲 "hanning"代表汉宁脉冲 "none"或者其他任何输入代表不使用脉冲 修改于23.5.14
-
+            pulse_type: "gaussian"代表高斯脉冲 "hanning"代表汉宁脉冲 "none"或者其他任何输入代表不使用脉冲
+            polarization: 电场偏振方向 "x" "y" "z"
         """
         self.grid = None
         self.period = period
         self.amplitude = amplitude
         self.phase_shift = phase_shift
         self.name = name
-        self.pulse = pulse
+        self.waveform = waveform
         self.pulse_type = pulse_type
         self.cycle = cycle
         self.frequency = 1.0 / period
         self.pulse_length = pulse_length
         self.offset = offset
+        self.polarization = polarizaton
 
     def _register_grid(
             self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
@@ -208,10 +225,9 @@ class LineSource:
             bd.float,
         )  # vect：这是一个包含了各个点到中心点的距离平方的三维数组。它通过计算每个点到中心点的距离平方的和来创建。
         self.profile = bd.ones(tuple(vect.shape))
-        if self.pulse:
+        if self.waveform == "gaussian":
             self.profile = bd.exp(-(vect ** 2) / (2 * (0.5 * vect.max()) ** 2))  # 这是一个高斯分布
             # self.profile /= self.profile.sum()
-            # 编辑于23.5.15 将self.profile /= self.profile.sum()改为self.profile /= self.profile.max() （归一化）
         self.profile /= self.profile.max()  # 在计算高斯分布之后，代码将其归一化，确保分布的最大值为1。
         self.profile *= self.amplitude
 
@@ -287,7 +303,7 @@ class LineSource:
     def update_E(self):
         """Add the source to the electric field"""
         q = self.grid.time_steps_passed
-        # if pulse
+        # if pulse = "hanning"
         if self.pulse_type == "hanning":
             t1 = int(2 * pi / (self.frequency * self.pulse_length / self.cycle))
             if q < t1:
@@ -298,18 +314,19 @@ class LineSource:
                 # src = - self.grid.E[self.x, self.y, self.z, 2]
                 vect = self.profile * 0
         elif self.pulse_type == "gaussian":
-            # 添加于2023.5.14
             vect = self.profile * pulse_oscillation(frequency=self.frequency, t=q * self.grid.time_step,
                                                     pulselength=self.pulse_length, offset=self.offset)
-        # if not pulse
+        # if not pulse_type
         else:
             vect = self.profile * sin(2 * pi * q / self.period + self.phase_shift)
             # TODO: 要绘制光源图像只需绘制vect
         # do not use list indexing here, as this is much slower especially for torch backend
         # DISABLED: self.grid.E[self.x, self.y, self.z, 2] = vect
+        self._Epol = 'xyz'.index(self.polarization)
         for x, y, z, value in zip(self.x, self.y, self.z, vect):
-            self.grid.E[x, y, z, 0] += 3.7494e-33 * value
-            self.grid.E[x, y, z, 1] += value
+            # str.index(a)方法给出str中a的所在位置
+            # self.grid.E[x, y, z, 0] += 3.7494e-33 * value
+            self.grid.E[x, y, z, self._Epol] += value
             # self.grid.E[x, y, z, 2] += value
 
     def update_H(self):
@@ -351,6 +368,7 @@ class PlaneSource:
             amplitude: The amplitude of the source in simulation units
             phase_shift: The phase offset of the source.
             polarization: Axis of E-field polarization ('x','y',or 'z')
+            # TODO: 面光源的脉冲应该是怎样的？
         """
         self.grid = None
         self.period = period
@@ -474,6 +492,7 @@ class PlaneSource:
             )
 
         self._Epol = 'xyz'.index(self.polarization)
+        # str.index(a)方法给出str中a的所在位置
         if (x.stop - x.start == 1 and self.polarization == 'x') or \
                 (y.stop - y.start == 1 and self.polarization == 'y') or \
                 (z.stop - z.start == 1 and self.polarization == 'z'):

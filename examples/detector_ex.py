@@ -13,17 +13,8 @@ if __name__ == "__main__":
     # 往 grid 里添加一个器件
     grid.add_object(waveguide)
 
-    grid.set_source(
-        x=20,
-        xlength=0,
-        y=50,
-        ylength=0,
-        z=0,
-        zlength=0,
-        source_type="pointsource",
-        period=1550e-9 / 299792458,
-        pulse=False,
-    )
+    grid.set_source(source_type="pointsource", period=1550e-9 / 299792458, waveform=False, x=20, y=50, z=0, xlength=0,
+                    ylength=0, zlength=0)
 
     grid.add_detector("LineDetector", "Detector", x=80, y=45, z=0, xlength=0, ylength=10, zlength=0)
 

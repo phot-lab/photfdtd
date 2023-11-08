@@ -11,3 +11,4 @@ from .analyse import Analyse
 from .index import Index
 from .mzi import Mzi
 from .fiber import Fiber
+from . import constants

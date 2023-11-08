@@ -26,13 +26,8 @@ if __name__ == "__main__":
                 pml_width_y=8, pml_width_z=1,
                 permittivity=background_index ** 2, foldername="test_dc")
 
-    grid.set_source(
-        x=25, xlength=0,
-        y=80, ylength=dc.width + 4,
-        z=12, zlength=dc.width + 2,
-        source_type="planesource",
-        period=1550e-9 / 299792458, pulse=False
-    )
+    grid.set_source(source_type="planesource", period=1550e-9 / 299792458, waveform=False, x=25, y=80, z=12, xlength=0,
+                    ylength=dc.width + 4, zlength=dc.width + 2)
 
     grid.set_detector(detector_type='blockdetector',
                       x=175, xlength=0,

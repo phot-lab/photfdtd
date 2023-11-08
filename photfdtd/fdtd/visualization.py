@@ -332,7 +332,7 @@ def dB_map_2D(block_det=None, choose_axis=2, interpolation="spline16", index="x-
               folder="", name_det="", total_time=0, fieldaxis="Ex"):
     """
     Displays detector readings from an 'fdtd.BlockDetector' in a decibel map spanning a 2D slice region inside the BlockDetector.
-    Compatible with continuous sources (not pulse).
+    Compatible with continuous sources (not waveform).
     Currently, only x-y 2D plot slices are accepted.
 
     Parameter:-
@@ -398,8 +398,8 @@ def dB_map_2D(block_det=None, choose_axis=2, interpolation="spline16", index="x-
 def plot_detection(detector_dict=None, specific_plot=None):
     """
     1. Plots intensity readings on array of 'fdtd.LineDetector' as a function of timestep.
-    2. Plots time of arrival of pulse at different LineDetector in array.
-    Compatible with pulse sources.
+    2. Plots time of arrival of waveform at different LineDetector in array.
+    Compatible with waveform sources.
 
     Args:
         detector_dict (dictionary): Dictionary of detector readings, as created by 'fdtd.Grid.save_data()'.
