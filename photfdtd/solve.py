@@ -1,6 +1,6 @@
 # import utils
 from photfdtd import Waveguide, Grid
-import philsol as ps
+import photfdtd.philsol as ps
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw
