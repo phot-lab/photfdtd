@@ -14,27 +14,32 @@ class Index:
 
     def __init__(self,
                  file: str = 'D:/下载内容/photfdtd-main/photfdtd/折射率数据/Si.csv',
+                 data=None
                  ):
         self.file = file
+        self.data = data
+        self.fit_function_Reindex = None
+        self.fit_function_Imindex = None
 
-    def _fit_(self):
+    def fit(self):
         # 打开CSV文件并读取数据
-        data = np.genfromtxt(self.file, delimiter=',', skip_header=1)
+        if self.data is None:
+            self.data = np.genfromtxt(self.file, delimiter=',', skip_header=1)
 
         # 从读取的数据中提取wl, n和k的列
-        self.wl_Reindex = data[:, 0]
-        n = data[:, 1]
+        self.wl_Reindex = self.data[:, 0]
+        n = self.data[:, 1]
         # 调用scipy得到拟合函数
         self.fit_function_Reindex = interp1d(self.wl_Reindex, n, kind='cubic')
-        if len(data[0]) == 4:
+        if len(self.data[0]) == 4:
             # 若同时保存有消光系数k，则读取
-            self.wl_Imindex = data[:, 2]
-            k = data[:, 3]
+            self.wl_Imindex = self.data[:, 2]
+            k = self.data[:, 3]
             self.fit_function_Imindex = interp1d(self.wl_Imindex, k, kind='cubic')
 
-    def _plot_(self,
-               choice: bool = True,
-               filepath: str = ''):
+    def plot(self,
+             choice: bool = True,
+             filepath: str = ''):
         """
         绘制曲线并保存
         :param choice: True表示绘制n，False表示绘制k （这个参数名起的很随意）
@@ -60,12 +65,16 @@ class Index:
         plt.savefig(fname='%s//wl-%s.png' % (filepath, ylabel))
         plt.show()
 
+    def get_refractive_index(self, wave_length):
+        return self.fit_function_Reindex(wave_length), self.fit_function_Imindex(
+                wave_length) if self.fit_function_Imindex is not None else 0
+
 
 if __name__ == "__main__":
     index_Si = Index('./materials/Si.csv')
-    index_Si._fit_()
-    index_Si._plot_(choice=True,
-                    filepath='./')
+    index_Si.fit()
+    index_Si.plot(choice=True,
+                  filepath='./')
 
     # 现在可以用拟合函数得到区域内一个波长下的折射率了
     wavelength_value = 1.6

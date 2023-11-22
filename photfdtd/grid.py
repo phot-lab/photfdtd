@@ -82,6 +82,7 @@ class Grid:
             self,
             source_type: str = "pointsource",
             wavelength=None,
+            period=None,
             amplitude: float = 1.0,
             phase_shift: float = 0.0,
             name: str = "source",
@@ -100,9 +101,9 @@ class Grid:
             zlength: int = 5,
     ):
         """
-        编辑于23.5.15 加入pulse_type: str = "gaussian",  pulse_length: float = 39e-15,offset: float = 112e-15,
         :param source_type: 光源种类：点或线或面
         :param wavelength: 波长(m)
+        :param period:周期
         :param amplitude: 振幅(V/m)
         :param phase_shift: 相移
         :param name: 名称
@@ -110,9 +111,9 @@ class Grid:
         :param cycle: 汉宁窗脉冲的周期（仅使用汉宁hanning脉冲时有用）
         :param hanning_dt: 汉宁窗宽度（仅使用汉宁hanning脉冲时有用）
         :param polarization: 偏振
-        :param pulse_length:脉宽(s)
         :param pulse_type: 脉冲类型 "gaussian" 或 "hanning" 或 "none"
-        :param offset: 脉冲中心(s)
+        :param pulse_length: 脉宽(s)（仅用于高斯脉冲）
+        :param offset: 脉冲中心(s)（仅用于高斯脉冲）
         :param x: 位置坐标（中心）
         :param y:
         :param z:
@@ -120,8 +121,12 @@ class Grid:
         :param ylength:
         :param zlength:
         """
-        if wavelength != None:
-            period = wavelength / constants.c
+        if period is None:
+            if wavelength is not None:
+                period = wavelength / constants.c
+            else:
+                raise ValueError("please set a wavelength or period")
+
 
         x = x - xlength // 2
         y = y - ylength // 2
@@ -485,41 +490,6 @@ class Grid:
 
         return data
 
-    def compute_frequency_domain(self, wl_start, wl_end, input_data):
-        # TODO: fdtd原作者想要让这里的输入为监视器，但是他并没有完成这一代码，现在只能输入一维数据，完成它?
-        # TODO: 傅里叶变换后的单位？
-        fr = fdtd.FrequencyRoutines(self._grid, objs=input_data)
-        spectrum_freqs, spectrum = fr.FFT(
-            freq_window_tuple=[299792458 / (wl_end * (10 ** -6)), 299792458 / (wl_start * (10 ** -6))], )
-
-        # 绘制频谱
-        plt.plot(spectrum_freqs, spectrum)
-        plt.xlabel('frequency (Hz)')
-        plt.ylabel("spectrum")
-        plt.savefig(fname='%s//f-spectrum_time=%i.png.png' % (self.folder, self._total_time))
-        plt.close()
-
-        # 绘制频率-振幅
-        plt.plot(spectrum_freqs, np.abs(spectrum))
-        plt.xlabel('frequency (Hz)')
-        plt.ylabel("amplitude")
-        plt.savefig(fname='%s//f-amplitude_time=%i.png.png' % (self.folder, self._total_time))
-        plt.close()
-
-        # 绘制频率-相位
-        plt.plot(299792458 / (spectrum_freqs * (10 ** -6)), np.abs(spectrum))
-        plt.xlabel('wavelength (um)')
-        plt.ylabel("amplitude")
-        plt.savefig(fname='%s//wl-amplitude_time=%i.png' % (self.folder, self._total_time))
-        plt.close()
-
-        # 绘制波长-透过率
-        # x = np.linspace(wl_start, wl_end, points)
-        # plt.plot(x, T)
-        # plt.xlabel('Wavelength (μm)')
-        # plt.ylabel("T")
-        # plt.savefig(fname='%s//wl-T_time=%i.png' % (grid.folder, grid._total_time))
-        # print(T)
 
     def visualize(
             self,
@@ -1091,18 +1061,76 @@ class Grid:
         plt.figure()
         if data.ndim == 3:
             plt.plot(range(len(data)), data[:, index, axis], linestyle='-', label="Experiment")
-            plt.ylabel('E%s' % chr(axis + 120))
+            plt.ylabel('%s%s' % (field, chr(axis + 120)))
             plt.xlabel("timesteps")
-            plt.title("E%s-t" % chr(axis + 120))
-            file_name = "E%s" % chr(axis + 120)
+            plt.title("%s%s-t" % (field, chr(axis + 120)))
+            file_name = "%s%s" % (field, chr(axis + 120))
             plt.savefig(os.path.join(folder, f"{file_name}.png"))
             plt.close()
         else:
             plt.plot(range(len(data)), data[:, index_3d[0], index_3d[1], index_3d[2], axis], linestyle='-',
                      label="Experiment")
-            plt.ylabel('E%s' % chr(axis + 120))
+            plt.ylabel('%s%s' % (field, chr(axis + 120)))
             plt.xlabel("timesteps")
-            plt.title("E%s-t" % chr(axis + 120))
-            file_name = "E%s" % chr(axis + 120)
+            plt.title("%s%s-t" % (field, chr(axis + 120)))
+            file_name = "%s%s" % (field, chr(axis + 120))
             plt.savefig(os.path.join(folder, f"{file_name}.png"))
             plt.close()
+    @staticmethod
+    def compute_frequency_domain(grid, wl_start, wl_end, data, name_det, input_data=None,
+                                 index=0, index_3d=[0,0,0], axis=0, field="E", folder=None):
+        """
+        傅里叶变换绘制频谱
+        @param folder: 保存图片的地址，若为None则为grid.folder
+        @param grid: photfdtd.grid
+        @param wl_start: 起始波长(m)
+        @param wl_end: 结束波长(m)
+        @param data: save_simulation()方法保存的监视器数据
+        @param name_det: 监视器名称
+        @param input_data: 如果输入了这个数据，则data、name_det、index、index_3d可以不输入。input_data必须是一个一维数组，
+        其长度表示时间步长，每一个元素表示在该时间场的幅值。
+        @param index: 用于线监视器，选择读取数据的点
+        @param index_3d: 用于面监视器，选择读取数据的点
+        @param axis: 0或1或2分别表示E或H的x，y，z分量
+        @param field: ”E"或"H"
+        """
+        # TODO: 把fdtd的fourier.py研究明白
+        # TODO: 傅里叶变换后的单位？
+        if folder is None:
+            folder = grid.folder
+        if input_data is None:
+            input_data = data[name_det + " (%s)" % field]
+            del data
+            if input_data.ndim == 3:
+                input_data = input_data[:, index, axis]
+            elif input_data.ndim == 5:
+                input_data = input_data[:,index_3d[0], index_3d[1], index_3d[2], axis]
+
+        fr = fdtd.FrequencyRoutines(grid._grid, objs=input_data)
+        spectrum_freqs, spectrum = fr.FFT(
+            freq_window_tuple=[constants.c / (wl_end), constants.c / (wl_start)], )
+
+        # 绘制频谱
+        plt.plot(spectrum_freqs, spectrum)
+        plt.xlabel('frequency (Hz)')
+        plt.ylabel("spectrum")
+        file_name = "spectrum_%s%s" % (field, chr(axis + 120))
+        plt.savefig(os.path.join(folder, f"{file_name}.png"))
+        plt.close()
+
+        # 绘制频率-振幅
+        plt.plot(spectrum_freqs, np.abs(spectrum))
+        plt.xlabel('frequency (Hz)')
+        plt.ylabel("amplitude")
+        file_name = "f-amplitude_%s%s" % (field, chr(axis + 120))
+        plt.savefig(os.path.join(folder, f"{file_name}.png"))
+        plt.close()
+
+        # 绘制波长-振幅
+        plt.plot(constants.c / (spectrum_freqs * (10e-6)), np.abs(spectrum))
+        plt.xlabel('wavelength (um)')
+        plt.ylabel("amplitude")
+        file_name = "wl-amplitude_%s%s" % (field, chr(axis + 120))
+        plt.savefig(os.path.join(folder, f"{file_name}.png"))
+        plt.close()
+
