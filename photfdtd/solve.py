@@ -11,6 +11,7 @@ import photfdtd.fdtd as fdtd
 class Solve:
     """
     绘制二维截面、计算波导模式，通过加入philsol包实现 https://github.com/philmain28/philsol
+    # TODO:似乎有更好的库来代替philsol？
     """
 
     def __init__(self,
@@ -82,51 +83,132 @@ class Solve:
         plt.close()
 
     def calculate_mode(self,
-                       lam: float = 1.55,
+                       lam: float = 1550e-9,
                        neff: float = 3.47,
                        neigs: int = 1,
+                       component: str = "Ex"
                        ):
         '''
-        调用phisol包，计算模式。结果被保存在self.Ey_fields与self.Ex_fields与传播常数self.beta中。
-        （若垂直于x轴的截面，Ex实际上是Ey, Ey实际上是Ez；若垂直于y轴的截面，Ex即是Ex，Ey实际上是Ez）
-        :param lam: 波长（um）
+        调用phisol包，计算模式并绘制模式。
+        :param lam: 波长（m）
         :param neff: 在neff周围计算模式
         :param neigs: 计算模式数
-        :return:
+        @param component: "Ex""Ey""Ez""Hx""Hy""Hz"
         '''
+        neff = neff * 10 ** 6
         self.lam = lam
         self.k = 2 * np.pi / lam
 
         # NOTE: fdtd的单位是m，而philsol的单位是um
         # 调用phisol包，计算模式
-        P, _ = ps.eigen_build(self.k, self.n, self.grid.grid_spacing * 1e6, self.grid.grid_spacing * 1e6)
+        # TODO: 把philsol的一大堆函数揉成一个，然后扔掉
+        P, matrices = ps.eigen_build(self.k, self.n, self.grid.grid_spacing * 1e6, self.grid.grid_spacing * 1e6)
         beta_in = 2. * np.pi * neff / lam
-        beta, Ex, Ey = ps.solve.solve(P, beta_in, neigs=neigs)
+        self.beta, Ex, Ey = ps.solve.solve(P, beta_in, neigs=neigs)
+        self.effective_index = abs(self.beta * self.lam / (2 * np.pi))
+        print("neff=", self.effective_index)
 
         if self.axis == 'x':
-            Ex_fields = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Ex]
-            Ey_fields = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Ey]
+            if component != "Ey" and component != "Ez":
+                Ex_field = np.empty((neigs, Ex.shape[1]), dtype=complex)
+                Hx = np.empty((neigs, Ex.shape[1]), dtype=complex)
+                Hy = np.empty((neigs, Ex.shape[1]), dtype=complex)
+                Hz = np.empty((neigs, Ex.shape[1]), dtype=complex)
+
+                for i in range(neigs):
+                    Ex_field[i], Hy[i], Hz[i], Hx[i] = ps.construct.extra_feilds(k0=self.k, beta=self.beta[i],
+                                                                                 Ex=Ex[i], Ey=Ey[i], matrices=matrices)
+                Ex_field = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Ex_field]
+                Hx = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Hx]
+                Hy = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Hy]
+                Hz = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Hz]
+
+                if component == "Ex":
+                    self.draw_mode(neigs=neigs, component=component, data=Ex_field)
+                elif component == "Hy":
+                    self.draw_mode(neigs=neigs, component=component, data=Hy)
+                elif component == "Hz":
+                    self.draw_mode(neigs=neigs, component=component, data=Hz)
+                elif component == "Hx":
+                    self.draw_mode(neigs=neigs, component=component, data=Hx)
+            else:
+                Ey = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Ex]
+                Ez = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Ey]
+                if component == "Ez":
+                    self.draw_mode(neigs=neigs, component=component, data=Ez)
+                elif component == "Ey":
+                    self.draw_mode(neigs=neigs, component=component, data=Ey)
+
         elif self.axis == 'y':
-            Ex_fields = [np.reshape(E_vec, (self.grid.Nx, self.grid.Nz)) for E_vec in Ex]
-            Ey_fields = [np.reshape(E_vec, (self.grid.Nx, self.grid.Nz)) for E_vec in Ey]
+            if component != "Ex" and component != "Ez":
+
+                Ey_field = np.empty((neigs, Ex.shape[1]), dtype=complex)
+                Hx = np.empty((neigs, Ex.shape[1]), dtype=complex)
+                Hy = np.empty((neigs, Ex.shape[1]), dtype=complex)
+                Hz = np.empty((neigs, Ex.shape[1]), dtype=complex)
+
+                for i in range(neigs):
+                    Ey_field[i], Hx[i], Hz[i], Hy[i] = ps.construct.extra_feilds(k0=self.k, beta=self.beta[i],
+                                                                                 Ex=Ex[i], Ey=Ey[i], matrices=matrices)
+
+                Ey_field = [np.reshape(E_vec, (self.grid.Nx, self.grid.Nz)) for E_vec in Ey_field]
+                Hx = [np.reshape(E_vec, (self.grid.Nx, self.grid.Nz)) for E_vec in Hx]
+                Hy = [np.reshape(E_vec, (self.grid.Nx, self.grid.Nz)) for E_vec in Hy]
+                Hz = [np.reshape(E_vec, (self.grid.Nx, self.grid.Nz)) for E_vec in Hz]
+
+                if component == "Ey":
+                    self.draw_mode(neigs=neigs, component=component, data=Ey_field)
+                elif component == "Hy":
+                    self.draw_mode(neigs=neigs, component=component, data=Hy)
+                elif component == "Hz":
+                    self.draw_mode(neigs=neigs, component=component, data=Hz)
+                elif component == "Hx":
+                    self.draw_mode(neigs=neigs, component=component, data=Hx)
+            else:
+                Ex = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Ex]
+                Ez = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Ey]
+                if component == "Ez":
+                    self.draw_mode(neigs=neigs, component=component, data=Ez)
+                elif component == "Ex":
+                    self.draw_mode(neigs=neigs, component=component, data=Ex)
+
         elif self.axis == 'z':
-            Ex_fields = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Ex]
-            Ey_fields = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Ey]
-        else:
-            raise RuntimeError('axis should be x, y or z! ')
+            if component != "Ex" and component != "Ey":
 
-        self.Ex_fields = Ex_fields
-        self.Ey_fields = Ey_fields
-        self.beta = beta
+                Ez = np.empty((neigs, Ex.shape[1]), dtype=complex)
+                Hx = np.empty((neigs, Ex.shape[1]), dtype=complex)
+                Hy = np.empty((neigs, Ex.shape[1]), dtype=complex)
+                Hz = np.empty((neigs, Ex.shape[1]), dtype=complex)
 
-        # 保存各个模式对应的有效折射率
-        # 23.3.22 将solve.py中保存有效折射率的代码由draw_mode转移到calculate_mode
-        self.effective_index = abs(self.beta * self.lam / (2 * np.pi))
-        print(self.effective_index)
+                for i in range(neigs):
+                    Ez[i], Hx[i], Hy[i], Hz[i] = ps.construct.extra_feilds(k0=self.k, beta=self.beta[i], Ex=Ex[i], Ey=Ey[i],
+                                                                     matrices=matrices)
+                Ez = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Ez]
+                Hx = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Hx]
+                Hy = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Hy]
+                Hz = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Hz]
+                if component == "Ez":
+                    self.draw_mode(neigs=neigs, component=component, data=Ez)
+                elif component == "Hy":
+                    self.draw_mode(neigs=neigs, component=component, data=Hy)
+                elif component == "Hz":
+                    self.draw_mode(neigs=neigs, component=component, data=Hz)
+                elif component == "Hx":
+                    self.draw_mode(neigs=neigs, component=component, data=Hx)
+                else:
+                    raise ValueError("invalid component")
+            else:
+                Ex = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Ex]
+                Ey = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Ey]
+                if component == "Ex":
+                    self.draw_mode(neigs=neigs, component=component, data=Ex)
+                elif component == "Ey":
+                    self.draw_mode(neigs=neigs, component=component, data=Ey)
 
     def draw_mode(self,
                   neigs: int = 1,
-                  component: str = "ey"
+                  component: str = "Ey",
+                  data: list=None
                   ) -> None:
         '''
         绘制模式，保存图片与相应的有效折射率
@@ -139,30 +221,29 @@ class Solve:
         for i in range(neigs):  # For each eigenvalue
             # Create a figure
             plt.figure()
-
-            plt.pcolor(self.n[:, :, 0], cmap=cm.Blues_r)
-            plt.clim([1, np.amax(self.n)])
-
-            if component == "ey":
-                E_fields = self.Ey_fields
-            elif component == "ex":
-                E_fields = self.Ex_fields
+            # if component == "Ey":
+            #     E_fields = self.Ey_fields
+            # elif component == "Ex":
+            #     E_fields = self.Ex_fields
 
             # Start a plot, find the contour levels, remove the zero level, replot without zero level
-            plot_matrix = np.transpose(E_fields[i].real)
+            plot_matrix = np.transpose(data[i].real)
             plt.pcolor(self.x, self.y, plot_matrix, cmap=cm.jet)
             plt.clim([np.amin(plot_matrix), np.amax(plot_matrix)])
             plt.colorbar()
-            plt.xlabel('X')
-            plt.ylabel('Y')
-            if component == "ey":
-                plt.title('Ey neff=%f' % self.effective_index[i])
-            elif component == "ex":
-                plt.title('Ex neff=%f' % self.effective_index[i])
+            if self.axis == "x":
+                plt.xlabel('Y')
+                plt.ylabel('Z')
+            elif self.axis == "y":
+                plt.xlabel('X')
+                plt.ylabel('Z')
+            elif self.axis == "z":
+                plt.xlabel('X')
+                plt.ylabel('Y')
 
+            plt.title('%s, neff=%f' % (component, self.effective_index[i]))
             # 保存图片
-            plt.savefig(fname='%s\\%s%d.png' % (self.filepath, 'mode', i + 1))
-            # plt.show()
+            plt.savefig(fname='%s\\%s%d_%s.png' % (self.filepath, 'mode', i + 1, component))
             plt.close()
 
     def calculate_TEfraction(self,

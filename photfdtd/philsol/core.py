@@ -29,7 +29,9 @@ def eigen_build(k0, n, dx, dy, x_boundary = None, y_boundary = None):
     
     #This statement is kind of confusing but is the equivilent to doing a tensor 
     #contraction. So each row operation is apended to the diagonals of a larger 
-    #matrix so we can operate on the whole grid at once.  
+    #matrix so we can operate on the whole grid at once.
+    # sps.block_diag：从提供的矩阵构建挡路对角稀疏矩阵。 为什么要这样做？
+    # 这是为了将非方阵转为方阵（这样做需要消耗巨大内存)
     Ux = sps.block_diag([Ux_temp for i in range(ny)], format = 'csr')
     
 #%% Now we can construct all the other operators        
@@ -79,4 +81,20 @@ def eigen_build(k0, n, dx, dy, x_boundary = None, y_boundary = None):
 
     return P, {'epsx': epsx, 'epsy':epsy, 'epszi': epszi, 
                                        'ux': Ux, 'uy': Uy, 'vx': Vx, 'vy': Vy }
+    solve(P, )
 
+def solve(P, beta_trial, E_trial=None, neigs=1):
+    """
+	Solves eigenproblem and returns beta and the transverse E-feilds
+	"""
+    print('Solving eigenmodes on CPU')
+    t = time.time()
+
+    beta_squared, E = linalg.eigs(P, neigs, sigma=beta_trial ** 2, v0=E_trial)
+
+    Ex, Ey = np.split(E, 2)
+
+    Ex, Ey = np.transpose(Ex), np.transpose(Ey)
+    print('{} secs later we have the final solution.'.format(time.time() - t))
+
+    return beta_squared ** 0.5, Ex, Ey
