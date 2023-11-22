@@ -159,7 +159,7 @@ class LineSource:
             pulse_length: float = 39e-15,
             offset: float = 112e-15,
             waveform: str = "plane",
-            polarizaton: str = "z"
+            polarization: str = "z"
     ):
         """Create a LineSource with a gaussian profile
         Args:
@@ -185,7 +185,7 @@ class LineSource:
         self.frequency = 1.0 / period
         self.pulse_length = pulse_length
         self.offset = offset
-        self.polarization = polarizaton
+        self.polarization = polarization
 
     def _register_grid(
             self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
