@@ -1,1 +1,1 @@
-这是github上的fdtd库，其中waveforms.py和sources.py被更改过
+https://github.com/phot-lab/photfdtd waveforms.py, sources.py and visualization.py modified by TaoJia

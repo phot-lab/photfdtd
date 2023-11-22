@@ -7,12 +7,12 @@ if __name__ == "__main__":
 
     # 设置器件参数
     waveguide = Waveguide(
-        xlength=40, ylength=40, zlength=1, x=150, y=150, z=0, refractive_index=3.47638, name="Waveguide",
+        xlength=40, ylength=40, zlength=1, x=75, y=75, z=0, refractive_index=3.47638, name="Waveguide",
         background_index=background_index
     )
 
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=300, grid_ylength=300, grid_zlength=1, grid_spacing=10e-9, total_time=1,
+    grid = Grid(grid_xlength=150, grid_ylength=150, grid_zlength=1, grid_spacing=10e-9, total_time=1,
                 pml_width_x=10,
                 pml_width_y=1,
                 pml_width_z=1,
@@ -30,17 +30,14 @@ if __name__ == "__main__":
                index=0,
                filepath=grid.folder)
 
-    # 计算这个截面处，波长1.55um，折射率3.47附近的10个模式
-    solve.calculate_mode(lam=1.55, neff=3.47638, neigs=5)
+    # 计算这个截面处，波长1.55um，折射率3.47附近的10个模式，并绘制
+    solve.calculate_mode(lam=1550e-9, neff=3.47638, neigs=2, component="Ex")
+    solve.calculate_mode(lam=1550e-9, neff=3.47638, neigs=2, component="Ey")
+    solve.calculate_mode(lam=1550e-9, neff=3.47638, neigs=2, component="Ez")
+    solve.calculate_mode(lam=1550e-9, neff=3.47638, neigs=2, component="Hx")
+    solve.calculate_mode(lam=1550e-9, neff=3.47638, neigs=2, component="Hy")
+    solve.calculate_mode(lam=1550e-9, neff=3.47638, neigs=2, component="Hz")
 
-    # 绘制计算的10个模式并保存
-    solve.draw_mode(neigs=5, component="ey")
-
-    # 计算各个模式的TEfraction，并保存图片
-    # solve._calculate_TEfraction(n_levels=6)
     # 打印这些模式对应的有效折射率
     print(solve.effective_index)
 
-    #频率扫描，波长范围为[1.45um, 1.55um] 一共计算五个点
-    # solve._sweep_(steps=5,
-    #               lams=[1.45, 1.55])
