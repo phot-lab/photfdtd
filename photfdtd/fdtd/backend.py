@@ -94,6 +94,8 @@ class NumpyBackend(Backend):
     """Numpy Backend"""
 
     # types
+    abs = numpy.abs
+
     int = numpy.int64
     """ integer type for array"""
 

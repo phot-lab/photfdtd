@@ -45,8 +45,6 @@ class Solve:
         :return: None
         # 23.4.17: 更改了保存图片的名称
         """
-        # TODO: 在截面图上标注轴
-
         self.axis = axis.lower()
         self.index = index
         self.filepath = filepath
@@ -67,6 +65,7 @@ class Solve:
         # 这里计划日后加入判断是否是各向异性材料
         if True:
             # 做转置，这样在显示时x就会被放在水平轴上
+            # FIXME: 这确定没错？
             self.n = np.transpose(self.n, [1, 0, 2])
         else:
             pass

@@ -11,6 +11,7 @@ class Fiber(Waveguide):
     name: 名称
     axis: 'x', 'y' 光纤沿哪个轴
     background_index：背景折射率
+    #TODO: 给弯曲结构加上抗锯齿弯曲边界?
     """
 
     # TODO: 多芯光纤、渐变折射率光纤
