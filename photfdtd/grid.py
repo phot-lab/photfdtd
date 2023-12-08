@@ -127,7 +127,6 @@ class Grid:
             else:
                 raise ValueError("please set a wavelength or period")
 
-
         x = x - xlength // 2
         y = y - ylength // 2
         z = z - zlength // 2
@@ -148,7 +147,8 @@ class Grid:
                                                                              phase_shift=phase_shift, name=name,
                                                                              pulse_type=pulse_type, cycle=cycle,
                                                                              pulse_length=pulse_length, offset=offset,
-                                                                             waveform=waveform, polarization=polarization)
+                                                                             waveform=waveform,
+                                                                             polarization=polarization)
             else:
                 self._grid[x: x + xlength, y: y + ylength, z: z + zlength] = fdtd.LineSource(period=period,
                                                                                              amplitude=amplitude,
@@ -476,7 +476,6 @@ class Grid:
         静态方法，调用时应使用 data = Grid.read_simulation(folder="...")
         folder: 保存监视器数据的文件路径
         """
-        # TODO: 将结果绘图
         if not folder.endswith(".npz"):
             folder = folder + "/detector_readings.npz"
 
@@ -489,7 +488,6 @@ class Grid:
             i += 1
 
         return data
-
 
     def visualize(
             self,
@@ -1076,9 +1074,10 @@ class Grid:
             file_name = "%s%s" % (field, chr(axis + 120))
             plt.savefig(os.path.join(folder, f"{file_name}.png"))
             plt.close()
+
     @staticmethod
     def compute_frequency_domain(grid, wl_start, wl_end, data, name_det, input_data=None,
-                                 index=0, index_3d=[0,0,0], axis=0, field="E", folder=None):
+                                 index=0, index_3d=[0, 0, 0], axis=0, field="E", folder=None):
         """
         傅里叶变换绘制频谱
         @param folder: 保存图片的地址，若为None则为grid.folder
@@ -1104,7 +1103,7 @@ class Grid:
             if input_data.ndim == 3:
                 input_data = input_data[:, index, axis]
             elif input_data.ndim == 5:
-                input_data = input_data[:,index_3d[0], index_3d[1], index_3d[2], axis]
+                input_data = input_data[:, index_3d[0], index_3d[1], index_3d[2], axis]
 
         fr = fdtd.FrequencyRoutines(grid._grid, objs=input_data)
         spectrum_freqs, spectrum = fr.FFT(
@@ -1133,4 +1132,3 @@ class Grid:
         file_name = "wl-amplitude_%s%s" % (field, chr(axis + 120))
         plt.savefig(os.path.join(folder, f"{file_name}.png"))
         plt.close()
-

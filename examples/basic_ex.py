@@ -15,7 +15,7 @@ if __name__ == "__main__":
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=400, grid_ylength=150, grid_zlength=1,
                 grid_spacing=20e-9,
-                total_time=2000,
+                total_time=1,
                 pml_width_x=40,
                 pml_width_y=40,
                 pml_width_z=0,
@@ -30,20 +30,20 @@ if __name__ == "__main__":
                     xlength=0, ylength=0, zlength=0)
 
     # 设置一个线监视器
-    grid.set_detector(detector_type="linedetector",
-                      name="detector",
-                      x=300,
-                      y=75,
-                      z=0,
-                      xlength=0 ,
-                      ylength=60,
-                      zlength=0
-                      )
+    # grid.set_detector(detector_type="linedetector",
+    #                   name="detector",
+    #                   x=300,
+    #                   y=75,
+    #                   z=0,
+    #                   xlength=0 ,
+    #                   ylength=60,
+    #                   zlength=0
+    #                   )
 
     # 创建solve对象
     solve = Solve(grid=grid)
 
-    # 绘制任一截面折射率分布
+    # 绘制z=0截面折射率分布
     solve.plot(axis='z',
                index=0,
                filepath=grid.folder)
@@ -69,3 +69,7 @@ if __name__ == "__main__":
 
     # 绘制某一点时域场变化曲线，这里选择index=30即监视器中心
     Grid.plot_fieldtime(folder=grid.folder,data=data,axis=2,index=30, name_det="detector")
+
+    # 绘制频谱
+    Grid.compute_frequency_domain(grid=grid, wl_start=1000e-9, wl_end=2000e-9, data=data, name_det="detector",
+                             index=30, axis=2, field="E", folder=None)

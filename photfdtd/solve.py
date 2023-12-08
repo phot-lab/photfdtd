@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw
 from matplotlib import cm
+from os import path
 import photfdtd.fdtd as fdtd
 
 
@@ -83,131 +84,127 @@ class Solve:
 
     def calculate_mode(self,
                        lam: float = 1550e-9,
-                       neff: float = 3.47,
+                       neff: float = None,
                        neigs: int = 1,
-                       component: str = "Ex"
+                       x_boundary_low=None, y_boundary_low=None, x_thickness_low=0, y_thickness_low=0,
+                       x_boundary_high=None, y_boundary_high=None, x_thickness_high=0, y_thickness_high=0
                        ):
-        '''
+        """
         调用phisol包，计算模式并绘制模式。
-        :param lam: 波长（m）
-        :param neff: 在neff周围计算模式
-        :param neigs: 计算模式数
-        @param component: "Ex""Ey""Ez""Hx""Hy""Hz"
-        '''
-        neff = neff * 10 ** 6
-        self.lam = lam
-        self.k = 2 * np.pi / lam
-
+        @param lam: 波长（m）
+        @param neff: 在neff周围计算模式
+        @param neigs: 计算模式数
+        @param x_boundary_low: "pml"或"zero"，分别表示pml或零值边界
+        @param y_boundary_low:
+        @param x_thickness_low: int表示pml边界的厚度
+        @param y_thickness_low:
+        @param x_boundary_high:
+        @param y_boundary_high:
+        @param x_thickness_high:
+        @param y_thickness_high:
+        @return:
+        """
         # NOTE: fdtd的单位是m，而philsol的单位是um
+        if neff == None:
+            neff = max(self.n)
+        self.lam = lam * 10 ** 6
+        self.k = 2 * np.pi / self.lam
+
         # 调用phisol包，计算模式
-        # TODO: 把philsol的一大堆函数揉成一个，然后扔掉
-        P, matrices = ps.eigen_build(self.k, self.n, self.grid.grid_spacing * 1e6, self.grid.grid_spacing * 1e6)
-        beta_in = 2. * np.pi * neff / lam
-        self.beta, Ex, Ey = ps.solve.solve(P, beta_in, neigs=neigs)
+        P, matrices = ps.eigen_build(self.k, self.n, self.grid.grid_spacing * 1e6, self.grid.grid_spacing * 1e6,
+                                     x_boundary_low=x_boundary_low, y_boundary_low=y_boundary_low, x_thickness_low=x_thickness_low,
+                                     y_thickness_low=y_thickness_low, x_boundary_high=x_boundary_high,
+                                     y_boundary_high=y_boundary_high, x_thickness_high=x_thickness_high, y_thickness_high=y_thickness_high)
+        beta_in = 2. * np.pi * neff / self.lam
+        self.beta, Ex_field, Ey_field = ps.solve.solve(P, beta_in, neigs=neigs)
+        del P  # 并不必要，只是为了节省内存
         self.effective_index = abs(self.beta * self.lam / (2 * np.pi))
         print("neff=", self.effective_index)
 
         if self.axis == 'x':
-            if component != "Ey" and component != "Ez":
-                Ex_field = np.empty((neigs, Ex.shape[1]), dtype=complex)
-                Hx = np.empty((neigs, Ex.shape[1]), dtype=complex)
-                Hy = np.empty((neigs, Ex.shape[1]), dtype=complex)
-                Hz = np.empty((neigs, Ex.shape[1]), dtype=complex)
+            Ex = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
+            Hx = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
+            Hy = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
+            Hz = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
 
-                for i in range(neigs):
-                    Ex_field[i], Hy[i], Hz[i], Hx[i] = ps.construct.extra_feilds(k0=self.k, beta=self.beta[i],
-                                                                                 Ex=Ex[i], Ey=Ey[i], matrices=matrices)
-                Ex_field = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Ex_field]
-                Hx = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Hx]
-                Hy = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Hy]
-                Hz = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Hz]
+            for i in range(neigs):
+                Ex[i], Hy[i], Hz[i], Hx[i] = ps.construct.extra_feilds(k0=self.k, beta=self.beta[i],
+                                                                       Ex=Ex_field[i], Ey=Ey_field[i],
+                                                                       matrices=matrices)
+            Ex = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Ex]
+            Hx = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Hx]
+            Hy = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Hy]
+            Hz = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Hz]
 
-                if component == "Ex":
-                    self.draw_mode(neigs=neigs, component=component, data=Ex_field)
-                elif component == "Hy":
-                    self.draw_mode(neigs=neigs, component=component, data=Hy)
-                elif component == "Hz":
-                    self.draw_mode(neigs=neigs, component=component, data=Hz)
-                elif component == "Hx":
-                    self.draw_mode(neigs=neigs, component=component, data=Hx)
-            else:
-                Ey = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Ex]
-                Ez = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Ey]
-                if component == "Ez":
-                    self.draw_mode(neigs=neigs, component=component, data=Ez)
-                elif component == "Ey":
-                    self.draw_mode(neigs=neigs, component=component, data=Ey)
 
         elif self.axis == 'y':
-            if component != "Ex" and component != "Ez":
 
-                Ey_field = np.empty((neigs, Ex.shape[1]), dtype=complex)
-                Hx = np.empty((neigs, Ex.shape[1]), dtype=complex)
-                Hy = np.empty((neigs, Ex.shape[1]), dtype=complex)
-                Hz = np.empty((neigs, Ex.shape[1]), dtype=complex)
+            Ey = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
+            Hx = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
+            Hy = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
+            Hz = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
 
-                for i in range(neigs):
-                    Ey_field[i], Hx[i], Hz[i], Hy[i] = ps.construct.extra_feilds(k0=self.k, beta=self.beta[i],
-                                                                                 Ex=Ex[i], Ey=Ey[i], matrices=matrices)
+            for i in range(neigs):
+                Ey[i], Hx[i], Hz[i], Hy[i] = ps.construct.extra_feilds(k0=self.k, beta=self.beta[i],
+                                                                       Ex=Ex_field[i], Ey=Ey_field[i],
+                                                                       matrices=matrices)
 
-                Ey_field = [np.reshape(E_vec, (self.grid.Nx, self.grid.Nz)) for E_vec in Ey_field]
-                Hx = [np.reshape(E_vec, (self.grid.Nx, self.grid.Nz)) for E_vec in Hx]
-                Hy = [np.reshape(E_vec, (self.grid.Nx, self.grid.Nz)) for E_vec in Hy]
-                Hz = [np.reshape(E_vec, (self.grid.Nx, self.grid.Nz)) for E_vec in Hz]
+            Ey = [np.reshape(E_vec, (self.grid.Nx, self.grid.Nz)) for E_vec in Ey_field]
+            Hx = [np.reshape(E_vec, (self.grid.Nx, self.grid.Nz)) for E_vec in Hx]
+            Hy = [np.reshape(E_vec, (self.grid.Nx, self.grid.Nz)) for E_vec in Hy]
+            Hz = [np.reshape(E_vec, (self.grid.Nx, self.grid.Nz)) for E_vec in Hz]
 
-                if component == "Ey":
-                    self.draw_mode(neigs=neigs, component=component, data=Ey_field)
-                elif component == "Hy":
-                    self.draw_mode(neigs=neigs, component=component, data=Hy)
-                elif component == "Hz":
-                    self.draw_mode(neigs=neigs, component=component, data=Hz)
-                elif component == "Hx":
-                    self.draw_mode(neigs=neigs, component=component, data=Hx)
-            else:
-                Ex = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Ex]
-                Ez = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Ey]
-                if component == "Ez":
-                    self.draw_mode(neigs=neigs, component=component, data=Ez)
-                elif component == "Ex":
-                    self.draw_mode(neigs=neigs, component=component, data=Ex)
 
         elif self.axis == 'z':
-            if component != "Ex" and component != "Ey":
 
-                Ez = np.empty((neigs, Ex.shape[1]), dtype=complex)
-                Hx = np.empty((neigs, Ex.shape[1]), dtype=complex)
-                Hy = np.empty((neigs, Ex.shape[1]), dtype=complex)
-                Hz = np.empty((neigs, Ex.shape[1]), dtype=complex)
+            Ez = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
+            Hx = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
+            Hy = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
+            Hz = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
 
-                for i in range(neigs):
-                    Ez[i], Hx[i], Hy[i], Hz[i] = ps.construct.extra_feilds(k0=self.k, beta=self.beta[i], Ex=Ex[i], Ey=Ey[i],
-                                                                     matrices=matrices)
-                Ez = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Ez]
-                Hx = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Hx]
-                Hy = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Hy]
-                Hz = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Hz]
-                if component == "Ez":
-                    self.draw_mode(neigs=neigs, component=component, data=Ez)
-                elif component == "Hy":
-                    self.draw_mode(neigs=neigs, component=component, data=Hy)
-                elif component == "Hz":
-                    self.draw_mode(neigs=neigs, component=component, data=Hz)
-                elif component == "Hx":
-                    self.draw_mode(neigs=neigs, component=component, data=Hx)
-                else:
-                    raise ValueError("invalid component")
-            else:
-                Ex = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Ex]
-                Ey = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Ey]
-                if component == "Ex":
-                    self.draw_mode(neigs=neigs, component=component, data=Ex)
-                elif component == "Ey":
-                    self.draw_mode(neigs=neigs, component=component, data=Ey)
+            for i in range(neigs):
+                Ez[i], Hx[i], Hy[i], Hz[i] = ps.construct.extra_feilds(k0=self.k, beta=self.beta[i], Ex=Ex_field[i],
+                                                                       Ey=Ey_field[i], matrices=matrices)
+            Ez = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Ez]
+            Hx = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Hx]
+            Hy = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Hy]
+            Hz = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Hz]
 
-    def draw_mode(self,
-                  neigs: int = 1,
-                  component: str = "Ey",
-                  data: list=None
+        dic = {}
+
+        if not "Ex" in vars():
+            Ex = Ex_field
+            Ex = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Ex]
+
+        if not "Ey" in vars():
+            Ey = Ey_field
+            Ey = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Ey]
+
+        del Ex_field, Ey_field, matrices          # 节省内存
+
+        # 似乎原代码中Ex, Ey和Hx, Hy弄反了，所以我在这里调换了一下
+        dic["Ex"] = Ey
+        del Ey # 节省内存
+        dic["Ey"] = Ex
+        del Ex
+        dic["Ez"] = Ez
+        del Ez
+        dic["Hx"] = Hy
+        del Hy
+        dic["Hy"] = Hx
+        del Hx
+        dic["Hz"] = Hz
+        del Hz
+        dic["number_of_modes"] = neigs
+        dic["effective_index"] = self.effective_index
+        dic["axis"] = self.axis
+
+        return dic
+
+    @staticmethod
+    def draw_mode(filepath,
+                  data: list = None,
+                  content: str = "amplitude"
                   ) -> None:
         '''
         绘制模式，保存图片与相应的有效折射率
@@ -215,36 +212,59 @@ class Solve:
         :param component: ey: 绘制Ey ex: 绘制Ex # TODO: Ez与磁场？
         :return: None
         '''
-        self.neigs = neigs
+        axis = data["axis"]
+        effective_index = data["effective_index"]
         # 绘制模式图
-        for i in range(neigs):  # For each eigenvalue
-            # Create a figure
-            plt.figure()
-            # if component == "Ey":
-            #     E_fields = self.Ey_fields
-            # elif component == "Ex":
-            #     E_fields = self.Ex_fields
+        x = np.linspace(1, np.size(data["Ex"][0], 0), np.size(data["Ex"][0], 0))
+        y = np.linspace(1, np.size(data["Ex"][0], 1), np.size(data["Ex"][0], 1))
+        for j in ("Ex" ,"Ey", "Ez", "Hx", "Hy", "Hz"):
+            for i in range(data["number_of_modes"]):  # For each eigenvalue
+                plt.figure()
+                if content == "real_part":
+                    plot_matrix = np.transpose(data[j][i].real)
+                elif content == "amplitude":
+                    plot_matrix = np.transpose(abs(data[j][i]))
+                elif content == "imaginary_part":
+                    plot_matrix = np.transpose(data[j][i].imag)
+                elif content == "phase":
+                    plot_matrix = np.transpose(np.angle(data[j][i]))
 
-            # Start a plot, find the contour levels, remove the zero level, replot without zero level
-            plot_matrix = np.transpose(data[i].real)
-            plt.pcolor(self.x, self.y, plot_matrix, cmap=cm.jet)
-            plt.clim([np.amin(plot_matrix), np.amax(plot_matrix)])
-            plt.colorbar()
-            if self.axis == "x":
-                plt.xlabel('Y')
-                plt.ylabel('Z')
-            elif self.axis == "y":
-                plt.xlabel('X')
-                plt.ylabel('Z')
-            elif self.axis == "z":
-                plt.xlabel('X')
-                plt.ylabel('Y')
+                plt.pcolor(x, y, plot_matrix, cmap=cm.jet)
+                plt.clim([np.amin(plot_matrix), np.amax(plot_matrix)])
+                plt.colorbar()
+                if axis == "x":
+                    plt.xlabel('Y')
+                    plt.ylabel('Z')
+                elif axis == "y":
+                    plt.xlabel('X')
+                    plt.ylabel('Z')
+                elif axis == "z":
+                    plt.xlabel('X')
+                    plt.ylabel('Y')
 
-            plt.title('%s, neff=%f' % (component, self.effective_index[i]))
-            # 保存图片
-            plt.savefig(fname='%s\\%s%d_%s.png' % (self.filepath, 'mode', i + 1, component))
-            plt.close()
+                plt.title('%s_of_%s, neff=%f' % (content, j, effective_index[i]))
+                # 保存图片
+                plt.savefig(fname='%s\\%s%d_%s_%s.png' % (filepath, 'mode', i + 1, content, j))
+                plt.close()
 
+    @staticmethod
+    def save_mode(folder, dic):
+        # 保存计算的模式
+        np.savez(path.join(folder, "saved_modes"), **dic)
+
+    @staticmethod
+    def read_mode(folder):
+        if not folder.endswith("saved_modes.npz"):
+            folder = folder + "/saved_modes.npz"
+        readings = np.load(folder, allow_pickle=True)
+        names = readings.files
+        data = {}
+        i = 0
+        for name in names:
+            data[name] = readings[name]
+            i += 1
+        del readings
+        return data
     def calculate_TEfraction(self,
                              n_levels: int = 6,
                              ) -> None:
@@ -397,34 +417,34 @@ if __name__ == "__main__":
     waveguide = Waveguide(
         xlength=100, ylength=20, zlength=10, x=50, y=20, z=10, width=10, refractive_index=3.47, name="Waveguide"
     )
-    # 新建一个 grid 对象
-    grid = Grid(grid_xlength=100, grid_ylength=40, grid_zlength=20, grid_spacing=11e-9, total_time=1)
-
-    # 往 grid 里添加一个器件
-    grid.add_object(waveguide)
-
-    # 创建solve对象
-    solve = Solve(grid=grid)
-
-    # 绘制x=50截面
-    solve.plot(axis='x',
-               index=50,
-               filepath='D:/')
-
-    # 计算这个截面处，波长1.55um，折射率3.47附近的10个模式
-    solve.calculate_mode(lam=1.55, neff=3.47, neigs=10)
-
-    # 绘制计算的10个模式并保存，绘制时使用6个等高线
-    solve.draw_mode(neigs=10)
-
-    # 计算各个模式的TEfraction，并保存图片
-    solve.calculate_TEfraction(n_levels=6)
-
-    # 频率扫描，波长范围为[1.45um, 1.55um] 一共计算五个点
-    solve.sweep(steps=5,
-                lams=[1.45, 1.55])
-
-    # # 保存画好的图，设置保存位置，以及从哪一个轴俯视画图（这里画了三张图）
-    # grid.savefig(filepath="WaveguideX.png", axis="x")
-    # grid.savefig(filepath="WaveguideY.png", axis="y")
-    # grid.savefig(filepath="WaveguideZ.png", axis="z")
+    # # 新建一个 grid 对象
+    # grid = Grid(grid_xlength=100, grid_ylength=40, grid_zlength=20, grid_spacing=11e-9, total_time=1)
+    #
+    # # 往 grid 里添加一个器件
+    # grid.add_object(waveguide)
+    #
+    # # 创建solve对象
+    # solve = Solve(grid=grid)
+    #
+    # # 绘制x=50截面
+    # solve.plot(axis='x',
+    #            index=50,
+    #            filepath='D:/')
+    #
+    # # 计算这个截面处，波长1.55um，折射率3.47附近的10个模式
+    # solve.calculate_mode(lam=1.55, neff=3.47, neigs=10)
+    #
+    # # 绘制计算的10个模式并保存，绘制时使用6个等高线
+    # solve.draw_mode(neigs=10)
+    #
+    # # 计算各个模式的TEfraction，并保存图片
+    # solve.calculate_TEfraction(n_levels=6)
+    #
+    # # 频率扫描，波长范围为[1.45um, 1.55um] 一共计算五个点
+    # solve.sweep(steps=5,
+    #             lams=[1.45, 1.55])
+    #
+    # # # 保存画好的图，设置保存位置，以及从哪一个轴俯视画图（这里画了三张图）
+    # # grid.savefig(filepath="WaveguideX.png", axis="x")
+    # # grid.savefig(filepath="WaveguideY.png", axis="y")
+    # # grid.savefig(filepath="WaveguideZ.png", axis="z")
