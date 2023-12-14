@@ -28,7 +28,7 @@ if __name__ == "__main__":
                filepath=grid.folder)
 
     # 计算这个截面处，波长1.55um，折射率3.47附近的2个模式，边界条件选择在四个方向上都是pml，厚度均为15格
-    data = solve.calculate_mode(lam=1550e-9, neff=1.9, neigs=2,
+    data = solve.calculate_mode(lam=1550e-9, neff=3.47638, neigs=2,
                                 x_boundary_low="pml", y_boundary_low="pml",
                                 x_boundary_high="pml",
                                 y_boundary_high="pml",

@@ -112,13 +112,15 @@ class Solve:
 
         # 调用phisol包，计算模式
         P, matrices = ps.eigen_build(self.k, self.n, self.grid.grid_spacing * 1e6, self.grid.grid_spacing * 1e6,
-                                     x_boundary_low=x_boundary_low, y_boundary_low=y_boundary_low, x_thickness_low=x_thickness_low,
+                                     x_boundary_low=x_boundary_low, y_boundary_low=y_boundary_low,
+                                     x_thickness_low=x_thickness_low,
                                      y_thickness_low=y_thickness_low, x_boundary_high=x_boundary_high,
-                                     y_boundary_high=y_boundary_high, x_thickness_high=x_thickness_high, y_thickness_high=y_thickness_high)
+                                     y_boundary_high=y_boundary_high, x_thickness_high=x_thickness_high,
+                                     y_thickness_high=y_thickness_high)
         beta_in = 2. * np.pi * neff / self.lam
         self.beta, Ex_field, Ey_field = ps.solve.solve(P, beta_in, neigs=neigs)
         del P  # 并不必要，只是为了节省内存
-        self.effective_index = abs(self.beta * self.lam / (2 * np.pi))
+        self.effective_index = self.beta * self.lam / (2 * np.pi)
         print("neff=", self.effective_index)
 
         if self.axis == 'x':
@@ -180,11 +182,11 @@ class Solve:
             Ey = Ey_field
             Ey = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Ey]
 
-        del Ex_field, Ey_field, matrices          # 节省内存
+        del Ex_field, Ey_field, matrices  # 节省内存
 
         # 似乎原代码中Ex, Ey和Hx, Hy弄反了，所以我在这里调换了一下
         dic["Ex"] = Ey
-        del Ey # 节省内存
+        del Ey  # 节省内存
         dic["Ey"] = Ex
         del Ex
         dic["Ez"] = Ez
@@ -217,7 +219,7 @@ class Solve:
         # 绘制模式图
         x = np.linspace(1, np.size(data["Ex"][0], 0), np.size(data["Ex"][0], 0))
         y = np.linspace(1, np.size(data["Ex"][0], 1), np.size(data["Ex"][0], 1))
-        for j in ("Ex" ,"Ey", "Ez", "Hx", "Hy", "Hz"):
+        for j in ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz"):
             for i in range(data["number_of_modes"]):  # For each eigenvalue
                 plt.figure()
                 if content == "real_part":
@@ -255,7 +257,7 @@ class Solve:
     @staticmethod
     def read_mode(folder):
         if not folder.endswith("saved_modes.npz"):
-            folder = folder + "/saved_modes.npz"
+            folder = folder + "\\saved_modes.npz"
         readings = np.load(folder, allow_pickle=True)
         names = readings.files
         data = {}
@@ -265,15 +267,16 @@ class Solve:
             i += 1
         del readings
         return data
+
     def calculate_TEfraction(self,
                              n_levels: int = 6,
                              ) -> None:
-        '''
+        """
         绘制不同模式的Ey与Ex的实部之比，并保存
         # TODO: 在lumerical中，TE fracttion 来自全区域电场的平方积分之比，得到的是一个数，并不是这种算法。是否需要改正？
         :param filepath: 保存图片路径
         :return: None
-        '''
+        """
         pass
         f = [0] * self.neigs
         for i in range(self.neigs):
