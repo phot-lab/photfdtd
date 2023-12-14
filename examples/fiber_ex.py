@@ -1,53 +1,48 @@
 from photfdtd import Fiber, Grid, Solve, constants
 
 if __name__ == "__main__":
-    background_index = 1.0
+    # 单模光纤模式分析
+    # 单模光纤，参数：
+    # 包层折射率：1.4437
+    # 纤芯折射率：1.4504
+    # 纤芯半径：4um
+    # Pml边界厚度：3um
+    # 波长：1.55um
 
-    fiber = Fiber(length=100, x=50, y=50, z=50, radius=[10, 40], refractive_index=[3.47, 1.45], name='fiber', axis='y',
+    background_index = 1.4437
+
+    fiber = Fiber(length=1, x=100, y=100, z=0, radius=[20], refractive_index=[1.4504], name='fiber', axis='z',
                   background_index=background_index)
 
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=100, grid_ylength=100, grid_zlength=100, grid_spacing=20e-9, total_time=500,
-                foldername="test_fiber",
-                pml_width_x=1,
-                pml_width_y=10,
-                pml_width_z=1,
-                permittivity=background_index ** 2)
+    grid = Grid(grid_xlength=200, grid_ylength=200, grid_zlength=1, grid_spacing=200e-9,
+                foldername="test_fiber", permittivity=background_index ** 2)
 
-    # 往 grid 里添加一个器件
+    # 往 grid 里添加fiber
     grid.add_object(fiber)
-
-    # 设置光源
-    grid.set_source(source_type="planesource", period=1550e-9 / constants.c, name="source", x=50, y=15, z=50,
-                    xlength=20, ylength=0, zlength=20)
-
-    # 设置监视器
-    grid.set_detector(detector_type="blockdetector",
-                      name="detector",
-                      x=50,
-                      y=85,
-                      z=50,
-                      xlength=20,
-                      ylength=0,
-                      zlength=20
-                      )
 
     # 创建solve对象
     solve = Solve(grid=grid)
 
-    # 绘制任一截面折射率分布
-    solve.plot()
+    # 绘制折射率分布
+    solve.plot(axis="z",
+               filepath=grid.folder,
+               index=0)
 
-    # 运行仿真
-    grid.run()
+    # 计算这个截面处，波长1.55um，折射率3.47附近的2个模式，边界条件选择在四个方向上都是pml，厚度均为15格
+    data = solve.calculate_mode(lam=1550e-9, neff=1.4504, neigs=2,
+                                x_boundary_low="pml", y_boundary_low="pml",
+                                x_boundary_high="pml",
+                                y_boundary_high="pml",
+                                x_thickness_low=15,
+                                y_thickness_low=15,  x_thickness_high=15,
+                                y_thickness_high=15)
 
-    # 保存仿真结果
-    grid.save_simulation()
+    Solve.save_mode(solve.filepath, data)
 
-    # 绘制任意截面场图
-    grid.visualize(x=50, showEnergy=True, show=True, save=True)
-    grid.visualize(z=50, showEnergy=True, show=True, save=True)
+    Solve.draw_mode(filepath=solve.filepath, data=data, content="amplitude")
+    Solve.draw_mode(filepath=solve.filepath, data=data, content="real_part")
+    Solve.draw_mode(filepath=solve.filepath, data=data, content="imaginary_part")
+    Solve.draw_mode(filepath=solve.filepath, data=data, content="phase")
 
-    # 读取仿真结果
-    data = grid.read_simulation(folder=grid.folder)
 
