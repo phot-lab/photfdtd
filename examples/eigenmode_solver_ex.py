@@ -20,12 +20,13 @@ if __name__ == "__main__":
 
     # 接下来我们绘制z=0截面的折射率分布，并计算在该截面处的五个模式
     # 创建solve对象
-    solve = Solve(grid=grid)
+    solve = Solve(grid=grid,
+                  axis='z',
+                  index=0,
+                  filepath=grid.folder)
 
     # 绘制截面折射率分布
-    solve.plot(axis='z',
-               index=0,
-               filepath=grid.folder)
+    solve.draw_refractive_index()
 
     # 计算这个截面处，波长1.55um，折射率3.47附近的2个模式，边界条件选择在四个方向上都是pml，厚度均为15格
     data = solve.calculate_mode(lam=1550e-9, neff=3.47638, neigs=2,
@@ -33,7 +34,7 @@ if __name__ == "__main__":
                                 x_boundary_high="pml",
                                 y_boundary_high="pml",
                                 x_thickness_low=15,
-                                y_thickness_low=15,  x_thickness_high=15,
+                                y_thickness_low=15, x_thickness_high=15,
                                 y_thickness_high=15)
 
     # 接下来即可绘制模式场，我们选择绘制amplitude，即幅值。filepath为保存绘制的图片的路径
@@ -57,5 +58,3 @@ if __name__ == "__main__":
     # data_from_saved_modes = Solve.read_mode(solve.filepath)
     #
     # Solve.draw_mode(filepath=solve.filepath, data=data_from_saved_modes, content="real_part")
-
-
