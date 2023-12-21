@@ -75,7 +75,7 @@ class Solve:
         plt.clim([1.0, np.amax(self.n)])
         plt.colorbar()
         # 保存图片
-        plt.savefig(fname='%s\\%s_%s=%d.png' % (self.filepath, 'index', axis, index))
+        plt.savefig(fname='%s\\%s_%s=%d.png' % (self.filepath, 'index', self.axis, self.index))
         if self.axis == "x":
             plt.xlabel('Y')
             plt.ylabel('Z')
