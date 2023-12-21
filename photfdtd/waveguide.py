@@ -27,8 +27,9 @@ class Waveguide:
             z: int = 30,
             width: int = 10,
             name: str = "waveguide",
-            refractive_index: float = 3.47,
-            background_index: float = 1
+            refractive_index: float = None,
+            background_index: float = 1,
+            material: str = ""
     ) -> None:
 
         self.xlength = xlength

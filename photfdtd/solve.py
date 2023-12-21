@@ -106,7 +106,7 @@ class Solve:
         """
         # NOTE: fdtd的单位是m，而philsol的单位是um
         if neff == None:
-            neff = max(self.n)
+            neff = np.max(self.n)
         self.lam = lam * 10 ** 6
         self.k = 2 * np.pi / self.lam
 

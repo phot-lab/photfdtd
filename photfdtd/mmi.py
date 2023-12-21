@@ -9,7 +9,7 @@ class Mmi(Waveguide):
     ylength: 多模波导区域y方向宽度
     zlength: 多模波导区域z方向宽度，通常也是波导高度
     We: 多模波导有效宽度
-    x,y,z: 多模波导位置坐标（通常是矩形区域最靠近原点的点）
+    x,y,z: 多模波导中心坐标
     n: 输入波导数
     m：输出波导数
     width_port：端口宽度(端口是一个梯形，是一个Ysplitter.taper类对象)

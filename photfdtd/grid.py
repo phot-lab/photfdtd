@@ -200,9 +200,11 @@ class Grid:
                  axis="x",
                  axis_number=0,
                  animate=False,
-                 time=None):
+                 time=None,
+                 geo=None):
         """
         保存图片
+        @param geo: Solve.geometry，也可以为None，程序会自己计算
         @param axis: 轴(若为二维模拟，则axis只能='z')
         @param axis_number: 索引
         @param time: 绘制哪个时刻的场图（用户用不到，仅供run()使用
@@ -219,13 +221,13 @@ class Grid:
         folder = self.folder
         if axis == "x":  # 绘制截面/剖面场图
             self._grid.visualize(x=axis_number, save=True, animate=animate,
-                                 index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder)
+                                 index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder, geo=geo, background_index=self.background_index)
         elif axis == "y":
             self._grid.visualize(y=axis_number, save=True, animate=animate,
-                                 index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder)
+                                 index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder, geo=geo, background_index=self.background_index)
         elif axis == "z":
             self._grid.visualize(z=axis_number, save=True, animate=animate,
-                                 index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder)
+                                 index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder, geo=geo, background_index=self.background_index)
         else:
             raise RuntimeError("Unknown axis parameter.")
 
@@ -470,6 +472,8 @@ class Grid:
         # 保存detector_readings_sweep.npz文件
         savez(path.join(self.folder, "detector_readings"), **dic)
 
+        return dic
+
     @staticmethod
     def read_simulation(folder: str = ''):
         """读取保存的监视器数据
@@ -526,6 +530,7 @@ class Grid:
             folder: path to folder to save frames
             showEnergy: 是否显示场
         """
+        pass
         if norm not in ("linear", "lin", "log"):
             raise ValueError("Color map normalization should be 'linear' or 'log'.")
         # imports (placed here to circumvent circular imports)
@@ -786,16 +791,6 @@ class Grid:
                     rect = ptc.Rectangle((px + mx, py + my), 1, 1, facecolor=objcolor)
                     plt.gca().add_patch(rect)
 
-            # patch = ptc.Rectangle(
-            #     xy=(min(_y) - 0.5, min(_x) - 0.5),
-            #     width=max(_y) - min(_y),
-            #     height=max(_x) - min(_x),
-            #     linewidth=0,
-            #     edgecolor="none",
-            #     facecolor=objcolor,
-            # )
-            # plt.gca().add_patch(patch)
-
         # visualize the energy in the grid
         cmap_norm = None
         if norm == "log":
@@ -833,136 +828,6 @@ class Grid:
 
         plt.clf()
 
-    # def visualize_detector(self, name: str, axis: str = "x", field: str = "E", filepath: str = None, show=True,
-    #                        save=False):
-    #     """
-    #
-    #     Args:
-    #
-    #         name: Detector name.
-    #         axis: Block detector data in axis {"x", "y", "z"}. default="x".
-    #         field: field to show. {"E", "H"}. default="E".
-    #         filepath: Figure path save to.
-    #         show: If show the figure immediately. default=True
-    #         show: If save the figure immediately. default=False
-    #     """
-    #     pass
-    #     from tqdm import tqdm
-    #     from scipy.signal import hilbert
-    #     from numpy import log10, where
-    #     from photfdtd.fdtd.detectors import LineDetector, BlockDetector
-    #     target = None
-    #     for detector in self._grid.detectors:
-    #         if detector.name == name:
-    #             target = detector
-    #     if target is None:
-    #         raise Exception(
-    #             "No Detector named '{}' in grid.".format(name)
-    #         )
-    #     if save and filepath is None:
-    #         filename = target.__class__.__name__ + "_" + field + axis
-    #         filename += ",name="+name
-    #         filename += ",time=" + str(self._total_time) if self._total_time is not None else ""
-    #         filepath = os.path.join(self.folder, f"{filename}.png")
-    #
-    #     if isinstance(target, LineDetector):
-    #         specific_plot = field + axis
-    #         detector_dict = {}
-    #         maxArray = {}
-    #         detector_dict[name + " (E)"] = np.array([x for x in target.detector_values()["E"]])
-    #         detector_dict[name + " (H)"] = np.array([x for x in target.detector_values()["H"]])
-    #         if len(detector_dict):
-    #             for detector in detector_dict:
-    #                 if len(detector_dict[detector].shape) != 3:
-    #                     print("Detector '{}' '{}' not LineDetector; dumped.".format(detector, specific_plot))
-    #                     continue
-    #                 if specific_plot is not None:
-    #                     if detector[-2] != specific_plot[0]:
-    #                         continue
-    #                 if detector[-2] == "E":
-    #                     plt.figure(0, figsize=(15, 15))
-    #                 elif detector[-2] == "H":
-    #                     plt.figure(1, figsize=(15, 15))
-    #                 for dimension in range(len(detector_dict[detector][0][0])):
-    #                     if specific_plot is not None:
-    #                         if ["x", "y", "z"].index(specific_plot[1]) != dimension:
-    #                             continue
-    #                     # if specific_plot, subplot on 1x1, else subplot on 2x2
-    #                     plt.subplot(
-    #                         2 - int(specific_plot is not None),
-    #                         2 - int(specific_plot is not None),
-    #                         dimension + 1 if specific_plot is None else 1,
-    #                     )
-    #                     hilbertPlot = abs(
-    #                         hilbert([x[0][dimension] for x in detector_dict[detector]])
-    #                     )
-    #                     plt.plot(hilbertPlot, label=detector)
-    #                     plt.title(detector[-2] + "(" + ["x", "y", "z"][dimension] + ")")
-    #                     if detector[-2] not in maxArray:
-    #                         maxArray[detector[-2]] = {}
-    #                     if str(dimension) not in maxArray[detector[-2]]:
-    #                         maxArray[detector[-2]][str(dimension)] = []
-    #                     maxArray[detector[-2]][str(dimension)].append(
-    #                         [detector, where(hilbertPlot == max(hilbertPlot))[0][0]]
-    #                     )
-    #
-    #                 # Loop same as above, only to add axes labels
-    #                 for i in range(2):
-    #                     if specific_plot is not None:
-    #                         if ["E", "H"][i] != specific_plot[0]:
-    #                             continue
-    #                     plt.figure(i)
-    #                     for dimension in range(len(detector_dict[detector][0][0])):
-    #                         if specific_plot is not None:
-    #                             if ["x", "y", "z"].index(specific_plot[1]) != dimension:
-    #                                 continue
-    #                         plt.subplot(
-    #                             2 - int(specific_plot is not None),
-    #                             2 - int(specific_plot is not None),
-    #                             dimension + 1 if specific_plot is None else 1,
-    #                         )
-    #                         plt.xlabel("Time steps")
-    #                         plt.ylabel("Magnitude")
-    #                     plt.suptitle("Intensity profile")
-    #             plt.legend()
-    #             if save:
-    #                 plt.savefig(filepath)
-    #             if show:
-    #                 plt.show()
-    #             # plt.clf()  # 清除画布
-    #     elif isinstance(target, BlockDetector):
-    #         detector_data = np.array([x for x in target.detector_values()[field]])
-    #         if len(detector_data) > 0:
-    #             plt.ioff()
-    #             plt.close()
-    #             a = []  # array to store wave intensities
-    #             axis_index = {"x": 0, "y": 1, "z": 2}
-    #             for i in tqdm(range(len(detector_data[0]))):
-    #                 a.append([])
-    #                 for j in range(len(detector_data[0][0])):
-    #                     temp = [x[i][j][0][axis_index[axis]] for x in detector_data]
-    #                     a[i].append(max(temp) - min(temp))
-    #
-    #             peakVal, minVal = max(map(max, a)), min(map(min, a))
-    #             print(
-    #                 "Peak at:",
-    #                 [
-    #                     [[i, j] for j, y in enumerate(x) if y == peakVal]
-    #                     for i, x in enumerate(a)
-    #                     if peakVal in x
-    #                 ],
-    #             )
-    #             a = 10 * log10([[y / minVal for y in x] for x in a])
-    #
-    #             plt.title("dB map of {} field distribution in detector region".format("Electrical(E)" if field == "E" else "Magnetic(H)"))
-    #             plt.imshow(a, cmap="inferno", interpolation="spline16")
-    #             cbar = plt.colorbar()
-    #             cbar.ax.set_ylabel("dB scale", rotation=270)
-    #             if save:
-    #                 plt.savefig(filepath)
-    #             if show:
-    #                 plt.show()
-    #             plt.clf()
     @staticmethod
     def dB_map(folder=None, total_time=None, block_det=None, data=None, choose_axis=2, field="E", name_det=None,
                interpolation="spline16", save=True, index="x-y"):
