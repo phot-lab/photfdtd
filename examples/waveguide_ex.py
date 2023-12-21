@@ -24,16 +24,8 @@ if __name__ == "__main__":
     grid.add_object(waveguide)
 
     # 设置光源
-    grid.set_source(source_type="planesource",
-                    period=1550e-9 / constants.c,
-                    name="source",
-                    x=100,
-                    y=30,
-                    z=20,
-                    xlength=1,
-                    ylength=waveguide.ylength + 20,
-                    zlength=waveguide.zlength + 10
-                    )
+    grid.set_source(source_type="pointsource", wavelength=1550e-9, name="source", x=100, y=30, z=20,
+                    xlength=0, ylength=0, zlength=0)
 
     # 设置监视器
     grid.set_detector(detector_type="blockdetector",
@@ -61,14 +53,15 @@ if __name__ == "__main__":
     grid.save_simulation()
 
     # 绘制任意截面场图
-    grid.visualize(x=200, showEnergy=True, show=True, save=True)
-    grid.visualize(z=20, showEnergy=True, show=True, save=True)
+    grid.save_fig(axis="x",
+                  axis_number=200,
+                  geo=solve.geometry)
+    grid.save_fig(axis="z",
+                  axis_number=20,
+                  geo=solve.geometry)
 
-    # 可视化监视器数据
-    # grid.visualize_detector("detector", "x", "E", show=True, save=True)
     # 读取仿真结果
     data = grid.read_simulation(folder=grid.folder)
     # 绘制监视器范围内光场分布
-    Grid.dB_map(folder="D:/Github_Clone/photfdtd/examples/test_waveguide", total_time=1600,
-                det_data=data, name_det="detector", choose_axis=0, field="E", index="x-y",
-                interpolation="spline16", save=True)
+    Grid.dB_map(folder="D:/Github_Clone/photfdtd/examples/test_waveguide", total_time=1600, data=data, choose_axis=0,
+                field="E", name_det="detector", interpolation="spline16", save=True, index="x-y")

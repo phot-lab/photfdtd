@@ -13,13 +13,20 @@ class Index:
     """
 
     def __init__(self,
-                 file: str = 'D:/下载内容/photfdtd-main/photfdtd/折射率数据/Si.csv',
-                 data=None
+                 material: str = 'materials/Si.csv',
+                 data=None,
+                 wavelength: float = 1.55
                  ):
-        self.file = file
+        self.material = material
+        import os
+        current_directory = os.getcwd()
+        parent_directory = os.path.dirname(current_directory)
+        self.file = "%s\\photfdtd\\materials\\%s.csv" % (parent_directory, material)
         self.data = data
         self.fit_function_Reindex = None
         self.fit_function_Imindex = None
+        self.fit()
+
 
     def fit(self):
         # 打开CSV文件并读取数据

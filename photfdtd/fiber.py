@@ -15,7 +15,8 @@ class Fiber(Waveguide):
     """
 
     # TODO: 多芯光纤、渐变折射率光纤
-    def __init__(self, length: int = 100, x: int = 50, y: int = 50, z: int = 50, radius: list = [10, 40], refractive_index: list = [3.47, 1.45],
+    def __init__(self, length: int = 100, x: int = 50, y: int = 50, z: int = 50, radius: list = [10, 40],
+                 refractive_index: list = [3.47, 1.45],
                  name: str = "fiber", axis: str = "x", background_index: float = 1.0) -> None:
 
         self.radius = radius
@@ -33,6 +34,12 @@ class Fiber(Waveguide):
             self.y = y - self.length // 2
             self.x = x - self.radius[-1]
             self.z = z - self.radius[-1]
+
+        elif self.axis.lower() == "z":
+            # 波导沿z轴
+            self.z = z - self.length // 2
+            self.x = x - self.radius[-1]
+            self.y = y - self.radius[-1]
 
         self.name = name
         self.refractive_index = refractive_index
@@ -87,17 +94,24 @@ class Fiber(Waveguide):
 
             for i in range(self.length):
                 self.permittivity[:, i] = matrix
-            print()
 
-        # elif self.axis.lower() == 'z':
-        #     # 波导沿z轴
-        #     self.xlength = 2*self.radius+2
-        #     self.ylength = 2*self.radius+2
-        #     self.zlength = self.length
-        #     self.permittivity = np.ones((2*self.radius+2, 2*self.radius+2, self.length))
-        #     for i in range(self.length):
-        #         self.permittivity[:, :, i] += m[:, :] * (self.refractive_index ** 2 - 1)
-        #         self.permittivity[:, :, i] += (1 - m[:, :]) * (self.background_index ** 2 - 1)
+        elif self.axis.lower() == 'z':
+            # 波导沿z轴
+            self.xlength = 2 * self.radius[-1] + 2
+            self.ylength = 2 * self.radius[-1] + 2
+            self.zlength = self.length
+            self.permittivity = np.zeros((self.xlength, self.ylength, self.zlength))
+            for i in range(len(self.radius)):
+                i = len(self.radius) - i - 1
+                mask = (X - self.ylength // 2) ** 2 + (Y - self.ylength // 2) ** 2 <= self.radius[i] ** 2
+                matrix[mask] = i + 1
+            for j in range(len(self.refractive_index)):
+                matrix[matrix == j + 1] = self.refractive_index[j] ** 2
+                matrix[matrix == 0] = self.background_index ** 2
+
+            for i in range(self.length):
+                self.permittivity[:, :, i] = matrix
+
 
     def _set_objects(self):
         self._internal_objects = [self]

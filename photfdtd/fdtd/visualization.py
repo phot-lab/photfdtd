@@ -15,7 +15,7 @@ from matplotlib.colors import LogNorm
 
 # 3rd party
 from tqdm import tqdm
-from numpy import log10, where
+from numpy import log10, where, sqrt
 from scipy.signal import hilbert  # TODO: Write hilbert function to replace using scipy
 
 # relative
@@ -26,22 +26,24 @@ from .backend import backend as bd
 
 
 def visualize(
-    grid,
-    x=None,
-    y=None,
-    z=None,
-    cmap="Blues",
-    pbcolor="C3",
-    pmlcolor=(0, 0, 0, 0.1),
-    objcolor=(1, 0, 0, 0.1),
-    srccolor="C0",
-    detcolor="C2",
-    norm="linear",
-    show=False,  # default False to allow animate to be true
-    animate=False,  # True to see frame by frame states of grid while running simulation
-    index=None,  # index for each frame of animation (visualize fn runs in a loop, loop variable is passed as index)
-    save=False,  # True to save frames (requires parameters index, folder)
-    folder=None,  # folder path to save frames
+        grid,
+        x=None,
+        y=None,
+        z=None,
+        cmap="Blues",
+        pbcolor="C3",
+        pmlcolor=(0, 0, 0, 0.1),
+        objcolor=(1, 0, 0, 0.1),
+        srccolor="C0",
+        detcolor="C2",
+        norm="linear",
+        show=False,  # default False to allow animate to be true
+        animate=False,  # True to see frame by frame states of grid while running simulation
+        index=None,  # index for each frame of animation (visualize fn runs in a loop, loop variable is passed as index)
+        save=False,  # True to save frames (requires parameters index, folder)
+        folder=None,  # folder path to save frames
+        geo: list = None,
+        background_index: float = 1.0
 ):
     """visualize a projection of the grid and the optical energy inside the grid
 
@@ -61,6 +63,8 @@ def visualize(
         index: index for each frame of animation (typically a loop variable is passed)
         save: save frames in a folder
         folder: path to folder to save frames
+        @param background_index: 背景折射率
+        @param geo:solve.geometry。若为None，程序会自动计算
     """
     if norm not in ("linear", "lin", "log"):
         raise ValueError("Color map normalization should be 'linear' or 'log'.")
@@ -109,11 +113,13 @@ def visualize(
         )
 
     # just to create the right legend entries:
-    plt.plot([], lw=7, color=objcolor, label="Objects")
-    plt.plot([], lw=7, color=pmlcolor, label="PML")
-    plt.plot([], lw=3, color=pbcolor, label="Periodic Boundaries")
-    plt.plot([], lw=3, color=srccolor, label="Sources")
-    plt.plot([], lw=3, color=detcolor, label="Detectors")
+    legend = False
+    if legend:
+        plt.plot([], lw=7, color=objcolor, label="Objects")
+        plt.plot([], lw=7, color=pmlcolor, label="PML")
+        plt.plot([], lw=3, color=pbcolor, label="Periodic Boundaries")
+        plt.plot([], lw=3, color=srccolor, label="Sources")
+        plt.plot([], lw=3, color=detcolor, label="Detectors")
 
     # Grid energy
     grid_energy = bd.sum(grid.E ** 2 + grid.H ** 2, -1)
@@ -123,7 +129,11 @@ def visualize(
         Nx, Ny = grid.Ny, grid.Nz
         pbx, pby = _PeriodicBoundaryY, _PeriodicBoundaryZ
         pmlxl, pmlxh, pmlyl, pmlyh = _PMLYlow, _PMLYhigh, _PMLZlow, _PMLZhigh
-        grid_energy = grid_energy[x, :, :]
+        grid_energy = grid_energy[x, :, :].T
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.ylim(-1, Ny)
+        # plt.xlim(-1, Nx)
     elif y is not None:
         assert grid.Nx > 1 and grid.Nz > 1
         xlabel, ylabel = "z", "x"
@@ -131,13 +141,20 @@ def visualize(
         pbx, pby = _PeriodicBoundaryZ, _PeriodicBoundaryX
         pmlxl, pmlxh, pmlyl, pmlyh = _PMLZlow, _PMLZhigh, _PMLXlow, _PMLXhigh
         grid_energy = grid_energy[:, y, :].T
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.gca().yaxis.set_ticks_position('right')
+        plt.ylim(-1, Ny)
     elif z is not None:
         assert grid.Nx > 1 and grid.Ny > 1
         xlabel, ylabel = "x", "y"
         Nx, Ny = grid.Nx, grid.Ny
         pbx, pby = _PeriodicBoundaryX, _PeriodicBoundaryY
         pmlxl, pmlxh, pmlyl, pmlyh = _PMLXlow, _PMLXhigh, _PMLYlow, _PMLYhigh
-        grid_energy = grid_energy[:, :, z]
+        grid_energy = grid_energy[:, :, z].T
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.ylim(-1, Ny)
     else:
         raise ValueError("Visualization only works for 2D grids")
 
@@ -147,23 +164,23 @@ def visualize(
                 _x = [source.y[0], source.y[-1]]
                 _y = [source.z[0], source.z[-1]]
             elif y is not None:
-                _x = [source.z[0], source.z[-1]]
-                _y = [source.x[0], source.x[-1]]
+                _x = [source.x[0], source.x[-1]]
+                _y = [source.z[0], source.z[-1]]
             elif z is not None:
                 _x = [source.x[0], source.x[-1]]
                 _y = [source.y[0], source.y[-1]]
-            plt.plot(_y, _x, lw=3, color=srccolor)
+            plt.plot(_x, _y, lw=3, color=srccolor)
         elif isinstance(source, PointSource):
             if x is not None:
                 _x = source.y
                 _y = source.z
             elif y is not None:
-                _x = source.z
-                _y = source.y
+                _x = source.x
+                _y = source.z
             elif z is not None:
                 _x = source.x
                 _y = source.y
-            plt.plot(_y - 0.5, _x - 0.5, lw=3, marker="o", color=srccolor)
+            plt.plot(_x - 0.5, _y - 0.5, lw=3, marker="o", color=srccolor)
             grid_energy[_x, _y] = 0  # do not visualize energy at location of source
         elif isinstance(source, PlaneSource):
             if x is not None:
@@ -179,14 +196,14 @@ def visualize(
                 )
             elif y is not None:
                 _x = (
-                    source.z
-                    if source.z.stop > source.z.start + 1
-                    else slice(source.z.start, source.z.start)
-                )
-                _y = (
                     source.x
                     if source.x.stop > source.x.start + 1
                     else slice(source.x.start, source.x.start)
+                )
+                _y = (
+                    source.z
+                    if source.z.stop > source.z.start + 1
+                    else slice(source.z.start, source.z.start)
                 )
             elif z is not None:
                 _x = (
@@ -200,11 +217,11 @@ def visualize(
                     else slice(source.y.start, source.y.start)
                 )
             patch = ptc.Rectangle(
-                xy=(_y.start - 0.5, _x.start - 0.5),
-                width=_y.stop - _y.start,
-                height=_x.stop - _x.start,
+                xy=(_x.start - 0.5, _y.start - 0.5),
+                width=_x.stop - _x.start,
+                height=_y.stop - _y.start,
                 linewidth=0,
-                edgecolor="none",
+                edgecolor=srccolor,
                 facecolor=srccolor,
             )
             plt.gca().add_patch(patch)
@@ -215,8 +232,8 @@ def visualize(
             _x = [detector.y[0], detector.y[-1]]
             _y = [detector.z[0], detector.z[-1]]
         elif y is not None:
-            _x = [detector.z[0], detector.z[-1]]
-            _y = [detector.x[0], detector.x[-1]]
+            _x = [detector.x[0], detector.x[-1]]
+            _y = [detector.z[0], detector.z[-1]]
         elif z is not None:
             _x = [detector.x[0], detector.x[-1]]
             _y = [detector.y[0], detector.y[-1]]
@@ -224,14 +241,14 @@ def visualize(
         if detector.__class__.__name__ == "BlockDetector":
             # BlockDetector
             plt.plot(
-                [_y[0], _y[1], _y[1], _y[0], _y[0]],
-                [_x[0], _x[0], _x[1], _x[1], _x[0]],
+                [_x[0], _x[1], _x[1], _x[0], _x[0]],
+                [_y[0], _y[0], _y[1], _y[1], _y[0]],
                 lw=3,
                 color=detcolor,
             )
         else:
             # LineDetector
-            plt.plot(_y, _x, lw=3, color=detcolor)
+            plt.plot(_x, _y, lw=3, color=detcolor)
 
     # Boundaries
     for boundary in grid.boundaries:
@@ -246,8 +263,8 @@ def visualize(
         elif isinstance(boundary, pmlyl):
             patch = ptc.Rectangle(
                 xy=(-0.5, -0.5),
-                width=boundary.thickness,
-                height=Nx,
+                width=Nx,
+                height=boundary.thickness,
                 linewidth=0,
                 edgecolor="none",
                 facecolor=pmlcolor,
@@ -256,8 +273,8 @@ def visualize(
         elif isinstance(boundary, pmlxl):
             patch = ptc.Rectangle(
                 xy=(-0.5, -0.5),
-                width=Ny,
-                height=boundary.thickness,
+                width=boundary.thickness,
+                height=Ny,
                 linewidth=0,
                 edgecolor="none",
                 facecolor=pmlcolor,
@@ -265,9 +282,9 @@ def visualize(
             plt.gca().add_patch(patch)
         elif isinstance(boundary, pmlyh):
             patch = ptc.Rectangle(
-                xy=(Ny - 0.5 - boundary.thickness, -0.5),
-                width=boundary.thickness,
-                height=Nx,
+                xy=(-0.5, Ny + 0.5 - boundary.thickness),
+                width=Nx,
+                height=boundary.thickness,
                 linewidth=0,
                 edgecolor="none",
                 facecolor=pmlcolor,
@@ -275,35 +292,55 @@ def visualize(
             plt.gca().add_patch(patch)
         elif isinstance(boundary, pmlxh):
             patch = ptc.Rectangle(
-                xy=(-0.5, Nx - boundary.thickness - 0.5),
-                width=Ny,
-                height=boundary.thickness,
+                xy=(Nx - boundary.thickness + 0.5, -0.5),
+                width=boundary.thickness,
+                height=Ny,
                 linewidth=0,
                 edgecolor="none",
                 facecolor=pmlcolor,
             )
             plt.gca().add_patch(patch)
+    # 只显示波导结构的轮廓，而不显示整个波导
+    if geo is None:
+        geo = sqrt(1 / grid.inverse_permittivity)
+        for i in range(len(grid.objects)):
+            geo[grid.objects[i].x.start:grid.objects[i].x.stop,
+            grid.objects[i].y.start:grid.objects[i].y.stop,
+            grid.objects[i].z.start:grid.objects[i].z.stop] = sqrt(grid.objects[i].permittivity)
 
-    for obj in grid.objects:
-        if x is not None:
-            _x = (obj.y.start, obj.y.stop)
-            _y = (obj.z.start, obj.z.stop)
-        elif y is not None:
-            _x = (obj.z.start, obj.z.stop)
-            _y = (obj.x.start, obj.x.stop)
-        elif z is not None:
-            _x = (obj.x.start, obj.x.stop)
-            _y = (obj.y.start, obj.y.stop)
+    # geo是四维矩阵
+    geo = geo[:,:,:,-1]
+    if x is not None:
+        n_to_draw = geo[x, :, :]
+    elif y is not None:
+        n_to_draw = geo[:, y, :]
+    elif z is not None:
+        n_to_draw = geo[:, :, z]
+    # n_to_draw /= n_to_draw.max()
+    contour_data = where(n_to_draw != 1, 1, 0)
+    plt.contour(contour_data.T, colors='black', linewidths=1)
 
-        patch = ptc.Rectangle(
-            xy=(min(_y) - 0.5, min(_x) - 0.5),
-            width=max(_y) - min(_y),
-            height=max(_x) - min(_x),
-            linewidth=0,
-            edgecolor="none",
-            facecolor=objcolor,
-        )
-        plt.gca().add_patch(patch)
+
+    # for obj in grid.objects:
+    #     if x is not None:
+    #         _x = (obj.y.start, obj.y.stop)
+    #         _y = (obj.z.start, obj.z.stop)
+    #     elif y is not None:
+    #         _x = (obj.z.start, obj.z.stop)
+    #         _y = (obj.x.start, obj.x.stop)
+    #     elif z is not None:
+    #         _x = (obj.x.start, obj.x.stop)
+    #         _y = (obj.y.start, obj.y.stop)
+    #
+    #     patch = ptc.Rectangle(
+    #         xy=(min(_y) - 0.5, min(_x) - 0.5),
+    #         width=max(_y) - min(_y),
+    #         height=max(_x) - min(_x),
+    #         linewidth=0,
+    #         edgecolor="none",
+    #         facecolor=objcolor,
+    #     )
+    #     plt.gca().add_patch(patch)
 
     # visualize the energy in the grid
     cmap_norm = None
@@ -312,11 +349,11 @@ def visualize(
     plt.imshow(bd.numpy(grid_energy), cmap=cmap, interpolation="sinc", norm=cmap_norm)
 
     # finalize the plot
-    plt.ylabel(xlabel)
-    plt.xlabel(ylabel)
-    plt.ylim(Nx, -1)
-    plt.xlim(-1, Ny)
-    plt.figlegend()
+    # plt.ylabel(xlabel)
+    # plt.xlabel(ylabel)
+    # plt.ylim(Nx, -1)
+    # plt.xlim(-1, Ny)
+    # plt.figlegend()
     plt.tight_layout()
 
     # save frame (require folder path and index)
@@ -483,7 +520,6 @@ def plot_detection(detector_dict=None, specific_plot=None):
         plt.legend()
         plt.suptitle("Time-of-arrival plot")
     plt.show()
-
 
 #
 # def dump_to_vtk(pcb, filename, iteration, Ex_dump=False, Ey_dump=False, Ez_dump=False, Emag_dump=True, objects_dump=True, ports_dump=True):
