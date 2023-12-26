@@ -32,12 +32,11 @@ class Solve:
         :param: filepath: 保存图片的文件夹
         '''
         self.grid = grid._grid
-        geo = np.sqrt(1 / self.grid.inverse_permittivity)
-        for i in range(len(self.grid.objects)):
-            geo[self.grid.objects[i].x.start:self.grid.objects[i].x.stop,
-            self.grid.objects[i].y.start:self.grid.objects[i].y.stop,
-            self.grid.objects[i].z.start:self.grid.objects[i].z.stop] = np.sqrt(self.grid.objects[i].permittivity)
-        self.geometry = geo
+        self.geometry = np.sqrt(1 / self.grid.inverse_permittivity)
+        # for i in range(len(self.grid.objects)):
+        #     self.geometry[self.grid.objects[i].x.start:self.grid.objects[i].x.stop,
+        #     self.grid.objects[i].y.start:self.grid.objects[i].y.stop,
+        #     self.grid.objects[i].z.start:self.grid.objects[i].z.stop] = np.sqrt(self.grid.objects[i].permittivity)
 
         self.axis = axis.lower()
         self.index = index
@@ -72,19 +71,20 @@ class Solve:
 
         # 绘制
         plt.pcolor(self.n[:, :, 0], cmap=cm.jet)
-        plt.clim([1.0, np.amax(self.n)])
+        plt.clim([np.amin(self.n), np.amax(self.n)])
+        if self.axis == "x":
+            plt.xlabel('Y/grids')
+            plt.ylabel('Z/grids')
+        elif self.axis == "y":
+            plt.xlabel('X/grids')
+            plt.ylabel('Z/grids')
+        elif self.axis == "z":
+            plt.xlabel('X/grids')
+            plt.ylabel('Y/grids')
         plt.colorbar()
         # 保存图片
         plt.savefig(fname='%s\\%s_%s=%d.png' % (self.filepath, 'index', self.axis, self.index))
-        if self.axis == "x":
-            plt.xlabel('Y')
-            plt.ylabel('Z')
-        elif self.axis == "y":
-            plt.xlabel('X')
-            plt.ylabel('Z')
-        elif self.axis == "z":
-            plt.xlabel('X')
-            plt.ylabel('Y')
+
 
         # plt.show()
         plt.clf()

@@ -12,4 +12,5 @@ from .index import Index
 from .mzi import Mzi
 from .fiber import Fiber
 from .tff import TFF
+from .fwg import FWG
 from . import constants
