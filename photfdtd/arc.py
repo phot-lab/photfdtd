@@ -6,61 +6,105 @@ class Arc(Waveguide):
     """四分之一圆环
     outer_radius: 外环半径
     zlength: 波导厚度
-    x,y,z: 位置坐标矩形区域最靠近原点的点（这一点与其他波导不同，如果）
+    x,y,z: 圆心位置
     width: 波导宽度
     refractive_index:折射率
     name: 名称
     direction: 等于1，2，3，4，分别表示四个方向
+    angle_phi: 与x轴正方向夹角, 单位: 角度
+    angle_psi: 张角(单位: 角度，必须小于90）
     background_index: 环境折射率
     """
 
-    def __init__(
-        self,
-        outer_radius: int = 60,
-        zlength: int = 20,
-        x: int = 100,
-        y: int = 100,
-        z: int = 1,
-        width: int = 20,
-        refractive_index: float = 3.47,
-        name: str = "arc",
-        direction: int = 1,
-        background_index: float = 1
-    ) -> None:
+    # TODO：现在只有x-y平面
 
-        self.direction = direction
+    def __init__(
+            self,
+            outer_radius: int = 60,
+            zlength: int = 20,
+            x: int = 100,
+            y: int = 100,
+            z: int = 1,
+            width: int = 20,
+            refractive_index: float = 3.47,
+            name: str = "arc",
+            angle_phi: float = 0,
+            angle_psi: float = 0,
+            background_index: float = 1,
+    ) -> None:
+        angle_phi = angle_phi % 360
+        if angle_phi < 0:
+            angle_phi += 360
         self.outer_radius = outer_radius
-        super().__init__(outer_radius, outer_radius, zlength, x + int(outer_radius / 2), y + int(outer_radius / 2), z + int(zlength / 2), width, name, refractive_index, background_index)
+        self.phi = np.radians(angle_phi)
+        self.psi = np.radians(angle_psi)
+
+        # 保存圆心
+        self.x_center = x
+        self.y_center = y
+        self.z_center = z
+
+        x += int(outer_radius / 2)
+        y += int(outer_radius / 2)
+        z += int(zlength / 2)
+        super().__init__(xlength=outer_radius, ylength=outer_radius, zlength=zlength, x=x,
+                         y=y,z=z, width=width, name=name, refractive_index=refractive_index,
+                         background_index=background_index)
+
+
+    # def __iter__(self):
+    #     # 假设你的 Arc 对象中有一些可迭代的数据
+    #     return iter(self)
 
     def _compute_permittivity(self):
-        x = y = np.linspace(1, self.outer_radius, self.outer_radius)
+        # 这里+2的原因：稍微扩大一点矩阵的大小，可以保证水平和竖直方向最边上的点不被丢出
+        x = y = np.linspace(1, 2 * self.outer_radius + 2, 2 * self.outer_radius + 2)
         X, Y = np.meshgrid(x, y, indexing="ij")  # indexing = 'ij'很重要
 
-        if self.direction == 1:
-            # direction=1, 圆心在(outer_radius,0)
-            m = (X - self.outer_radius) ** 2 + Y**2 >= (self.outer_radius - self.width) ** 2
-            m1 = (X - self.outer_radius) ** 2 + Y**2 <= self.outer_radius**2
+        m = (X - self.outer_radius - 1) ** 2 + (Y - self.outer_radius - 1) ** 2 >= (self.outer_radius - self.width) ** 2
+        m1 = (X - self.outer_radius - 1) ** 2 + (Y - self.outer_radius - 1) ** 2 <= self.outer_radius ** 2
 
-        elif self.direction == 2:
-            # direction=2, 圆心在(0, 0)
-            m = X**2 + Y**2 >= (self.outer_radius - self.width) ** 2
-            m1 = X**2 + Y**2 <= self.outer_radius**2
+        # 以中心点为圆心创建角度矩阵
+        radient_matrix = np.arctan2((Y - self.outer_radius - 1), (X - self.outer_radius - 1))
+        # 将负角度变为正角度
+        radient_matrix[radient_matrix < 0] = 2 * np.pi + radient_matrix[radient_matrix < 0]
 
-        elif self.direction == 3:
-            # direction=3, 圆心在(0, outer_radius)
-            m = X**2 + (Y - self.outer_radius) ** 2 >= (self.outer_radius - self.width) ** 2
-            m1 = X**2 + (Y - self.outer_radius) ** 2 <= self.outer_radius**2
+        m2 = radient_matrix >= self.phi
+        m3 = radient_matrix <= self.phi + self.psi
 
-        elif self.direction == 4:
-            # direction=4, 圆心在(outer_radius, outer_radius)
-            m = (X - self.outer_radius) ** 2 + (Y - self.outer_radius) ** 2 >= (self.outer_radius - self.width) ** 2
-            m1 = (X - self.outer_radius) ** 2 + (Y - self.outer_radius) ** 2 <= self.outer_radius**2
-
-        for i in range(self.outer_radius):
-            for j in range(self.outer_radius):
-                if m1[i, j] != m[i, j]:
+        for i in range(2 * self.outer_radius + 2):
+            for j in range(2 * self.outer_radius + 2):
+                if m1[i, j] != m[i, j] or m2[i, j] != m[i, j] or m3[i, j] != m[i, j]:
                     m[i, j] = 0
 
-        self.permittivity = np.ones((self.outer_radius, self.outer_radius, self.zlength))
-        self.permittivity += m[:, :, None] * (self.refractive_index**2 - 1)
-        self.permittivity += (1 - m[:, :, None]) * (self.background_index ** 2 - 1)
+        def remove_zero_rows_columns(matrix):
+            # 删除矩阵所有元素都为0的行和列
+            # 检查每行是否至少有一个非零元素
+            non_zero_rows = np.any(matrix != 0, axis=1)
+
+            # 检查每列是否至少有一个非零元素
+            non_zero_columns = np.any(matrix != 0, axis=0)
+
+            # 使用布尔掩码筛选原始矩阵
+            result_matrix = matrix[non_zero_rows][:, non_zero_columns]
+
+            row_indices, col_indices = np.where(non_zero_rows), np.where(non_zero_columns)
+
+            return result_matrix, row_indices, col_indices
+
+        m_removed, row_indices, col_indices = remove_zero_rows_columns(m)
+        self.x += row_indices[0][0] - self.outer_radius
+        self.y += col_indices[0][0] - self.outer_radius
+
+        m_removed = m_removed.astype(float)
+        m_removed[m_removed == 1] *= self.refractive_index ** 2
+        m_removed[m_removed == 0] = self.background_index ** 2
+        self.permittivity = m_removed[:, :, None]
+
+        self.xlength = np.shape(m_removed)[0]
+        self.ylength = np.shape(m_removed)[1]
+
+        # import matplotlib.pyplot as plt
+        # plt.pcolor(self.permittivity)
+        # plt.show()
+        # quit()
