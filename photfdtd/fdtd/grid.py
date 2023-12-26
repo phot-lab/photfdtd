@@ -283,8 +283,10 @@ class Grid:
         self.E += self.courant_number * self.inverse_permittivity * curl
 
         # update objects
-        for obj in self.objects:
-            obj.update_E(curl)
+        # for obj in self.objects:
+        #     # 在添加波导后，fdtd会把波导区域中grid.inverse_permittivity设为0，这样波导区域内电磁场的更新就被放在了这里
+        #       Edited in 2023/12/25 by Tao Jia. Now the inverse permittivity of objects is added into the grid.
+        #     obj.update_E(curl)
 
         # update boundaries: step 2
         for boundary in self.boundaries:
@@ -308,9 +310,9 @@ class Grid:
         curl = curl_E(self.E)
         self.H -= self.courant_number * self.inverse_permeability * curl
 
-        # update objects
-        for obj in self.objects:
-            obj.update_H(curl)
+        # # update objects
+        # for obj in self.objects:
+        #     obj.update_H(curl)
 
         # update boundaries: step 2
         for boundary in self.boundaries:
