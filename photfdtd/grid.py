@@ -76,7 +76,8 @@ class Grid:
                 internal_object.x: internal_object.x + internal_object.xlength,
                 internal_object.y: internal_object.y + internal_object.ylength,
                 internal_object.z: internal_object.z + internal_object.zlength,
-                ] = fdtd.Object(permittivity=internal_object.permittivity, name=internal_object.name)
+                ] = fdtd.Object(permittivity=internal_object.permittivity, name=internal_object.name,
+                                background_index=internal_object.background_index)
 
     def set_source(
             self,
@@ -221,13 +222,16 @@ class Grid:
         folder = self.folder
         if axis == "x":  # 绘制截面/剖面场图
             self._grid.visualize(x=axis_number, save=True, animate=animate,
-                                 index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder, geo=geo, background_index=self.background_index)
+                                 index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder, geo=geo,
+                                 background_index=self.background_index)
         elif axis == "y":
             self._grid.visualize(y=axis_number, save=True, animate=animate,
-                                 index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder, geo=geo, background_index=self.background_index)
+                                 index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder, geo=geo,
+                                 background_index=self.background_index)
         elif axis == "z":
             self._grid.visualize(z=axis_number, save=True, animate=animate,
-                                 index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder, geo=geo, background_index=self.background_index)
+                                 index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder, geo=geo,
+                                 background_index=self.background_index)
         else:
             raise RuntimeError("Unknown axis parameter.")
 
@@ -266,6 +270,7 @@ class Grid:
                 axis: str = "z",
                 number: int = 0):
         # TODO: 完成它，让正则表达式能识别完整地址
+        pass
         import re
         from PIL import Image
         import imageio
@@ -461,8 +466,8 @@ class Grid:
     def save_simulation(self):
         dic = {}
         for detector in self._grid.detectors:
-            dic[detector.name + " (E)"] = [x for x in detector.detector_values()["E"]]
-            dic[detector.name + " (H)"] = [x for x in detector.detector_values()["H"]]
+            dic[detector.name + " (E)"] = np.array([x for x in detector.detector_values()["E"]])
+            dic[detector.name + " (H)"] = np.array([x for x in detector.detector_values()["H"]])
         dic["grid_spacing"] = self._grid.grid_spacing
         dic["time_step"] = self._grid.time_step
         dic["detectors"] = self._grid.detectors
@@ -829,20 +834,21 @@ class Grid:
         plt.clf()
 
     @staticmethod
-    def dB_map(folder=None, total_time=None, block_det=None, data=None, choose_axis=2, field="E", name_det=None,
-               interpolation="spline16", save=True, index="x-y"):
+    def dB_map(folder=None, total_time=None, block_det=None, data=None, axis="x", field="E", field_axis="z",
+               name_det=None,
+               interpolation="spline16", save=True, ):
         """
         绘制场分贝图 需要面监视器数据
         @param folder: 保存图片的地址
-        @param total_time: 模拟经历的时间
+        @param total_time: 模拟经历的时间，可选，仅命名用
         @param block_det: 面监视器数据 此变量与data二选一即可
         @param data: reading_simulation()方法读取的data数据
-        @param choose_axis: 从{0,1,2}中选择以匹配E或H的{x,y,z}分量
+        @param field_axis: {x,y,z} of E or H
         @param field: “E”或“H”
         @param name_det: 监视器的名称
         @param interpolation: 绘图方式 'matplotlib.pyplot.imshow' interpolation
         @param save: bool 是否保存
-        @param index: "x-y" or "y-z" or "x-z" 选择绘制dB图的面
+        @param axis: "x" or "y" or "z" 选择绘制dB图的截面
 
         """
         if block_det != None:
@@ -850,72 +856,73 @@ class Grid:
             name_det = block_det.name
         else:
             data = data[name_det + " (%s)" % field]
-        fieldaxis = field + chr(choose_axis + 120)
-        fdtd.dB_map_2D(block_det=data, choose_axis=choose_axis, interpolation=interpolation, index=index,
-                       save=save, folder=folder, name_det=name_det, total_time=total_time, fieldaxis=fieldaxis)
+
+        fdtd.dB_map_2D(block_det=data, interpolation=interpolation, axis=axis, field=field, field_axis=field_axis,
+                       save=save,
+                       folder=folder, name_det=name_det, total_time=total_time)
 
     @staticmethod
-    def plot_field(grid=None, field="E", axis=0, cross_section="z", axis_number=0, folder="", cmap="jet"):
+    def plot_field(grid=None, axis="z", axis_index=0, field="E", field_axis="z", folder="", cmap="jet"):
         """
         绘制当前时刻场分布（不需要监视器）
         @param grid: grid
         @param field: "E"或"H"
-        @param axis: 从{0,1,2}中选择以匹配E或H的{x,y,z}分量
-        @param cross_section: "x"或"y"或"z"表示绘制哪个截面
-        @param axis_number: 例如绘制z=0截面 ，则cross_section设为"z"而axis_number为0
+        @param field_axis: {x,y,z} of E or H
+        @param axis: "x"或"y"或"z"表示绘制哪个截面
+        @param axis_index: 例如绘制z=0截面 ，则axis设为"z"而axis_index为0
         @param folder: 保存图片的地址
         @param cmap: matplotlib.pyplot.imshow(cmap)
         """
-        title = "%s%s" % (field, chr(axis + 120))
+        title = "%s%s" % (field, field_axis)
         grid = grid._grid
         if field == "E":
-            if cross_section == "z":
-                field = grid.E[:, :, axis_number, axis]
-            elif cross_section == "y":
-                field = grid.E[:, axis_number, :, axis]
-            elif cross_section == "x":
-                field = grid.E[axis_number, :, :, axis]
+            if axis == "z":
+                field = grid.E[:, :, axis_index, ord(field_axis) - 120]
+            elif axis == "y":
+                field = grid.E[:, axis_index, :, ord(field_axis) - 120]
+            elif axis == "x":
+                field = grid.E[axis_index, :, :, ord(field_axis) - 120]
         elif field == "H":
-            if cross_section == "z":
-                field = grid.H[:, :, axis_number, axis]
-            elif cross_section == "y":
-                field = grid.H[:, axis_number, :, axis]
-            elif cross_section == "x":
-                field = grid.H[axis_number, :, :, axis]
+            if axis == "z":
+                field = grid.H[:, :, axis_index, ord(field_axis) - 120]
+            elif axis == "y":
+                field = grid.H[:, axis_index, :, ord(field_axis) - 120]
+            elif axis == "x":
+                field = grid.H[axis_index, :, :, ord(field_axis) - 120]
 
         m = max(abs(field.min().item()), abs(field.max().item()))
 
         # 创建颜色图
         plt.figure()
-        plt.imshow(field, vmin=-m, vmax=m, cmap=cmap)  # cmap 可以选择不同的颜色映射
-
+        plt.imshow(np.transpose(field), vmin=-m, vmax=m, cmap=cmap)  # cmap 可以选择不同的颜色映射
+        plt.ylim(-1, field.shape[1])
         # 添加颜色条
         cbar = plt.colorbar()
         # cbar.set_label('')
 
         # 添加标题和坐标轴标签
         plt.title(title)
-        if cross_section == "z":
+        if axis == "z":
             plt.xlabel('X/grids')
             plt.ylabel('Y/grids')
-        elif cross_section == "x":
+        elif axis == "x":
             plt.xlabel('Y/grids')
             plt.ylabel('Z/grids')
-        elif cross_section == "y":
+        elif axis == "y":
             plt.xlabel('X/grids')
             plt.ylabel('Z/grids')
 
-        plt.savefig(fname="%s//%s_%s=%i.png" % (folder, title, cross_section, axis_number))
+        plt.savefig(fname="%s//%s_%s=%i.png" % (folder, title, axis, axis_index))
         plt.close()
 
     @staticmethod
-    def plot_fieldtime(folder=None, data=None, axis=2, field="E", index=0, index_3d=[0, 0, 0], name_det=None):
+    def plot_fieldtime(folder=None, data=None, field_axis="z", field="E", index=None, index_3d=None, name_det=None):
         """
         绘制监视器某一点的时域场图
         @param index_3d: 三维数组：用于面监视器，选择读取数据的点
         @param folder: 保存图片的文件夹
         @param data: read_simulation()读到的数据
-        @param axis: 0或1或2分别表示E或H的x，y，z分量
+        @param field_axis: x, y, z of E or H
         @param field: “E“或”H“
         @param index: 用于线监视器，选择读取数据的点
         @param name_det: 监视器的名称
@@ -923,20 +930,25 @@ class Grid:
         data = data[name_det + " (%s)" % field]
         plt.figure()
         if data.ndim == 3:
-            plt.plot(range(len(data)), data[:, index, axis], linestyle='-', label="Experiment")
-            plt.ylabel('%s%s' % (field, chr(axis + 120)))
+            if index == None:
+                raise ValueError("Parameter 'index' must be set for linedetector!")
+            plt.plot(range(len(data)), data[:, index, ord(field_axis) - 120], linestyle='-', label="Experiment")
+            plt.ylabel('%s%s' % (field, field_axis))
             plt.xlabel("timesteps")
-            plt.title("%s%s-t" % (field, chr(axis + 120)))
-            file_name = "%s%s" % (field, chr(axis + 120))
+            plt.title("%s%s-t" % (field, field_axis))
+            file_name = "%s%s" % (field, field_axis)
             plt.savefig(os.path.join(folder, f"{file_name}.png"))
             plt.close()
         else:
-            plt.plot(range(len(data)), data[:, index_3d[0], index_3d[1], index_3d[2], axis], linestyle='-',
+            if index_3d == None:
+                raise ValueError("Parameter 'index_3d' must be set for blockdetector!")
+            plt.plot(range(len(data)), data[:, index_3d[0], index_3d[1], index_3d[2], ord(field_axis) - 120],
+                     linestyle='-',
                      label="Experiment")
-            plt.ylabel('%s%s' % (field, chr(axis + 120)))
+            plt.ylabel('%s%s' % (field, field_axis))
             plt.xlabel("timesteps")
-            plt.title("%s%s-t" % (field, chr(axis + 120)))
-            file_name = "%s%s" % (field, chr(axis + 120))
+            plt.title("%s%s-t" % (field, field_axis))
+            file_name = "%s%s" % (field, field_axis)
             plt.savefig(os.path.join(folder, f"{file_name}.png"))
             plt.close()
 

@@ -15,7 +15,7 @@ from matplotlib.colors import LogNorm
 
 # 3rd party
 from tqdm import tqdm
-from numpy import log10, where, sqrt
+from numpy import log10, where, sqrt, transpose
 from scipy.signal import hilbert  # TODO: Write hilbert function to replace using scipy
 
 # relative
@@ -136,14 +136,14 @@ def visualize(
         # plt.xlim(-1, Nx)
     elif y is not None:
         assert grid.Nx > 1 and grid.Nz > 1
-        xlabel, ylabel = "z", "x"
-        Nx, Ny = grid.Nz, grid.Nx
-        pbx, pby = _PeriodicBoundaryZ, _PeriodicBoundaryX
-        pmlxl, pmlxh, pmlyl, pmlyh = _PMLZlow, _PMLZhigh, _PMLXlow, _PMLXhigh
+        xlabel, ylabel = "x", "z"
+        Nx, Ny = grid.Nx, grid.Nz
+        pbx, pby = _PeriodicBoundaryX, _PeriodicBoundaryZ
+        pmlxl, pmlxh, pmlyl, pmlyh = _PMLXlow, _PMLXhigh, _PMLZlow, _PMLZhigh
         grid_energy = grid_energy[:, y, :].T
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
-        plt.gca().yaxis.set_ticks_position('right')
+        plt.gca().yaxis.set_ticks_position('left')
         plt.ylim(-1, Ny)
     elif z is not None:
         assert grid.Nx > 1 and grid.Ny > 1
@@ -181,7 +181,8 @@ def visualize(
                 _x = source.x
                 _y = source.y
             plt.plot(_x - 0.5, _y - 0.5, lw=3, marker="o", color=srccolor)
-            grid_energy[_x, _y] = 0  # do not visualize energy at location of source
+            # 由于grid_energy在前面被转置，这里必须对_x与_y做了替换
+            grid_energy[_y, _x] = 0  # do not visualize energy at location of source
         elif isinstance(source, PlaneSource):
             if x is not None:
                 _x = (
@@ -216,6 +217,7 @@ def visualize(
                     if source.y.stop > source.y.start + 1
                     else slice(source.y.start, source.y.start)
                 )
+
             patch = ptc.Rectangle(
                 xy=(_x.start - 0.5, _y.start - 0.5),
                 width=_x.stop - _x.start,
@@ -252,13 +254,16 @@ def visualize(
 
     # Boundaries
     for boundary in grid.boundaries:
+        # TODO: 日后使用周期边界时要注意绘图问题
         if isinstance(boundary, pbx):
             _x = [-0.5, -0.5, float("nan"), Nx - 0.5, Nx - 0.5]
             _y = [-0.5, Ny - 0.5, float("nan"), -0.5, Ny - 0.5]
+            # *
             plt.plot(_y, _x, color=pbcolor, linewidth=3)
         elif isinstance(boundary, pby):
             _x = [-0.5, Nx - 0.5, float("nan"), -0.5, Nx - 0.5]
             _y = [-0.5, -0.5, float("nan"), Ny - 0.5, Ny - 0.5]
+            # *
             plt.plot(_y, _x, color=pbcolor, linewidth=3)
         elif isinstance(boundary, pmlyl):
             patch = ptc.Rectangle(
@@ -309,7 +314,7 @@ def visualize(
             grid.objects[i].z.start:grid.objects[i].z.stop] = sqrt(grid.objects[i].permittivity)
 
     # geo是四维矩阵
-    geo = geo[:,:,:,-1]
+    geo = geo[:, :, :, -1]
     if x is not None:
         n_to_draw = geo[x, :, :]
     elif y is not None:
@@ -319,7 +324,6 @@ def visualize(
     # n_to_draw /= n_to_draw.max()
     contour_data = where(n_to_draw != 1, 1, 0)
     plt.contour(contour_data.T, colors='black', linewidths=1)
-
 
     # for obj in grid.objects:
     #     if x is not None:
@@ -365,46 +369,51 @@ def visualize(
         plt.show()
 
 
-def dB_map_2D(block_det=None, choose_axis=2, interpolation="spline16", index="x-y", save=True,
-              folder="", name_det="", total_time=0, fieldaxis="Ex"):
+def dB_map_2D(block_det=None, interpolation="spline16", axis="z", field="E", field_axis="z", save=True,
+              folder="", name_det="", total_time=0):
     """
     Displays detector readings from an 'fdtd.BlockDetector' in a decibel map spanning a 2D slice region inside the BlockDetector.
     Compatible with continuous sources (not waveform).
-    Currently, only x-y 2D plot slices are accepted.
 
     Parameter:-
         block_det (numpy array): 5 axes numpy array (timestep, row, column, height, {x, y, z} parameter) created by 'fdtd.BlockDetector'.
-        (optional) choose_axis (int): Choose between {0, 1, 2} to display {x, y, z} data. Default 2 (-> z).
         (optional) interpolation (string): Preferred 'matplotlib.pyplot.imshow' interpolation. Default "spline16".
-        index (str): "x-y" or "y-z" or "x-z"
+        @param axis: 选择截面"x" or "y" or "z"
+        @param save: 是否保存
+        @param folder: 存储文件夹
+        @param name_det: 面监视器的名称
+        @param total_time: 总模拟时间，可选，仅为了命名
     """
-    if block_det is None:
-        raise ValueError(
-            "Function 'dBmap' requires a detector_readings object as parameter."
-        )
-    if len(block_det.shape) != 5:  # BlockDetector readings object have 5 axes
-        raise ValueError(
-            "Function 'dBmap' requires object of readings recorded by 'fdtd.BlockDetector'."
-        )
+    # if block_det is None:
+    #     raise ValueError(
+    #         "Function 'dBmap' requires a detector_readings object as parameter."
+    #     )
+    # if len(block_det.shape) != 5:  # BlockDetector readings object have 5 axes
+    #     raise ValueError(
+    #         "Function 'dBmap' requires object of readings recorded by 'fdtd.BlockDetector'."
+    #     )
 
     # TODO: convert all 2D slices (y-z, x-z plots) into x-y plot data structure
 
     plt.ioff()
     plt.close()
     a = []  # array to store wave intensities
-    if index == "x-y":
+    # 首先计算仿真空间上每一点在所有时间上的最大值与最小值之差
+
+    choose_axis = ord(field_axis) -120
+    if axis == "z":
         for i in tqdm(range(len(block_det[0]))):
             a.append([])
             for j in range(len(block_det[0][0])):
                 temp = [x[i][j][0][choose_axis] for x in block_det]
                 a[i].append(max(temp) - min(temp))
-    elif index == "y-z":
+    elif axis == "x":
         for i in tqdm(range(len(block_det[0][0]))):
             a.append([])
             for j in range(len(block_det[0][0][0])):
                 temp = [x[0][i][j][choose_axis] for x in block_det]
                 a[i].append(max(temp) - min(temp))
-    elif index == "x-z":
+    elif axis == "y":
         for i in tqdm(range(len(block_det[0]))):
             a.append([])
             for j in range(len(block_det[0][0][0])):
@@ -412,23 +421,37 @@ def dB_map_2D(block_det=None, choose_axis=2, interpolation="spline16", index="x-
                 a[i].append(max(temp) - min(temp))
 
     peakVal, minVal = max(map(max, a)), min(map(min, a))
-    print(
-        "Peak at:",
-        [
-            [[i, j] for j, y in enumerate(x) if y == peakVal]
-            for i, x in enumerate(a)
-            if peakVal in x
-        ],
-    )
+    # print(
+    #     "Peak at:",
+    #     [
+    #         [[i, j] for j, y in enumerate(x) if y == peakVal]
+    #         for i, x in enumerate(a)
+    #         if peakVal in x
+    #     ],
+    # )
+    # 然后做对数计算
+    if minVal == 0:
+        raise RuntimeError("minVal == 0, impossible to draw a dB map")
     a = 10 * log10([[y / minVal for y in x] for x in a])
 
-    plt.title("dB map of Electrical waves in detector region")
-    plt.imshow(a, cmap="inferno", interpolation=interpolation)
+    # plt.title("dB map of Electrical waves in detector region")
+    plt.imshow(transpose(a), cmap="inferno", interpolation=interpolation)
+    plt.ylim(-1, a.shape[1])
+    if axis == "z":
+        plt.xlabel('X/grids')
+        plt.ylabel('Y/grids')
+    elif axis == "x":
+        plt.xlabel('Y/grids')
+        plt.ylabel('Z/grids')
+    elif axis == "y":
+        plt.xlabel('X/grids')
+        plt.ylabel('Z/grids')
     cbar = plt.colorbar()
-    cbar.ax.set_ylabel("dB scale", rotation=270)
+    # cbar.ax.set_ylabel("dB scale", rotation=270)
     # plt.show()
     if save:
-        plt.savefig(fname='%s//BlockDetector_%s,name=%s,time=%i.png' % (folder, fieldaxis, name_det, total_time))
+        fieldaxis = field + field_axis
+        plt.savefig(fname='%s//dB_map_%s, detector_name=%s, time=%i.png' % (folder, fieldaxis, name_det, total_time))
     plt.close()
 
 

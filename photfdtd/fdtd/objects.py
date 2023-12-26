@@ -24,15 +24,17 @@ from . import constants as const
 class Object:
     """ An object to place in the grid """
 
-    def __init__(self, permittivity: Tensorlike, name: str = None):
+    def __init__(self, permittivity: Tensorlike, name: str = None, background_index: float = None):
         """
         Args:
             permittivity: permittivity tensor
             name: name of the object (will become available as attribute to the grid)
+            background_index: added by Tao Jia 2023/12/25
         """
         self.grid = None
         self.name = name
         self.permittivity = bd.array(permittivity)
+        self.background_index = background_index
 
     def _register_grid(
         self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
@@ -75,6 +77,10 @@ class Object:
 
         # set the permittivity values of the object at its border to be equal
         # to the grid permittivity. This way, the object is made symmetric.
+        a = self.inverse_permittivity[-1, :, :, 0]
+        b = self.grid.inverse_permittivity[
+                -1, self.y, self.z, 0
+            ]
         if self.Nx > 1:
             self.inverse_permittivity[-1, :, :, 0] = self.grid.inverse_permittivity[
                 -1, self.y, self.z, 0
@@ -88,7 +94,13 @@ class Object:
                 self.x, self.y, -1, 2
             ]
 
-        self.grid.inverse_permittivity[self.x, self.y, self.z] = 0
+        # Edited in 2023/12/25 by Tao Jia. Now the inverse permittivity of objects is added into the grid.
+        mask = self.grid.inverse_permittivity[self.x, self.y, self.z]
+
+        inverse_background_index = 1.0 / (self.background_index ** 2)
+        mask[mask == inverse_background_index] = self.inverse_permittivity[mask == inverse_background_index]
+        self.grid.inverse_permittivity[self.x, self.y, self.z] = mask
+
 
     def _handle_slice(self, s: ListOrSlice, max_index: int = None) -> slice:
         if isinstance(s, list):
