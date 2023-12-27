@@ -1,15 +1,20 @@
 import numpy as np
 import scipy.sparse as sps
 import time
+import math
 from photfdtd import constants
 
 
-def calculate_s(vect, k0 = None , n=1, ):
+def calculate_s(vect, k0=None, n=1, sigmaE_max=None):
     # 计算参数s
-    # TODO:设置n
+    # TODO: sigmaE_max这个参数看起来非常重要，究竟如何处理它能让solve的结果与lumerical一致？
     # k0 *= 10 ** 6 # 变为标准单位
     omega = constants.c * k0
-    sigmaE = 40 * vect ** 2  # FIXME: 这里的sigmaEmax取40，是来自fdtd库中pml边界的设置，但其实不清楚是怎么来的, 难道是由用户自定的？
+    if sigmaE_max is None:
+        # 0.000001是反射系数R
+        sigmaE_max = (3 / 2) * constants.eps0 * constants.c * n * math.log(1 / 1e-100) / max(abs(vect))
+        # sigmaE_max = 40
+    sigmaE = sigmaE_max * vect ** 2
 
     # 测试
     # sigmaE *= 1e12
@@ -82,20 +87,23 @@ def eigen_build(k0, n, dx, dy, x_boundary_low=None, y_boundary_low=None, x_thick
             s_for_C = calculate_s(vect=np.arange(x_thickness_low, 0, -1.0), k0=k0)
             for i in range(nx):
                 Ax[nx * i: nx * i + x_thickness_low, :] = Ax[nx * i: nx * i + x_thickness_low, :] / s[:, np.newaxis]
-                Cx[nx * i: nx * i + x_thickness_low, :] = Cx[nx * i: nx * i + x_thickness_low, :] / s_for_C[:, np.newaxis]
-                
+                Cx[nx * i: nx * i + x_thickness_low, :] = Cx[nx * i: nx * i + x_thickness_low, :] / s_for_C[:,
+                                                                                                    np.newaxis]
+
         if x_boundary_high == "pml":
             s = calculate_s(vect=np.arange(x_thickness_high - 0.5, -0.5, -1.0), k0=k0)
             s_for_C = calculate_s(vect=np.arange(x_thickness_high, 0, -1.0), k0=k0)
             s_flip = np.flip(s)
             s_for_C_flip = np.flip(s_for_C)
             for i in range(nx):
-                Ax[nx * (i + 1) - x_thickness_high: nx * (i + 1), :] = Ax[nx * (i + 1) - x_thickness_high: nx * (i + 1), :] / s_flip[
-                                                                                                                    :,
-                                                                                                                    np.newaxis]
-                Cx[nx * (i + 1) - x_thickness_high: nx * (i + 1), :] = Cx[nx * (i + 1) - x_thickness_high: nx * (i + 1), :] / s_for_C_flip[
-                                                                                                                    :,
-                                                                                                                    np.newaxis]
+                Ax[nx * (i + 1) - x_thickness_high: nx * (i + 1), :] = Ax[nx * (i + 1) - x_thickness_high: nx * (i + 1),
+                                                                       :] / s_flip[
+                                                                            :,
+                                                                            np.newaxis]
+                Cx[nx * (i + 1) - x_thickness_high: nx * (i + 1), :] = Cx[nx * (i + 1) - x_thickness_high: nx * (i + 1),
+                                                                       :] / s_for_C_flip[
+                                                                            :,
+                                                                            np.newaxis]
 
         # 处理y_boundary
         if y_boundary_low == "pml":
@@ -116,7 +124,7 @@ def eigen_build(k0, n, dx, dy, x_boundary_low=None, y_boundary_low=None, x_thick
 
         # Bx = Ax
         # By = Ay
-        
+
         # 处理Cx
         # s = calculate_s(vect=np.arange(x_thickness, 0, -1.0), k0=k0)
         # s_flip = np.flip(s)
