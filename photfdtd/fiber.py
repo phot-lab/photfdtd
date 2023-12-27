@@ -13,8 +13,7 @@ class Fiber(Waveguide):
     background_index：背景折射率
     #TODO: 给弯曲结构加上抗锯齿弯曲边界?
     """
-
-    # TODO: 多芯光纤、渐变折射率光纤
+    # TODO: 渐变折射率光纤
     def __init__(self, length: int = 100, x: int = 50, y: int = 50, z: int = 50, radius: list = [10, 40],
                  refractive_index: list = [3.47, 1.45],
                  name: str = "fiber", axis: str = "x", background_index: float = 1.0) -> None:
@@ -23,23 +22,22 @@ class Fiber(Waveguide):
         self.length = length
         self.axis = axis
         if self.axis.lower() == 'x':
-            # 23.08
             # 波导沿x轴
-            self.x = x - self.length // 2
-            self.y = y - self.radius[-1]
-            self.z = z - self.radius[-1]
+            self.x = int(x - self.length // 2)
+            self.y = int(y - self.radius[-1])
+            self.z = int(z - self.radius[-1])
 
         elif self.axis.lower() == 'y':
             # 波导沿y轴
-            self.y = y - self.length // 2
-            self.x = x - self.radius[-1]
-            self.z = z - self.radius[-1]
+            self.y = int(y - self.length // 2)
+            self.x = int(x - self.radius[-1])
+            self.z = int(z - self.radius[-1])
 
         elif self.axis.lower() == "z":
             # 波导沿z轴
-            self.z = z - self.length // 2
-            self.x = x - self.radius[-1]
-            self.y = y - self.radius[-1]
+            self.z = int(z - self.length // 2)
+            self.x = int(x - self.radius[-1])
+            self.y = int(y - self.radius[-1])
 
         self.name = name
         self.refractive_index = refractive_index

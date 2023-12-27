@@ -13,4 +13,5 @@ from .mzi import Mzi
 from .fiber import Fiber
 from .tff import TFF
 from .fwg import FWG
+from .pc import Hexagonal_PC
 from . import constants

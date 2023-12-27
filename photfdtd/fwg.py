@@ -3,7 +3,7 @@ from .arc import Arc
 
 
 class FWG():
-    """扇形波导光栅(fan-shaped waveguide grate)
+    """扇形波导光栅(fan-shaped waveguide grating)
     outer_radius: 外环半径
     zlength: 波导厚度
     x,y,z: 圆心坐标
