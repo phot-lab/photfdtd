@@ -181,7 +181,7 @@ def visualize(
                 _x = source.x
                 _y = source.y
             plt.plot(_x - 0.5, _y - 0.5, lw=3, marker="o", color=srccolor)
-            # 由于grid_energy在前面被转置，这里必须对_x与_y做了替换
+            # 由于grid_energy在前面被转置，这里必须对_x与_y做替换
             grid_energy[_y, _x] = 0  # do not visualize energy at location of source
         elif isinstance(source, PlaneSource):
             if x is not None:
@@ -308,10 +308,6 @@ def visualize(
     # 只显示波导结构的轮廓，而不显示整个波导
     if geo is None:
         geo = sqrt(1 / grid.inverse_permittivity)
-        for i in range(len(grid.objects)):
-            geo[grid.objects[i].x.start:grid.objects[i].x.stop,
-            grid.objects[i].y.start:grid.objects[i].y.stop,
-            grid.objects[i].z.start:grid.objects[i].z.stop] = sqrt(grid.objects[i].permittivity)
 
     # geo是四维矩阵
     geo = geo[:, :, :, -1]

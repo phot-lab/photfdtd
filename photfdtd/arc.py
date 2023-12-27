@@ -12,7 +12,7 @@ class Arc(Waveguide):
     name: 名称
     direction: 等于1，2，3，4，分别表示四个方向
     angle_phi: 与x轴正方向夹角, 单位: 角度
-    angle_psi: 张角(单位: 角度，必须小于90）
+    angle_psi: 张角
     background_index: 环境折射率
     """
 
@@ -44,17 +44,10 @@ class Arc(Waveguide):
         self.y_center = y
         self.z_center = z
 
-        x += int(outer_radius / 2)
-        y += int(outer_radius / 2)
-        z += int(zlength / 2)
         super().__init__(xlength=outer_radius, ylength=outer_radius, zlength=zlength, x=x,
                          y=y,z=z, width=width, name=name, refractive_index=refractive_index,
-                         background_index=background_index)
+                         background_index=background_index, reset_xyz=False)
 
-
-    # def __iter__(self):
-    #     # 假设你的 Arc 对象中有一些可迭代的数据
-    #     return iter(self)
 
     def _compute_permittivity(self):
         # 这里+2的原因：稍微扩大一点矩阵的大小，可以保证水平和竖直方向最边上的点不被丢出

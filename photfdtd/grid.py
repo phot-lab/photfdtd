@@ -14,8 +14,8 @@ from photfdtd import constants
 class Grid:
 
     def __init__(
-            self, grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=20e-9, total_time=1, pml_width_x=10,
-            pml_width_y=10, pml_width_z=0, permittivity=1.0, permeability=1.0, courant_number=None, foldername=" ",
+            self, grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=20e-9, total_time=1, pml_width_x=0,
+            pml_width_y=0, pml_width_z=0, permittivity=1.0, permeability=1.0, courant_number=None, foldername=" ",
             folder=None
     ) -> None:
         """
@@ -38,12 +38,12 @@ class Grid:
                          permeability=permeability,
                          courant_number=courant_number
                          )
-
-        grid[0:pml_width_x, :, :] = fdtd.PML(name="pml_xlow")
-        grid[-pml_width_x:, :, :] = fdtd.PML(name="pml_xhigh")
-        grid[:, 0:pml_width_y, :] = fdtd.PML(name="pml_ylow")
-        grid[:, -pml_width_y:, :] = fdtd.PML(name="pml_yhigh")
-
+        if pml_width_x != 0:
+            grid[0:pml_width_x, :, :] = fdtd.PML(name="pml_xlow")
+            grid[-pml_width_x:, :, :] = fdtd.PML(name="pml_xhigh")
+        if pml_width_y != 0:
+            grid[:, 0:pml_width_y, :] = fdtd.PML(name="pml_ylow")
+            grid[:, -pml_width_y:, :] = fdtd.PML(name="pml_yhigh")
         if pml_width_z != 0:
             grid[:, :, 0:pml_width_z] = fdtd.PML(name="pml_zlow")
             grid[:, :, -pml_width_z:] = fdtd.PML(name="pml_zhigh")
@@ -1009,3 +1009,28 @@ class Grid:
         file_name = "wl-amplitude_%s%s" % (field, chr(axis + 120))
         plt.savefig(os.path.join(folder, f"{file_name}.png"))
         plt.close()
+
+    def slice_grid(self, grid=None, x_slice=[], y_slice=[], z_slice=[]):
+        """切割grid，以切割后的grid创建grid_sliced
+        @param grid: photfdtd.Grid
+        @param x_slice: list. X range that will be sliced
+        @param y_slice:
+        @param z_slice:
+        @return: Sliced grid
+        """
+        # TODO: 磁导率？
+        if grid is None:
+            grid = self
+
+        grid_sliced = Grid(grid_xlength=x_slice[1] - x_slice[0], grid_ylength=y_slice[1] - y_slice[0],
+                           grid_zlength=z_slice[1] - z_slice[0],
+                           grid_spacing=grid._grid.grid_spacing, total_time=grid._total_time,
+                           foldername="%s_sliced_grid" % grid.folder,
+                           pml_width_x=0,
+                           pml_width_y=0,
+                           pml_width_z=0,
+                           permittivity=self.background_index ** 2)
+        grid_sliced._grid.inverse_permittivity = grid._grid.inverse_permittivity[x_slice[0]:x_slice[1],
+                                                 y_slice[0]:y_slice[1], z_slice[0]:z_slice[1]]
+
+        return grid_sliced

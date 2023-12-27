@@ -29,25 +29,38 @@ class Waveguide:
             name: str = "waveguide",
             refractive_index: float = None,
             background_index: float = 1,
-            material: str = ""
+            material: str = "",
+            reset_xyz: bool = True
     ) -> None:
 
         self.xlength = xlength
         self.ylength = ylength
         self.zlength = zlength
-        self.x = x - int(xlength / 2)
-        self.y = y - int(ylength / 2)
-        self.z = z - int(zlength / 2)
+        if reset_xyz:
+            self.x = x - int(xlength / 2)
+            self.y = y - int(ylength / 2)
+            self.z = z - int(zlength / 2)
+        else:
+            self.x = x
+            self.y = y
+            self.z = z
+
         self.width = width
         self.name = name
         self.refractive_index = refractive_index
         self.background_index = background_index
 
+        # 保存中心
+        self.x_center = x
+        self.y_center = y
+        self.z_center = z
+
+
         self._compute_permittivity()
         self._set_objects()
 
     def _compute_permittivity(self):
-        """矩形波导"""
+        """计算介电常数矩阵"""
         permittivity = np.zeros((self.xlength, self.ylength, self.zlength))
         permittivity += self.refractive_index ** 2
 
