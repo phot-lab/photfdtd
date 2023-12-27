@@ -112,6 +112,7 @@ class Solve:
         @param y_thickness_high:
         @return:
         """
+        # TODO: 识别并删除不存在的模式
         # NOTE: fdtd的单位是m，而philsol的单位是um
         if neff == None:
             neff = np.max(self.n)
