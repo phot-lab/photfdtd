@@ -31,8 +31,8 @@ def calculate_sigmaEmax(R, d):
 
 
 n = 1.445
-R = calculate_R(d=0.0000002 * 15, sigmaE_max=40)
-sigmaE_max = calculate_sigmaEmax(R=0.000001, d=14.5)
+R = calculate_R(d=0.2 * 15, sigmaE_max=2)
+sigmaE_max = calculate_sigmaEmax(R=1e-10, d=0.2 * 15)
 
 print(f"The result of R is: {R}")
 print(f"The result of sigmaE_max is: {sigmaE_max}")

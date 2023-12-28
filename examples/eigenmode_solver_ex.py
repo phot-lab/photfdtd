@@ -1,4 +1,3 @@
-import utils
 from photfdtd import Waveguide, Grid, Solve
 
 if __name__ == "__main__":
@@ -26,16 +25,17 @@ if __name__ == "__main__":
                   filepath=grid.folder)
 
     # 绘制截面折射率分布
-    solve.draw_refractive_index()
+    solve.plot()
 
     # 计算这个截面处，波长1.55um，折射率3.47附近的2个模式，边界条件选择在四个方向上都是pml，厚度均为15格
-    data = solve.calculate_mode(lam=1550e-9, neff=3.47638, neigs=2,
+    data = solve.calculate_mode(lam=1550e-9, neff=3.47638, neigs=5,
                                 x_boundary_low="pml", y_boundary_low="pml",
                                 x_boundary_high="pml",
                                 y_boundary_high="pml",
                                 x_thickness_low=15,
                                 y_thickness_low=15, x_thickness_high=15,
-                                y_thickness_high=15)
+                                y_thickness_high=15,
+                                background_index=background_index)
 
     # 接下来即可绘制模式场，我们选择绘制amplitude，即幅值。filepath为保存绘制的图片的路径
     solve.draw_mode(filepath=solve.filepath,

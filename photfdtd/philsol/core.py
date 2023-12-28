@@ -7,14 +7,16 @@ from photfdtd import constants
 
 def calculate_s(vect, k0=None, n=1, sigmaE_max=None):
     # 计算参数s
-    # TODO: sigmaE_max这个参数看起来非常重要，究竟如何处理它能让solve的结果与lumerical一致？
-    # k0 *= 10 ** 6 # 变为标准单位
+    # TODO: 究竟如何处理sigmaE_max能让solve的结果与lumerical一致？
+    # k0 *= 10 ** 6 # 以um为标准单位
     omega = constants.c * k0
+    # sigmaE_max = 1
     if sigmaE_max is None:
         # 0.000001是反射系数R
-        sigmaE_max = (3 / 2) * constants.eps0 * constants.c * n * math.log(1 / 1e-100) / max(abs(vect))
+        sigmaE_max = (3 / 2) * constants.eps0 * constants.c * n * math.log(1 / 1e-10 ) / max(abs(vect))
         # sigmaE_max = 40
-    sigmaE = sigmaE_max * vect ** 2
+        print(sigmaE_max)
+    sigmaE = sigmaE_max * (vect / max(abs(vect))) ** 2
 
     # 测试
     # sigmaE *= 1e12
@@ -24,7 +26,8 @@ def calculate_s(vect, k0=None, n=1, sigmaE_max=None):
 
 
 def eigen_build(k0, n, dx, dy, x_boundary_low=None, y_boundary_low=None, x_thickness_low=0, y_thickness_low=0,
-                x_boundary_high=None, y_boundary_high=None, x_thickness_high=0, y_thickness_high=0):
+                x_boundary_high=None, y_boundary_high=None, x_thickness_high=0, y_thickness_high=0,
+                background_index=1):
     """
 
     @param k0: 波矢（单位um）
@@ -58,7 +61,6 @@ def eigen_build(k0, n, dx, dy, x_boundary_low=None, y_boundary_low=None, x_thick
     # Ax = sps.block_diag([Ax_temp for i in range(ny)], format='csr')
     Ax = (- sps.eye(nx * ny, k=0, format="csr") + sps.eye(nx * ny, k=1, format="csr")) / dx
     Ay = (- sps.eye(nx * ny, k=0, format="csr") + sps.eye(nx * ny, k=nx, format="csr")) / dy
-
     # if x_boundary_low or x_boundary_high == 'periodic':
     #     pass
     #     # Ux_temp[nx - 1, 0] = 1. / dx
@@ -83,16 +85,16 @@ def eigen_build(k0, n, dx, dy, x_boundary_low=None, y_boundary_low=None, x_thick
         Cy = -Ay.transpose()
         # 处理x_boundary
         if x_boundary_low == "pml":
-            s = calculate_s(vect=np.arange(x_thickness_low - 0.5, -0.5, -1.0), k0=k0)
-            s_for_C = calculate_s(vect=np.arange(x_thickness_low, 0, -1.0), k0=k0)
+            s = calculate_s(vect=np.arange(x_thickness_low - 0.5, -0.5, -1.0) * dx, k0=k0, n=background_index)
+            s_for_C = calculate_s(vect=np.arange(x_thickness_low, 0, -1.0) * dx, k0=k0, n=background_index)
             for i in range(nx):
                 Ax[nx * i: nx * i + x_thickness_low, :] = Ax[nx * i: nx * i + x_thickness_low, :] / s[:, np.newaxis]
                 Cx[nx * i: nx * i + x_thickness_low, :] = Cx[nx * i: nx * i + x_thickness_low, :] / s_for_C[:,
                                                                                                     np.newaxis]
 
         if x_boundary_high == "pml":
-            s = calculate_s(vect=np.arange(x_thickness_high - 0.5, -0.5, -1.0), k0=k0)
-            s_for_C = calculate_s(vect=np.arange(x_thickness_high, 0, -1.0), k0=k0)
+            s = calculate_s(vect=np.arange(x_thickness_high - 0.5, -0.5, -1.0) * dx, k0=k0, n=background_index)
+            s_for_C = calculate_s(vect=np.arange(x_thickness_high, 0, -1.0) * dx, k0=k0, n=background_index)
             s_flip = np.flip(s)
             s_for_C_flip = np.flip(s_for_C)
             for i in range(nx):
@@ -107,16 +109,16 @@ def eigen_build(k0, n, dx, dy, x_boundary_low=None, y_boundary_low=None, x_thick
 
         # 处理y_boundary
         if y_boundary_low == "pml":
-            s = calculate_s(vect=np.arange(y_thickness_low - 0.5, -0.5, -1.0), k0=k0)
-            s_for_C = calculate_s(vect=np.arange(y_thickness_low, 0, -1.0), k0=k0)
+            s = calculate_s(vect=np.arange(y_thickness_low - 0.5, -0.5, -1.0) * dy, k0=k0, n=background_index)
+            s_for_C = calculate_s(vect=np.arange(y_thickness_low, 0, -1.0) * dy, k0=k0, n=background_index)
             for i in range(nx):
                 if i < y_thickness_low:
                     Ay[nx * i:nx * (i + 1), :] = Ay[nx * i:nx * (i + 1), :] / s[i]
                     Cy[nx * i:nx * (i + 1), :] = Cy[nx * i:nx * (i + 1), :] / s_for_C[i]
 
         if y_boundary_high == "pml":
-            s = calculate_s(vect=np.arange(y_thickness_high - 0.5, -0.5, -1.0), k0=k0)
-            s_for_C = calculate_s(vect=np.arange(y_thickness_high, 0, -1.0), k0=k0)
+            s = calculate_s(vect=np.arange(y_thickness_high - 0.5, -0.5, -1.0) * dy, k0=k0, n=background_index)
+            s_for_C = calculate_s(vect=np.arange(y_thickness_high, 0, -1.0) * dy, k0=k0, n=background_index)
             for i in range(nx):
                 if i > ny - y_thickness_high - 1:
                     Ay[nx * i:nx * (i + 1), :] = Ay[nx * i:nx * (i + 1), :] / s[ny - i - 1]
