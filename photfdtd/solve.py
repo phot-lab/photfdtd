@@ -95,7 +95,8 @@ class Solve:
                        neff: float = None,
                        neigs: int = 1,
                        x_boundary_low=None, y_boundary_low=None, x_thickness_low=0, y_thickness_low=0,
-                       x_boundary_high=None, y_boundary_high=None, x_thickness_high=0, y_thickness_high=0
+                       x_boundary_high=None, y_boundary_high=None, x_thickness_high=0, y_thickness_high=0,
+                       background_index=1
                        ):
         """
         调用phisol包，计算模式并绘制模式。
@@ -125,7 +126,7 @@ class Solve:
                                      x_thickness_low=x_thickness_low,
                                      y_thickness_low=y_thickness_low, x_boundary_high=x_boundary_high,
                                      y_boundary_high=y_boundary_high, x_thickness_high=x_thickness_high,
-                                     y_thickness_high=y_thickness_high)
+                                     y_thickness_high=y_thickness_high, background_index=background_index)
         beta_in = 2. * np.pi * neff / self.lam
         self.beta, Ex_field, Ey_field = ps.solve.solve(P, beta_in, neigs=neigs)
         self.effective_index = self.beta * self.lam / (2 * np.pi)

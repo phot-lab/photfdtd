@@ -26,3 +26,13 @@ if __name__ == "__main__":
 
     # 绘制任一截面
     solve.plot()
+
+    # 计算这个截面处，波长1.55um，折射率3.47附近的2个模式，边界条件选择在四个方向上都是pml，厚度均为15格
+    data = solve.calculate_mode(lam=1550e-9, neff=3.47638, neigs=5,
+                                x_boundary_low="pml", y_boundary_low="pml",
+                                x_boundary_high="pml",
+                                y_boundary_high="pml",
+                                x_thickness_low=15,
+                                y_thickness_low=15, x_thickness_high=15,
+                                y_thickness_high=15)
+
