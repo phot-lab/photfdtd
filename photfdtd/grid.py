@@ -464,6 +464,7 @@ class Grid:
 
     # 保存数据
     def save_simulation(self):
+        # TODO: 保存和读取整个grid
         dic = {}
         for detector in self._grid.detectors:
             dic[detector.name + " (E)"] = np.array([x for x in detector.detector_values()["E"]])

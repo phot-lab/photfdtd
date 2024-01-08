@@ -7,15 +7,16 @@ from photfdtd import constants
 
 def calculate_s(vect, k0=None, n=1, sigmaE_max=None):
     # 计算参数s
+    # n: background index
     # TODO: 究竟如何处理sigmaE_max能让solve的结果与lumerical一致？
-    # k0 *= 10 ** 6 # 以um为标准单位
+    # k0 *= 10 ** 6
+    # m为单位
     omega = constants.c * k0
-    # sigmaE_max = 1
+    # sigmaE_max = 40
     if sigmaE_max is None:
-        # 0.000001是反射系数R
-        sigmaE_max = (3 / 2) * constants.eps0 * constants.c * n * math.log(1 / 1e-10 ) / max(abs(vect))
+        # 1e-10是反射系数R
+        sigmaE_max = (3 / 2) * constants.eps0 * constants.c * n * math.log(1 / 1e-10) / max(abs(vect))
         # sigmaE_max = 40
-        print(sigmaE_max)
     sigmaE = sigmaE_max * (vect / max(abs(vect))) ** 2
 
     # 测试
@@ -53,6 +54,7 @@ def eigen_build(k0, n, dx, dy, x_boundary_low=None, y_boundary_low=None, x_thick
     # lets find out size of grid and construct some finite difference operators
     # These can take different forms depending on the user inputed boundarys
     # These operators also need boundaries
+    # It's important to transpose nx and ny
     nx, ny, dummy = np.shape(n)
     print('Assembling matrix for {} grid points...\n'.format(nx * ny))
 
@@ -87,7 +89,7 @@ def eigen_build(k0, n, dx, dy, x_boundary_low=None, y_boundary_low=None, x_thick
         if x_boundary_low == "pml":
             s = calculate_s(vect=np.arange(x_thickness_low - 0.5, -0.5, -1.0) * dx, k0=k0, n=background_index)
             s_for_C = calculate_s(vect=np.arange(x_thickness_low, 0, -1.0) * dx, k0=k0, n=background_index)
-            for i in range(nx):
+            for i in range(ny):
                 Ax[nx * i: nx * i + x_thickness_low, :] = Ax[nx * i: nx * i + x_thickness_low, :] / s[:, np.newaxis]
                 Cx[nx * i: nx * i + x_thickness_low, :] = Cx[nx * i: nx * i + x_thickness_low, :] / s_for_C[:,
                                                                                                     np.newaxis]
@@ -97,21 +99,17 @@ def eigen_build(k0, n, dx, dy, x_boundary_low=None, y_boundary_low=None, x_thick
             s_for_C = calculate_s(vect=np.arange(x_thickness_high, 0, -1.0) * dx, k0=k0, n=background_index)
             s_flip = np.flip(s)
             s_for_C_flip = np.flip(s_for_C)
-            for i in range(nx):
+            for i in range(ny):
                 Ax[nx * (i + 1) - x_thickness_high: nx * (i + 1), :] = Ax[nx * (i + 1) - x_thickness_high: nx * (i + 1),
-                                                                       :] / s_flip[
-                                                                            :,
-                                                                            np.newaxis]
+                                                                       :] / s_flip[:, np.newaxis]
                 Cx[nx * (i + 1) - x_thickness_high: nx * (i + 1), :] = Cx[nx * (i + 1) - x_thickness_high: nx * (i + 1),
-                                                                       :] / s_for_C_flip[
-                                                                            :,
-                                                                            np.newaxis]
+                                                                       :] / s_for_C_flip[:, np.newaxis]
 
-        # 处理y_boundary
+        # y_boundary
         if y_boundary_low == "pml":
             s = calculate_s(vect=np.arange(y_thickness_low - 0.5, -0.5, -1.0) * dy, k0=k0, n=background_index)
             s_for_C = calculate_s(vect=np.arange(y_thickness_low, 0, -1.0) * dy, k0=k0, n=background_index)
-            for i in range(nx):
+            for i in range(ny):
                 if i < y_thickness_low:
                     Ay[nx * i:nx * (i + 1), :] = Ay[nx * i:nx * (i + 1), :] / s[i]
                     Cy[nx * i:nx * (i + 1), :] = Cy[nx * i:nx * (i + 1), :] / s_for_C[i]
@@ -119,7 +117,7 @@ def eigen_build(k0, n, dx, dy, x_boundary_low=None, y_boundary_low=None, x_thick
         if y_boundary_high == "pml":
             s = calculate_s(vect=np.arange(y_thickness_high - 0.5, -0.5, -1.0) * dy, k0=k0, n=background_index)
             s_for_C = calculate_s(vect=np.arange(y_thickness_high, 0, -1.0) * dy, k0=k0, n=background_index)
-            for i in range(nx):
+            for i in range(ny):
                 if i > ny - y_thickness_high - 1:
                     Ay[nx * i:nx * (i + 1), :] = Ay[nx * i:nx * (i + 1), :] / s[ny - i - 1]
                     Cy[nx * i:nx * (i + 1), :] = Cy[nx * i:nx * (i + 1), :] / s_for_C[ny - i - 1]
@@ -147,25 +145,18 @@ def eigen_build(k0, n, dx, dy, x_boundary_low=None, y_boundary_low=None, x_thick
         # Dx = Cx
         # Dy = Cy
 
-        I = sps.eye(nx * ny, dtype="complex")
-
-        # We then build relative permitivity tensors
-        epsx = np.empty(nx * ny, dtype="complex")
-        epsy = np.empty(nx * ny, dtype="complex")
-        epszi = np.empty(nx * ny, dtype="complex")
-
     # %% Now we can construct all the other operators
     else:
-        # 零值边界条件
+        # zero value boundary
         Cx = - Ax.transpose()
         Cy = - Ay.transpose()
 
-        I = sps.eye(nx * ny)
+    I = sps.eye(nx * ny, dtype=Ax.dtype)
 
-        # We then build relative permitivity tensors
-        epsx = np.empty(nx * ny, dtype=n.dtype)
-        epsy = np.empty(nx * ny, dtype=n.dtype)
-        epszi = np.empty(nx * ny, dtype=n.dtype)
+    # We then build relative permitivity tensors
+    epsx = np.empty(nx * ny, dtype=Ax.dtype)
+    epsy = np.empty(nx * ny, dtype=Ax.dtype)
+    epszi = np.empty(nx * ny, dtype=Ax.dtype)
 
     count = 0
     for j in range(0, ny):
@@ -194,7 +185,7 @@ def eigen_build(k0, n, dx, dy, x_boundary_low=None, y_boundary_low=None, x_thick
     Pyx = (Ay * epszi * Cx * (epsx + Cy * Ay / k0 ** 2)
            - (k0 ** 2 * I + Ay * epszi * Cy) * Cx * Ay / k0 ** 2)
 
-    print('and we are done (after {} secs).'.format(time.time() - t))
+    print('Eigen building is done (after {} secs).'.format(time.time() - t))
 
     # Ok we should be able to do the final assembly now !!!
     P = sps.vstack([sps.hstack([Pxx, Pxy]), sps.hstack([Pyx, Pyy])])

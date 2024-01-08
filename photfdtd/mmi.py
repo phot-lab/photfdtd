@@ -20,7 +20,7 @@ class Mmi(Waveguide):
     refractive_index:折射率
     background_index: 环境折射率
     """
-
+    # FIXME: 矩形波导与MMI之间有缝隙
     def __init__(
             self,
             xlength: int = 71,
@@ -52,8 +52,8 @@ class Mmi(Waveguide):
         self.l_port = l_port
         self.We = We
 
-        super().__init__(xlength, ylength, zlength, x + int(xlength / 2), y + int(ylength / 2), z + int(zlength / 2),
-                         ylength, name, refractive_index, background_index)
+        super().__init__(xlength, ylength, zlength, x, y, z,
+                         ylength, name, refractive_index, background_index, reset_xyz=False)
 
     def _set_objects(self):
         self._set_box()
