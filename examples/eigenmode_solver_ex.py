@@ -1,3 +1,4 @@
+import utils
 from photfdtd import Waveguide, Grid, Solve
 
 if __name__ == "__main__":
@@ -5,12 +6,12 @@ if __name__ == "__main__":
 
     # 设置器件参数
     waveguide = Waveguide(
-        xlength=20, ylength=15, zlength=1, x=40, y=40, z=0, refractive_index=3.47638, name="Waveguide",
+        xlength=25, ylength=20, zlength=1, x=40, y=50, z=0, refractive_index=3.47638, name="Waveguide",
         background_index=background_index
     )
 
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=80, grid_ylength=80, grid_zlength=1, grid_spacing=20e-9,
+    grid = Grid(grid_xlength=80, grid_ylength=100, grid_zlength=1, grid_spacing=20e-9,
                 permittivity=background_index ** 2,
                 foldername="test_eigenmode_solver")
 
@@ -28,13 +29,15 @@ if __name__ == "__main__":
     solve.plot()
 
     # 计算这个截面处，波长1.55um，折射率3.47附近的2个模式，边界条件选择在四个方向上都是pml，厚度均为15格
-    data = solve.calculate_mode(lam=1550e-9, neff=3.47638, neigs=5,
-                                x_boundary_low="pml", y_boundary_low="pml",
+    data = solve.calculate_mode(lam=1550e-9, neff=3.47638, neigs=2,
+                                x_boundary_low="pml",
+                                y_boundary_low="pml",
                                 x_boundary_high="pml",
                                 y_boundary_high="pml",
-                                x_thickness_low=15,
-                                y_thickness_low=15, x_thickness_high=15,
-                                y_thickness_high=15,
+                                x_thickness_low=5,
+                                y_thickness_low=15,
+                                x_thickness_high=10,
+                                y_thickness_high=20,
                                 background_index=background_index)
 
     # 接下来即可绘制模式场，我们选择绘制amplitude，即幅值。filepath为保存绘制的图片的路径

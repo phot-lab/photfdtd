@@ -4,7 +4,8 @@ import numpy as np
 
 
 class Taper(Waveguide):
-    """梯形（锥形）耦合部分代码，继承自waveguide
+    """inverse taper
+    梯形（锥形）耦合部分代码，继承自waveguide
     xlength: 波导区域x方向宽度
     ylength: 波导区域y方向宽度
     zlength:

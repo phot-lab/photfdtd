@@ -318,7 +318,7 @@ def visualize(
     elif z is not None:
         n_to_draw = geo[:, :, z]
     # n_to_draw /= n_to_draw.max()
-    contour_data = where(n_to_draw != 1, 1, 0)
+    contour_data = where(n_to_draw != background_index, 1, 0)
     plt.contour(contour_data.T, colors='black', linewidths=1)
 
     # for obj in grid.objects:

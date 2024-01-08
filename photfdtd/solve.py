@@ -52,12 +52,8 @@ class Solve:
         else:
             raise ValueError('Parameter "axis" should be x, y or z! ')
 
-        # 这里计划日后加入判断是否是各向异性材料
-        if True:
-            # 做转置，这样在显示时x就会被放在水平轴上
-            self.n = np.transpose(self.n, [1, 0, 2])
-        else:
-            pass
+        # 日后加入判断是否是各向异性材料
+
 
     def plot(self):
         """
@@ -66,11 +62,12 @@ class Solve:
         :return: None
         """
 
-        self.x = np.linspace(1, np.size(self.n, 0), np.size(self.n, 0))
-        self.y = np.linspace(1, np.size(self.n, 1), np.size(self.n, 1))
+        self.x = self.n.shape[0]
+        self.y = self.n.shape[1]
 
-        # 绘制
-        plt.pcolor(self.n[:, :, 0], cmap=cm.jet)
+        # It's quite important to transpose n
+        self.n = np.transpose(self.n, [1, 0, 2])
+        plt.pcolor(self.n[:,:,0], cmap=cm.jet)
         plt.clim([np.amin(self.n), np.amax(self.n)])
         if self.axis == "x":
             plt.xlabel('Y/grids')
@@ -82,9 +79,9 @@ class Solve:
             plt.xlabel('X/grids')
             plt.ylabel('Y/grids')
         plt.colorbar()
+        plt.title("refractive_index_real")
         # 保存图片
         plt.savefig(fname='%s\\%s_%s=%d.png' % (self.filepath, 'index', self.axis, self.index))
-
 
         # plt.show()
         plt.clf()
@@ -99,7 +96,7 @@ class Solve:
                        background_index=1
                        ):
         """
-        调用phisol包，计算模式并绘制模式。
+        调用phisol包，计算模式
         @param lam: 波长（m）
         @param neff: 在neff周围计算模式
         @param neigs: 计算模式数
@@ -120,7 +117,8 @@ class Solve:
         self.lam = lam * 10 ** 6
         self.k = 2 * np.pi / self.lam
 
-        # 调用phisol包，计算模式
+        # Calculate modes
+        # FIXME: 检查pml边界的四个方向是否有问题
         P, matrices = ps.eigen_build(self.k, self.n, self.grid.grid_spacing * 1e6, self.grid.grid_spacing * 1e6,
                                      x_boundary_low=x_boundary_low, y_boundary_low=y_boundary_low,
                                      x_thickness_low=x_thickness_low,
@@ -132,62 +130,54 @@ class Solve:
         self.effective_index = self.beta * self.lam / (2 * np.pi)
         print("neff=", self.effective_index)
 
+        # Now calculate the other fields
+        Hx = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
+        Hy = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
+        Hz = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
+
         if self.axis == 'x':
             Ex = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
-            Hx = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
-            Hy = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
-            Hz = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
 
             for i in range(neigs):
                 Ex[i], Hy[i], Hz[i], Hx[i] = ps.construct.extra_feilds(k0=self.k, beta=self.beta[i],
                                                                        Ex=Ex_field[i], Ey=Ey_field[i],
                                                                        matrices=matrices)
-            Ex = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Ex]
-            Hx = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Hx]
-            Hy = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Hy]
-            Hz = [np.reshape(E_vec, (self.grid.Ny, self.grid.Nz)) for E_vec in Hz]
+            Ex = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ex]
+            Ey = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ex_field]
+            Ez = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ey_field]
 
 
         elif self.axis == 'y':
 
             Ey = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
-            Hx = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
-            Hy = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
-            Hz = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
 
             for i in range(neigs):
                 Ey[i], Hx[i], Hz[i], Hy[i] = ps.construct.extra_feilds(k0=self.k, beta=self.beta[i],
                                                                        Ex=Ex_field[i], Ey=Ey_field[i],
                                                                        matrices=matrices)
 
-            Ey = [np.reshape(E_vec, (self.grid.Nx, self.grid.Nz)) for E_vec in Ey_field]
-            Hx = [np.reshape(E_vec, (self.grid.Nx, self.grid.Nz)) for E_vec in Hx]
-            Hy = [np.reshape(E_vec, (self.grid.Nx, self.grid.Nz)) for E_vec in Hy]
-            Hz = [np.reshape(E_vec, (self.grid.Nx, self.grid.Nz)) for E_vec in Hz]
+            Ey = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ey]
+            Ex = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ex_field]
+            Ez = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ey_field]
 
 
         elif self.axis == 'z':
 
             Ez = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
-            Hx = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
-            Hy = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
-            Hz = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
 
             for i in range(neigs):
                 Ez[i], Hx[i], Hy[i], Hz[i] = ps.construct.extra_feilds(k0=self.k, beta=self.beta[i], Ex=Ex_field[i],
                                                                        Ey=Ey_field[i], matrices=matrices)
-            Ez = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Ez]
-            Hx = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Hx]
-            Hy = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Hy]
-            Hz = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Hz]
+            # (self.x, self.y)
+            Ez = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ez]
+            Ex = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ex_field]
+            Ey = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ey_field]
+
+        Hx = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Hx]
+        Hy = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Hy]
+        Hz = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Hz]
 
         dic = {}
-
-        if not "Ex" in vars():
-            Ex = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Ex_field]
-
-        if not "Ey" in vars():
-            Ey = [np.reshape(E_vec, (self.grid.Nx, self.grid.Ny)) for E_vec in Ey_field]
 
         # 似乎原代码中Ex, Ey和Hx, Hy弄反了，所以我在这里调换了一下
         dic["Ex"] = Ey
@@ -215,9 +205,7 @@ class Solve:
         '''
         axis = data["axis"]
         effective_index = data["effective_index"]
-        # 绘制模式图
-        x = np.linspace(1, np.size(data["Ex"][0], 0), np.size(data["Ex"][0], 0))
-        y = np.linspace(1, np.size(data["Ex"][0], 1), np.size(data["Ex"][0], 1))
+        # plot mode figures
         for j in ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz"):
             for i in range(data["number_of_modes"]):  # For each eigenvalue
                 plt.figure()
@@ -230,18 +218,18 @@ class Solve:
                 elif content == "phase":
                     plot_matrix = np.transpose(np.angle(data[j][i]))
 
-                plt.pcolor(x, y, plot_matrix, cmap=cm.jet)
+                plt.pcolor(plot_matrix, cmap=cm.jet)
                 plt.clim([np.amin(plot_matrix), np.amax(plot_matrix)])
                 plt.colorbar()
                 if axis == "x":
-                    plt.xlabel('Y')
-                    plt.ylabel('Z')
+                    plt.xlabel('Y/grids')
+                    plt.ylabel('Z/grids')
                 elif axis == "y":
-                    plt.xlabel('X')
-                    plt.ylabel('Z')
+                    plt.xlabel('X/grids')
+                    plt.ylabel('Z/grids')
                 elif axis == "z":
-                    plt.xlabel('X')
-                    plt.ylabel('Y')
+                    plt.xlabel('X/grids')
+                    plt.ylabel('Y/grids')
 
                 plt.title('%s_of_%s, neff=%f' % (content, j, effective_index[i]))
                 # 保存图片

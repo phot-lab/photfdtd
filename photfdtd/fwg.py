@@ -2,7 +2,7 @@ import numpy as np
 from .arc import Arc
 
 
-class FWG():
+class FWG(Arc):
     """扇形波导光栅(fan-shaped waveguide grating)
     outer_radius: 外环半径
     zlength: 波导厚度
@@ -14,7 +14,7 @@ class FWG():
     name: 名称
     direction: 等于1，2，3，4，分别表示四个方向
     angle_phi: 与x轴正方向夹角, 单位: 角度
-    angle_psi: 张角(单位: 角度，必须小于90）
+    angle_psi: 张角
     background_index: 环境折射率
     """
 
@@ -29,7 +29,7 @@ class FWG():
             z: int = 1,
             width: int = 20,
             refractive_index: float = 3.47,
-            name: str = "arc",
+            name: str = "fwg",
             angle_phi: float = 0,
             angle_psi: float = 0,
             background_index: float = 1.0,
@@ -39,19 +39,11 @@ class FWG():
         # TODO: FIXME: NOTE: python中赋值后面加逗号代表创建元组
         self.gap = gap
         self.number = number
-        self.outer_radius = outer_radius
-        self.zlength = zlength
-        self.x, self.x_center = x, x
-        self.y, self.y_center = y, y
-        self.z, self.z_center = z, z
-        self.width = width
-        self.refractive_index = refractive_index
-        self.name = name
-        self.phi = angle_phi
-        self.psi = angle_psi
-        self.background_index = background_index
 
-        self._set_objects()
+        super().__init__(outer_radius=outer_radius, zlength=zlength, x=x, y=y, z=z, width=width,
+                         refractive_index=refractive_index,
+                         name=name, angle_phi=angle_phi, angle_psi=angle_psi, background_index=background_index,
+                         angle_to_radian=False)
 
     def _set_objects(self):
         self._internal_objects = []
@@ -62,3 +54,6 @@ class FWG():
                       width=self.width, refractive_index=self.refractive_index, name="%s_arc%d" % (self.name, i + 1),
                       background_index=self.background_index, angle_psi=self.psi, angle_phi=self.phi)
             self._internal_objects.append(arc)
+
+    def _compute_permittivity(self):
+        """"""

@@ -1,5 +1,5 @@
 from .sbend import Sbend
-from .ysplitter import Ysplitter
+from .ysplitter import Ysplitter, Taper
 from .waveguide import Waveguide
 from .arc import Arc
 from .directional_coupler import DirectionalCoupler

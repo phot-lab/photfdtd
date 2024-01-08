@@ -1,4 +1,3 @@
-import utils
 from photfdtd import Waveguide, Grid, Solve, constants
 
 if __name__ == "__main__":
@@ -39,12 +38,14 @@ if __name__ == "__main__":
                       )
 
     # 创建solve对象
-    solve = Solve(grid=grid)
+    solve = Solve(grid=grid,
+                  axis='z',
+                  index=20,
+                  filepath=grid.folder
+                  )
 
     # 绘制任一截面折射率分布
-    solve.plot(axis='z',
-               index=20,
-               filepath=grid.folder)
+    solve.plot()
 
     # 运行仿真
     grid.run()
@@ -63,5 +64,5 @@ if __name__ == "__main__":
     # 读取仿真结果
     data = grid.read_simulation(folder=grid.folder)
     # 绘制监视器范围内光场分布
-    Grid.dB_map(folder="D:/Github_Clone/photfdtd/examples/test_waveguide", total_time=1600, data=data, choose_axis=0,
-                field="E", name_det="detector", interpolation="spline16", save=True, index="x-y")
+    Grid.dB_map(folder="D:/Github_Clone/photfdtd/examples/test_waveguide", total_time=1600, data=data, axis="x-y",
+                field_axis=0, field="E", name_det="detector", interpolation="spline16", save=True)

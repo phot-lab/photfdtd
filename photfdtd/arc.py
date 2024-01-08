@@ -14,10 +14,11 @@ class Arc(Waveguide):
     angle_phi: 与x轴正方向夹角, 单位: 角度
     angle_psi: 张角
     background_index: 环境折射率
+    angle_to_radian: bool: True表示从角度转弧度
     """
 
     # TODO：现在只有x-y平面
-
+    # FIXME: 在圆弧跨越x=0时存在问题
     def __init__(
             self,
             outer_radius: int = 60,
@@ -31,23 +32,23 @@ class Arc(Waveguide):
             angle_phi: float = 0,
             angle_psi: float = 0,
             background_index: float = 1,
+            angle_to_radian: bool = True
     ) -> None:
         angle_phi = angle_phi % 360
         if angle_phi < 0:
             angle_phi += 360
-        self.outer_radius = outer_radius
-        self.phi = np.radians(angle_phi)
-        self.psi = np.radians(angle_psi)
 
-        # 保存圆心
-        self.x_center = x
-        self.y_center = y
-        self.z_center = z
+        self.outer_radius = outer_radius
+        if angle_to_radian:
+            self.phi = np.radians(angle_phi)
+            self.psi = np.radians(angle_psi)
+        else:
+            self.phi = angle_phi
+            self.psi = angle_psi
 
         super().__init__(xlength=outer_radius, ylength=outer_radius, zlength=zlength, x=x,
-                         y=y,z=z, width=width, name=name, refractive_index=refractive_index,
+                         y=y, z=z, width=width, name=name, refractive_index=refractive_index,
                          background_index=background_index, reset_xyz=False)
-
 
     def _compute_permittivity(self):
         # 这里+2的原因：稍微扩大一点矩阵的大小，可以保证水平和竖直方向最边上的点不被丢出
