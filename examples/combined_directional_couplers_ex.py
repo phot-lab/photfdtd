@@ -38,15 +38,8 @@ if __name__ == "__main__":
     grid.add_object(dc1)
     grid.add_object(dc2)
 
-    grid.set_source(
-        x=dc1.x,
-        xlength=0,
-        y=dc1.y,
-        ylength=dc1.width,
-        source_type="linesource",
-        period=1550e-9 / 299792458,
-        pulse=False,
-    )
+    grid.set_source(source_type="linesource", period=1550e-9 / 299792458, waveform=False, x=dc1.x, y=dc1.y, xlength=0,
+                    ylength=dc1.width)
 
     grid.run()
 

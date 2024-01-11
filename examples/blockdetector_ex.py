@@ -64,11 +64,11 @@ if __name__ == "__main__":
     # 监视器结果可视化
     # 如果添加了面监视器，可以绘制监视器范围内电场dB图, choose_axis参数选择场值的方向0,1,2分别表示"x“,”y“,”z“, field为"E", 或"H",
     # inddex表示绘制的截面
-    Grid.dB_map(folder=folder, total_time=800, data=data, choose_axis=2,
-                field="E", name_det="detector", interpolation="spline16", save=True, index="x-y")
+    Grid.dB_map(folder=folder, total_time=800, data=data, axis="x-y", field_axis=2, field="E", name_det="detector",
+                interpolation="spline16", save=True)
 
     # 绘制仿真结束时刻空间场分布
-    Grid.plot_field(grid=grid, field="E", axis=2, cross_section="z", axis_number=0, folder=folder)
+    Grid.plot_field(grid=grid, field="E", field_axis=2, axis="z", axis_index=0, folder=folder)
 
     # 绘制某一点时域场变化曲线，这里选择index_3d=[50,5,0]即监视器中心
-    Grid.plot_fieldtime(folder=folder,data=data,axis=2,index_3d=[50,5,0], name_det="detector")
+    Grid.plot_fieldtime(folder=folder, data=data, field_axis=2, index_3d=[50, 5, 0], name_det="detector")

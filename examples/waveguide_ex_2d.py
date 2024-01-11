@@ -58,14 +58,13 @@ if __name__ == "__main__":
     # data = grid.read_simulation(folder=grid.folder)
     # 如果设置了监视器，绘制监视器范围内光场分布
     try:
-        Grid.dB_map(folder=grid.folder, total_time=grid._grid.time_passed,
-                    data=data, choose_axis=0, field="E", name_det="detector", interpolation="spline16", save=True,
-                    index="x-y")
+        Grid.dB_map(folder=grid.folder, total_time=grid._grid.time_passed, data=data, axis="x-y", field_axis=0,
+                    field="E", name_det="detector", interpolation="spline16", save=True)
     except:
         pass
 
-    Grid.plot_field(grid=grid, field="E", axis=0, axis_number=0, cross_section="z", folder=grid.folder)
-    Grid.plot_field(grid=grid, field="E", axis=1, axis_number=0, cross_section="z", folder=grid.folder)
-    Grid.plot_field(grid=grid, field="E", axis=2, axis_number=0, cross_section="z", folder=grid.folder)
+    Grid.plot_field(grid=grid, field="E", field_axis=0, axis="z", axis_index=0, folder=grid.folder)
+    Grid.plot_field(grid=grid, field="E", field_axis=1, axis="z", axis_index=0, folder=grid.folder)
+    Grid.plot_field(grid=grid, field="E", field_axis=2, axis="z", axis_index=0, folder=grid.folder)
 
-    Grid.plot_fieldtime(folder=grid.folder, data=data, axis=2, field="E", index=0, name_det="detector")
+    Grid.plot_fieldtime(folder=grid.folder, data=data, field_axis=2, field="E", index=0, name_det="detector")

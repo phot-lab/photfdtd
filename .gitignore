@@ -27,3 +27,6 @@ examples/*.png
 *.pdf
 /test_*/
 examples/test_*/
+examples/read_npz.py
+
+test/

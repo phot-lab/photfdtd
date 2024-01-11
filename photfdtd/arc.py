@@ -14,11 +14,11 @@ class Arc(Waveguide):
     angle_phi: 与x轴正方向夹角, 单位: 角度
     angle_psi: 张角
     background_index: 环境折射率
-    angle_to_radian: bool: True表示从角度转弧度
+    angle_to_radian: bool: True表示需要从角度转弧度
     """
 
     # TODO：现在只有x-y平面
-    # FIXME: 在圆弧跨越x=0时存在问题
+    # FIXME: 在圆弧跨越x正半轴时存在问题
     def __init__(
             self,
             outer_radius: int = 60,
@@ -86,7 +86,7 @@ class Arc(Waveguide):
 
             return result_matrix, row_indices, col_indices
 
-        m_removed, row_indices, col_indices = remove_zero_rows_columns(m)
+        m_removed, row_indices, col_indices, zz = super().remove_zero_slices(m)
         self.x += row_indices[0][0] - self.outer_radius
         self.y += col_indices[0][0] - self.outer_radius
 
@@ -98,7 +98,21 @@ class Arc(Waveguide):
         self.xlength = np.shape(m_removed)[0]
         self.ylength = np.shape(m_removed)[1]
 
-        # import matplotlib.pyplot as plt
-        # plt.pcolor(self.permittivity)
-        # plt.show()
-        # quit()
+        # self.permittivity = np.zeros((m.shape[0], m.shape[1], 1))
+        # self.permittivity[:, :, 0] = m * self.refractive_index ** 2
+        # # Remove all-zero slices, xx, yy, zz represents the indexes that be keeped.
+        # self.permittivity, xx, yy, zz = super().remove_zero_slices(self.permittivity)
+        #
+        # self.x = self.x_center + (xx[0] - self.outer_radius)
+        # self.y = self.y_center + (yy[0] - self.outer_radius)
+        #
+        # if self.phi:
+        #     super()._rotate_Z(angle=self.phi, center=[-self.outer_radius + self.permittivity.shape[0], 0, 0],
+        #                       angle_to_radian=False)
+        #     self.x = self.x_center + self.x_changed
+        #     self.y = self.y_center + self.y_changed
+        #
+        # self.permittivity[self.permittivity == 0] = self.background_index ** 2
+        # self.xlength = self.permittivity.shape[0]
+        # self.ylength = self.permittivity.shape[1]
+        # self.zlength = self.permittivity.shape[2]

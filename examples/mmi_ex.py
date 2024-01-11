@@ -43,11 +43,8 @@ if __name__ == "__main__":
     #         period=1550e-9 / 299792458,
     #     )
 
-    grid.set_source(
-        x=15, xlength=1, y=40, ylength=18, z=15, zlength=18, source_type="planesource",
-        period=1550e-9 / 299792458,
-        name="source"
-    )
+    grid.set_source(source_type="planesource", period=1550e-9 / 299792458, name="source", x=15, y=40, z=15, xlength=1,
+                    ylength=18, zlength=18)
 
     # 设置监视器
     grid.set_detector(detector_type="blockdetector",

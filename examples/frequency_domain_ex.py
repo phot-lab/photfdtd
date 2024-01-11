@@ -27,9 +27,8 @@ if __name__ == "__main__":
                 pml_width_y=20, pml_width_z=0,
                 permittivity=background_index ** 2, foldername="test_frequency_domain")
 
-    grid.set_source(
-        x=dc.x, xlength=0, y=dc.y, ylength=dc.width, source_type="linesource", period=1550e-9 / 299792458, pulse=False
-    )
+    grid.set_source(source_type="linesource", period=1550e-9 / 299792458, waveform=False, x=dc.x, y=dc.y, xlength=0,
+                    ylength=dc.width)
 
     grid.set_detector(detector_type='linedetector',
                       x=dc.x, xlength=0, y=dc.y + dc.ylength - dc.width, ylength=dc.width, z=0, zlength=0,

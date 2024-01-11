@@ -77,10 +77,6 @@ class Object:
 
         # set the permittivity values of the object at its border to be equal
         # to the grid permittivity. This way, the object is made symmetric.
-        a = self.inverse_permittivity[-1, :, :, 0]
-        b = self.grid.inverse_permittivity[
-                -1, self.y, self.z, 0
-            ]
         if self.Nx > 1:
             self.inverse_permittivity[-1, :, :, 0] = self.grid.inverse_permittivity[
                 -1, self.y, self.z, 0
@@ -97,8 +93,8 @@ class Object:
         # Edited in 2023/12/25 by Tao Jia. Now the inverse permittivity of objects is added into the grid.
         mask = self.grid.inverse_permittivity[self.x, self.y, self.z]
 
-        inverse_background_index = 1.0 / (self.background_index ** 2)
-        mask[mask == inverse_background_index] = self.inverse_permittivity[mask == inverse_background_index]
+        inverse_permitivity = 1.0 / (self.background_index ** 2)
+        mask[mask == inverse_permitivity] = self.inverse_permittivity[mask == inverse_permitivity]
         self.grid.inverse_permittivity[self.x, self.y, self.z] = mask
 
 

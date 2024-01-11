@@ -13,6 +13,7 @@ class Waveguide:
     background_index: 环境折射率
     name:名称
     """
+
     # TODO: fdtd包绘制场的代码很有问题，在3d仿真时不能正确显示
     # TODO: z方向空间步长单独设置？
     # TODO: 如何保存整个仿真而不仅仅是监视器数据？
@@ -30,7 +31,7 @@ class Waveguide:
             refractive_index: float = None,
             background_index: float = 1,
             material: str = "",
-            reset_xyz: bool = True
+            reset_xyz: bool = True,
     ) -> None:
 
         self.xlength = xlength
@@ -50,11 +51,10 @@ class Waveguide:
         self.refractive_index = refractive_index
         self.background_index = background_index
 
-        # 保存中心
+        # save the center position保存中心
         self.x_center = x
         self.y_center = y
         self.z_center = z
-
 
         self._compute_permittivity()
         self._set_objects()
@@ -69,23 +69,187 @@ class Waveguide:
     def _set_objects(self):
         self._internal_objects = [self]
 
-    def _negate_binary_matrix(self,
-                              matrix):
-        # 输入矩阵，得到相反数
-        # 创建一个新的矩阵，用于存储相反数后的结果
-        result_matrix = []
+    @staticmethod
+    def remove_zero_slices(matrix):
+        # Delete all-zero 2D slices, xx, yy, zz represents the new matrix's position in the original matrix
+        shape = matrix.shape
+        if len(shape) == 2:
 
-        # 遍历原始矩阵的每一行
-        for row in matrix:
-            # 创建一个新的行，用于存储相反数后的结果行
-            result_row = []
+            non_zero_rows = np.any(matrix != 0, axis=1)
+            non_zero_columns = np.any(matrix != 0, axis=0)
+            # 使用布尔掩码筛选原始矩阵
+            matrix = matrix[non_zero_rows][:, non_zero_columns]
+            xx_position, yy_position = np.where(non_zero_rows), np.where(non_zero_columns)
 
-            # 遍历原始矩阵中当前行的每个元素
-            for value in row:
-                # 将0变为1，将1变为0
-                result_row.append(1 - value)
+            zz_position = [0]
 
-            # 将相反数后的结果行添加到结果矩阵中
-            result_matrix.append(result_row)
+        else:
 
-        return result_matrix
+            zero_slices_x = np.where(np.all(matrix == 0, axis=(1, 2)))
+            zero_slices_y = np.where(np.all(matrix == 0, axis=(0, 2)))
+            zero_slices_z = np.where(np.all(matrix == 0, axis=(0, 1)))
+
+            matrix = np.delete(matrix, zero_slices_x, axis=0)
+            matrix = np.delete(matrix, zero_slices_y, axis=1)
+            matrix = np.delete(matrix, zero_slices_z, axis=2)
+            xx_position = np.delete(np.arange(shape[0]), zero_slices_x)
+            yy_position = np.delete(np.arange(shape[1]), zero_slices_y)
+            zz_position = np.delete(np.arange(shape[2]), zero_slices_z)
+
+        return matrix, xx_position, yy_position, zz_position
+
+    def _rotate_Z(self, angle, center=None, angle_to_radian: bool = True):
+        """
+        # TODO: 这个函数的效果没有想象的那么好。也许还是应该在矩阵中描点连线更方便？
+        Rotate a waveguide around the z-axis
+        @param angle: Angle of rotation with respect to the positive direction of the x-axis
+        @param center: Center of rotation, if not given, it will be the center of waveguide.
+        """
+        # matrix_size = int(np.sqrt((self.xlength / 2) ** 2 + (self.ylength / 2) ** 2)) * 2 + 2
+        # # 计算在每个维度上需要填充的数量
+        # # np.ceil(0.1) = 1.0（向上取整）
+        # pad_x = int(np.ceil((matrix_size - self.permittivity.shape[0]) // 2))
+        # pad_y = int(np.ceil((matrix_size - self.permittivity.shape[1]) // 2))
+        #
+        # # 使用 np.pad 在矩阵周围添加0
+        # matrix = np.pad(self.permittivity, ((pad_x, pad_x), (pad_y, pad_y), (0, 0)), mode='constant',
+        #                 constant_values=0)
+        matrix = self.permittivity
+        shape = matrix.shape
+        if center is None:
+            center = np.array([shape[0] // 2, shape[1] // 2, shape[2] // 2])
+
+        # 角度转弧度
+        if angle_to_radian:
+            angle = np.radians(angle)
+
+        # Rotation matrix 创建绕 z 轴的旋转矩阵
+        rotation_z = np.array([[np.cos(angle), -np.sin(angle), 0],
+                               [np.sin(angle), np.cos(angle), 0],
+                               [0, 0, 1]])
+
+        # Coordinates relative to center相对坐标
+        relative_coords = np.array(np.meshgrid(range(shape[0]), range(shape[1]), range(shape[2]))).T.reshape(-1, 3)
+        relative_coords -= center
+
+        # Rotate
+        rotated_coords = np.empty_like(relative_coords)
+        for i in range(relative_coords.shape[0]):
+            rotated_coords[i] = rotation_z @ relative_coords[i]
+
+        # Note the min indexes and make the min coordinate equals 0
+        self.x_changed, self.y_changed, self.z_changed = min(rotated_coords[:, 0]), min(rotated_coords[:, 1]), min(
+            rotated_coords[:, 2])
+        rotated_coords[:, 0] -= self.x_changed
+        rotated_coords[:, 1] -= self.y_changed
+        rotated_coords[:, 2] -= self.z_changed
+
+        # self.x_changed += center[0]
+        # self.y_changed += center[1]
+        # self.z_changed += center[2]
+
+        # rotated_coords += center
+        # Restore to absolute coordinates将坐标还原为绝对坐标
+        relative_coords += center
+
+        # Mapping the rotated coordinates according to the original matrix 将旋转后的坐标映射到新矩阵
+        rotated_matrix = np.zeros(
+            [max(abs(rotated_coords[:, 0])) + 1, max(abs(rotated_coords[:, 1])) + 1,
+             max(abs(rotated_coords[:, 2])) + 1],
+            dtype=matrix.dtype)
+        for i in range(len(rotated_coords)):
+            x, y, z = rotated_coords[i]
+            rotated_matrix[x, y, z] = matrix[relative_coords[i, 0], relative_coords[i, 1], relative_coords[i, 2]]
+
+        # Fill the blank holes
+        # TODO:
+        for i in range(rotated_matrix.shape[0]):
+            for j in range(rotated_matrix.shape[1]):
+                for k in range(rotated_matrix.shape[2]):
+                    if not rotated_matrix[i, j, k]:
+                        if i + 1 < rotated_matrix.shape[0] and j + 1 < rotated_matrix.shape[1]:
+                            if all((rotated_matrix[i - 1, j, k], rotated_matrix[i + 1, j, k],
+                                    rotated_matrix[i, j - 1, k], rotated_matrix[i, j + 1, k])):
+                                rotated_matrix[i, j, k] = rotated_matrix[i - 1, j, k]
+
+        # Remove all-zero slices
+        # rotated_matrix, self.xx, self.yy, self.zz = self.remove_zero_slices(rotated_matrix)
+        rotated_matrix = self.remove_zero_slices(rotated_matrix)
+        # self.x_changed += rotated_matrix[1][0]
+        # self.y_changed += rotated_matrix[2][0]
+        # self.z_changed += rotated_matrix[3][0]
+        rotated_matrix = rotated_matrix[0]
+        rotated_matrix[rotated_matrix == 0] += self.background_index ** 2
+
+        self.permittivity = rotated_matrix
+
+        self.xlength = rotated_matrix.shape[0]
+        self.ylength = rotated_matrix.shape[1]
+        self.zlength = rotated_matrix.shape[2]
+        self.x = self.x_center - int(self.xlength / 2)
+        self.y = self.y_center - int(self.ylength / 2)
+        self.z = self.z_center - int(self.zlength / 2)
+
+    def _rotate(self, angle_x, angle_y, angle_z, center=None):
+        pass
+        # 创建一个立方体，所有元素初始化为0
+        matrix_size = int(np.sqrt((self.xlength / 2) ** 2 + (self.ylength / 2) ** 2 + (self.zlength / 2) ** 2) * 2) + 2
+
+        # 计算在每个维度上需要填充的数量
+        # np.ceil(0.1) = 1.0（向上取整）
+        pad_m = int(np.ceil((matrix_size - self.permittivity.shape[0]) // 2))
+        pad_n = int(np.ceil((matrix_size - self.permittivity.shape[1]) // 2))
+        pad_l = int(np.ceil((matrix_size - self.permittivity.shape[2]) // 2))
+
+        # 使用 np.pad 在矩阵周围添加0
+        matrix = np.pad(self.permittivity, ((pad_m, pad_m), (pad_n, pad_n), (pad_l, pad_l)), mode='constant',
+                        constant_values=0)
+
+        if center is None:
+            center = np.array([matrix_size // 2, matrix_size // 2, matrix_size // 2])
+
+        def rotate_3d_matrix(matrix, center, angles):
+            # 获取矩阵形状
+            shape = matrix.shape
+
+            # 将矩阵坐标转换为相对于中心的坐标
+            relative_coords = np.array(np.meshgrid(range(shape[0]), range(shape[1]), range(shape[2]))).T.reshape(-1, 3)
+            relative_coords -= center
+
+            # 创建旋转矩阵
+            rotation_matrix = np.array([[np.cos(np.radians(angles[0])), -np.sin(np.radians(angles[0])), 0],
+                                        [np.sin(np.radians(angles[0])), np.cos(np.radians(angles[0])), 0],
+                                        [0, 0, 1]])
+
+            # 应用旋转矩阵
+            rotated_coords = np.dot(relative_coords, rotation_matrix.T)
+
+            # 将坐标还原为绝对坐标
+            rotated_coords += center
+
+            # 四舍五入到整数坐标
+            rotated_coords = np.round(rotated_coords).astype(int)
+
+            # 创建新的矩阵
+            rotated_matrix = np.zeros(shape, dtype=matrix.dtype)
+
+            # 将旋转后的坐标映射回原矩阵
+            for i in range(len(rotated_coords)):
+                x, y, z = rotated_coords[i]
+                if 0 <= x < shape[0] and 0 <= y < shape[1] and 0 <= z < shape[2]:
+                    rotated_matrix[x, y, z] = matrix[
+                        relative_coords[i, 0], relative_coords[i, 1], relative_coords[i, 2]]
+
+            return rotated_matrix
+
+        # 设置中心点和旋转角度
+
+        # 执行旋转操作
+        rotated_matrix = rotate_3d_matrix(matrix, center, [angle_x, angle_y, angle_z])
+        rotated_matrix, xx, yy, zz = self.remove_zero_slices(rotated_matrix)
+        rotated_matrix *= self.refractive_index ** 2
+        rotated_matrix[rotated_matrix == 0] += self.background_index ** 2
+        self.permittivity = rotated_matrix
+        self.xlength = rotated_matrix.shape[0]
+        self.ylength = rotated_matrix.shape[0]
+        self.zlength = rotated_matrix.shape[0]

@@ -6,8 +6,7 @@ import numpy as np
 if __name__ == "__main__":
     folder = "D:/Github_Clone/photfdtd/examples/test_mzi"
     data = Grid.read_simulation(folder=folder)
-    Grid.plot_fieldtime(folder=folder, total_time=None, data=data, axis=2, field="E", index=0, name_det="detector",
-               interpolation="spline16")
+    Grid.plot_fieldtime(folder=folder, data=data, field_axis=2, field="E", index=0, name_det="detector")
     # analyse_source = Analyse(E=data["detector_source (E)"], H=data["detector_source (H)"], grid_spacing=20e-9)
     # # analyse_source.plot()
     # analyse_through = Analyse(E=data["detector_through (E)"], H=data["detector_through (H)"], grid_spacing=20e-9)

@@ -24,17 +24,8 @@ if __name__ == "__main__":
                 pml_width_x=50, pml_width_y=20, pml_width_z=1,
                 permittivity=background_index ** 2, foldername="test_ring")
 
-    grid.set_source(
-        source_type="planesource",
-        x=100,
-        xlength=0,
-        y=35,
-        ylength=21,
-        pulse_type="None",
-        z=13,
-        zlength=22,
-        period=1550e-9 / 299792458,
-    )
+    grid.set_source(source_type="planesource", period=1550e-9 / 299792458, pulse_type="None", x=100, y=35, z=13,
+                    xlength=0, ylength=21, zlength=22)
 
     grid.set_detector(detector_type="blockdetector",
                       x=250,

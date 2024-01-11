@@ -54,6 +54,9 @@ class Grid:
         self._total_time = total_time
         self._grid = grid
 
+        # TODO: finish this优先值矩阵
+        # self.flag = np.zeros_like(self._grid.inverse_permittivity)
+
         # makedirs(foldername, exist_ok=True)  # Output master folder declaration
         current_dir = os.getcwd()
 
