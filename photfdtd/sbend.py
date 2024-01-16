@@ -17,20 +17,20 @@ class Sbend(Waveguide):
 
     def __init__(
             self,
-            xlength: int = 200,
-            ylength: int = 100,
-            zlength: int = 20,
-            x: int = 100,
-            y: int = 75,
-            z: int = 13,
-            width: int = 20,
+            xlength: int or float = 200,
+            ylength: int or float= 100,
+            zlength: int or float= 20,
+            x: int or float = None,
+            y: int or float = None,
+            z: int or float = None,
+            width: int or float = 20,
             name: str = "sbend",
             refractive_index: float = 3.47,
             direction: int = -1,
-            background_index: float = 1
+            grid=None
     ) -> None:
         self.direction = direction
-        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index, background_index)
+        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index, grid=grid)
 
     def _compute_permittivity(self):
         """

@@ -16,21 +16,22 @@ class Ring(Waveguide):
     """
 
     def __init__(
-        self,
-            outer_radius: int = 100,
-            zlength: int = 20,
-            x: int = 150,
-            y: int = 150,
-            z: int = 13,
-            width: int = 20,
-            length: int = 0,
-            gap: int = 5,
+            self,
+            outer_radius: int or float = 100,
+            zlength: int or float = 20,
+            x: int or float = None,
+            y: int or float = None,
+            z: int or float = None,
+            width: int or float = 20,
+            length: int or float = 0,
+            gap: int or float = 5,
             name: str = "ring",
             refractive_index: float = 3.47,
             direction: int = 1,
-            background_index: float = 1
+            grid=None
     ) -> None:
-
+        outer_radius, zlength, width, length, gap = grid._handle_unit([outer_radius, zlength, width, length, gap],
+                                                                      grid_spacing=grid._grid.grid_spacing)
         self.outer_r = outer_radius
         self.length = length
         self.gap = gap
@@ -38,9 +39,7 @@ class Ring(Waveguide):
         xlength = self.outer_r * 2 + self.length
         ylength = self.outer_r * 2
 
-        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index, background_index)
-
-
+        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index, grid=grid, reset_xyz=False)
 
     def _compute_permittivity(self):
         y = np.linspace(1, 2 * self.outer_r, 2 * self.outer_r)
@@ -49,9 +48,8 @@ class Ring(Waveguide):
         X, Y = np.meshgrid(x, y, indexing="ij")  # indexing = 'ij'很重要
 
         if self.length == 0:
-
             m1 = (self.outer_r - self.width) ** 2 <= (X - self.outer_r) ** 2 + (Y - self.outer_r) ** 2
-            m = (X - self.outer_r) ** 2 + (Y - self.outer_r) ** 2 <= self.outer_r**2
+            m = (X - self.outer_r) ** 2 + (Y - self.outer_r) ** 2 <= self.outer_r ** 2
 
         for i in range(2 * self.outer_r + self.length):
             for j in range(2 * self.outer_r):
@@ -67,17 +65,17 @@ class Ring(Waveguide):
 
                     # 左半圆弧
                     if (self.outer_r - self.width) ** 2 <= (X[i, j] - self.outer_r) ** 2 + (
-                        Y[i, j] - self.outer_r
-                    ) ** 2 and (X[i, j] - self.outer_r) ** 2 + (Y[i, j] - self.outer_r) ** 2 <= self.outer_r**2:
+                            Y[i, j] - self.outer_r
+                    ) ** 2 and (X[i, j] - self.outer_r) ** 2 + (Y[i, j] - self.outer_r) ** 2 <= self.outer_r ** 2:
                         m[i, j] = 1
 
                     if (self.outer_r - self.width) ** 2 <= (
-                        X[self.outer_r + self.length + i, j] - self.outer_r - self.length
+                            X[self.outer_r + self.length + i, j] - self.outer_r - self.length
                     ) ** 2 + (Y[self.outer_r + self.length + i, j] - self.outer_r) ** 2 and (
-                        X[self.outer_r + self.length + i, j] - self.outer_r - self.length
+                            X[self.outer_r + self.length + i, j] - self.outer_r - self.length
                     ) ** 2 + (
-                        Y[self.outer_r + self.length + i, j] - self.outer_r
-                    ) ** 2 <= self.outer_r**2:
+                            Y[self.outer_r + self.length + i, j] - self.outer_r
+                    ) ** 2 <= self.outer_r ** 2:
                         m[self.outer_r + self.length + i, j] = 1
 
             for i in range(self.length):
@@ -87,16 +85,12 @@ class Ring(Waveguide):
                     m[i + self.outer_r, 2 * self.outer_r - j - 1] = m1[i + self.outer_r, 2 * self.outer_r - j - 1] = 1
 
         permittivity = np.ones((self.outer_r * 2 + self.length, self.outer_r * 2, self.zlength))
-        permittivity += m[:, :] * (self.refractive_index**2 - 1)
+        permittivity += m[:, :] * (self.refractive_index ** 2 - 1)
         permittivity += (1 - m[:, :]) * (self.background_index ** 2 - 1)
 
         self.permittivity = permittivity
 
     def _set_objects(self):
-
-        self.x = self.x + int(self.xlength / 2)
-        self.y = self.y + int(self.ylength / 2)
-        self.z = self.z + int(self.zlength / 2)
 
         wg_bottom = Waveguide(
             xlength=self.outer_r * 2 + self.length,
@@ -108,7 +102,7 @@ class Ring(Waveguide):
             width=self.width,
             name="waveguide_bottom_%s" % self.name,
             refractive_index=self.refractive_index,
-            background_index=self.background_index
+            grid=self.grid
         )
 
         wg_top = Waveguide(
@@ -121,7 +115,7 @@ class Ring(Waveguide):
             width=self.width,
             name="waveguide_top_%s" % self.name,
             refractive_index=self.refractive_index,
-            background_index=self.background_index
+            grid=self.grid
         )
 
         self.x = self.x - int(self.xlength / 2)

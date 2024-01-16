@@ -43,7 +43,8 @@ def visualize(
         save=False,  # True to save frames (requires parameters index, folder)
         folder=None,  # folder path to save frames
         geo: list = None,
-        background_index: float = 1.0
+        background_index: float = 1.0,
+        show_geometry: bool = True
 ):
     """visualize a projection of the grid and the optical energy inside the grid
 
@@ -306,20 +307,21 @@ def visualize(
             )
             plt.gca().add_patch(patch)
     # 只显示波导结构的轮廓，而不显示整个波导
-    if geo is None:
-        geo = sqrt(1 / grid.inverse_permittivity)
+    if show_geometry:
+        if geo is None:
+            geo = sqrt(1 / grid.inverse_permittivity)
 
-    # geo是四维矩阵
-    geo = geo[:, :, :, -1]
-    if x is not None:
-        n_to_draw = geo[x, :, :]
-    elif y is not None:
-        n_to_draw = geo[:, y, :]
-    elif z is not None:
-        n_to_draw = geo[:, :, z]
-    # n_to_draw /= n_to_draw.max()
-    contour_data = where(n_to_draw != background_index, 1, 0)
-    plt.contour(contour_data.T, colors='black', linewidths=1)
+        # geo是四维矩阵
+        geo = geo[:, :, :, -1]
+        if x is not None:
+            n_to_draw = geo[x, :, :]
+        elif y is not None:
+            n_to_draw = geo[:, y, :]
+        elif z is not None:
+            n_to_draw = geo[:, :, z]
+        # n_to_draw /= n_to_draw.max()
+        contour_data = where(n_to_draw != background_index, 1, 0)
+        plt.contour(contour_data.T, colors='black', linewidths=1)
 
     # for obj in grid.objects:
     #     if x is not None:

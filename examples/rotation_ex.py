@@ -1,4 +1,4 @@
-from photfdtd import Waveguide, Grid, Solve, Index
+from photfdtd import Waveguide, Grid, Solve, Index, Sbend, Taper
 
 if __name__ == "__main__":
     # This example shows a 2D simulation of a basic straight waveguide本示例展示了一个基础矩形波导的二维仿真
@@ -8,11 +8,19 @@ if __name__ == "__main__":
 
     # set waveguide设置器件参数
     waveguide = Waveguide(
-        xlength=97, ylength=60, zlength=1, x=100, y=100, z=0, refractive_index=3.47, name="waveguide",
+        xlength=90, ylength=10, zlength=1, x=150, y=100, z=0, refractive_index=3.47, name="waveguide",
         background_index=background_index
     )
-    waveguide._rotate_Z(angle=45)
-
+    sbend = Sbend(
+        xlength=150, ylength=100, zlength=1, x=100, y=100, z=0, direction=-1, width=10, refractive_index=3.47, name="sbend",
+        background_index=background_index
+    )
+    taper = Taper(xlength=91, ylength=25, zlength=1, x=100, y=100, z=0, direction=-1, width=5, name="taper",
+                  refractive_index=3.47, background_index=background_index)
+    waveguide._rotate_Z(angle=-100, center=[-5, 5, 0])
+    sbend._rotate_Z(angle=60)
+    taper._rotate_Z(angle=25)
+    # waveguide._rotate_Z(angle=45)
     # create the simulation region, which is a Grid object 新建一个 grid 对象
     grid = Grid(grid_xlength=200, grid_ylength=200, grid_zlength=1,
                 grid_spacing=20e-9,
@@ -21,10 +29,10 @@ if __name__ == "__main__":
                 pml_width_y=40,
                 pml_width_z=0,
                 permittivity=background_index ** 2,
-                foldername="test0109")
+                foldername="test_rotation")
 
     # add waveguide to grid 往 grid 里添加器件
-    grid.add_object(waveguide)
+    grid.add_object(taper)
 
     # set a point source 设置一个点光源，波长为1550nm，波形为连续正弦
     # grid.set_source(source_type="pointsource", wavelength=1550e-9, name="source", x=80, y=75, z=0,

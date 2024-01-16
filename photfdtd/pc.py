@@ -21,28 +21,33 @@ class Hexagonal_PC():
             self,
             n_side: int = None,
             H_number: int = None,
-            zlength: int = None,
-            a: int = None,
-            radius: int = None,
-            x: int = 100,
-            y: int = 100,
-            z: int = 1,
+            zlength: int or float = None,
+            a: int or float= None,
+            radius: int or float= None,
+            x: int or float = None,
+            y: int or float = None,
+            z: int or float = None,
             refractive_index: float = 3.47,
             name: str = "arc",
-            background_index: float = 1.0,
+            grid=None
     ) -> None:
         # TODO: FIXME: NOTE: python中赋值后面加逗号代表创建元组
         self.n_side = n_side
         self.H_number = H_number
-        self.a = a
-        self.zlength = zlength
+        self.a, self.zlength, self.radius, x, y, z = grid._handle_unit([a, zlength, radius, x, y, z], grid_spacing=grid._grid.grid_spacing)
+        if x == None:
+            # 如果没设置x，自动选仿真区域中心If x not set, choose the center of grid
+            x = int(grid._grid_xlength / 2)
+        if y == None:
+            y = int(grid._grid_ylength / 2)
+        if z == None:
+            z = int(grid._grid_zlength / 2)
         self.x, self.x_center = x, x
         self.y, self.y_center = y, y
         self.z, self.z_center = z, z
-        self.radius = radius
         self.refractive_index = refractive_index
         self.name = name
-        self.background_index = background_index
+        self.grid = grid
 
         self._set_objects()
 
@@ -75,26 +80,26 @@ class Hexagonal_PC():
                         circle = Fiber(radius=[self.radius], length=self.zlength, x=self.x + j * self.a,
                                        y=self.y + i * self.a * np.sqrt(3) / 2, z=self.z,
                                        refractive_index=[self.refractive_index], name="%s_circle_%d" % (self.name, flag),
-                                       axis="z", background_index=self.background_index)
+                                       axis="z", grid=self.grid)
                         flag+=1
                         self._internal_objects.append(circle)
                         circle = Fiber(radius=[self.radius], length=self.zlength, x=self.x + j * self.a,
                                        y=self.y - i * self.a * np.sqrt(3) / 2, z=self.z,
                                        refractive_index=[self.refractive_index], name="%s_circle_%d" % (self.name, flag),
-                                       axis="z", background_index=self.background_index)
+                                       axis="z", grid=self.grid)
                         flag += 1
                         self._internal_objects.append(circle)
                 else:
                     circle = Fiber(radius=[self.radius], length=self.zlength, x=self.x + j * self.a,
                                    y=self.y + i * self.a * np.sqrt(3) / 2, z=self.z,
                                    refractive_index=[self.refractive_index], name="%s_circle_%d" % (self.name, flag),
-                                   axis="z", background_index=self.background_index)
+                                   axis="z", grid=self.grid)
                     flag += 1
                     self._internal_objects.append(circle)
                     circle = Fiber(radius=[self.radius], length=self.zlength, x=self.x + j * self.a,
                                    y=self.y - i * self.a * np.sqrt(3) / 2, z=self.z,
                                    refractive_index=[self.refractive_index], name="%s_circle_%d" % (self.name, flag),
-                                   axis="z", background_index=self.background_index)
+                                   axis="z", grid=self.grid)
                     flag += 1
                     self._internal_objects.append(circle)
 

@@ -20,9 +20,9 @@ class Grid:
     ) -> None:
         """
         Args:
-            grid_xlength (int, optional): _description_. Defaults to 100.
-            grid_ylength (int, optional): _description_. Defaults to 200.
-            grid_zlength (int, optional): _description_. Defaults to 50.
+            grid_xlength (int or float, optional): xlength of Simulation Region, SI unit(m) if float or grid_spacing unit if int
+            grid_ylength (int or float, optional): ylength of Simulation Region, SI unit(m) if float or grid_spacing unit if int
+            grid_zlength (int or float, optional): zlength of Simulation Region, SI unit(m) if float or grid_spacing unit if int
             grid_spacing (float, optional): fdtd算法的空间步长（yee元胞的网格宽度）. 单位为m
             total_time (int, optional): 计算时间. Defaults to 1.
             pml_width (int, optional): PML宽度.
@@ -32,6 +32,10 @@ class Grid:
             courant_number: 科朗数 默认为None
             foldername: 文件夹名称, 若其不存在将在目录下创建该文件夹
         """
+
+        grid_xlength, grid_ylength, grid_zlength = self._handle_unit(lengths=[grid_xlength, grid_ylength, grid_zlength],
+                                                                     grid_spacing=grid_spacing)
+
         grid = fdtd.Grid(shape=(grid_xlength, grid_ylength, grid_zlength),
                          grid_spacing=grid_spacing,
                          permittivity=permittivity,
@@ -68,6 +72,15 @@ class Grid:
 
         self.background_index = np.sqrt(permittivity * permeability)
 
+    def _handle_unit(self, lengths, grid_spacing):
+        # 把SI单位变成空间步长单位 SI unit -> grid spacing unit
+        for i in range(len(lengths)):
+            if not np.issubdtype(type(lengths[i]), np.integer):
+            # if not isinstance(lengths[i], int):
+                lengths[i] = int(np.round(lengths[i] / grid_spacing))
+
+        return lengths
+
     def add_object(self, object: Waveguide):
 
         for internal_object in object._internal_objects:
@@ -94,15 +107,15 @@ class Grid:
             pulse_type: str = "none",
             cycle: int = 5,
             hanning_dt: float = 10.0,
-            polarization: str = "z",
+            polarization: str = "x",
             pulse_length: float = 39e-15,
             offset: float = 112e-15,
             x: int = 5,
             y: int = 5,
             z: int = 5,
-            xlength: int = 5,
-            ylength: int = 5,
-            zlength: int = 5,
+            xlength: int or float= 5,
+            ylength: int or float= 5,
+            zlength: int or float= 5,
     ):
         """
         :param source_type: 光源种类：点或线或面
@@ -129,8 +142,8 @@ class Grid:
             if wavelength is not None:
                 period = wavelength / constants.c
             else:
-                raise ValueError("please set a wavelength or period")
-
+                raise ValueError("please set wavelength or period for the source")
+        xlength, ylength, zlength = self._handle_unit([xlength, ylength, zlength], grid_spacing=self._grid.grid_spacing)
         x = x - xlength // 2
         y = y - ylength // 2
         z = z - zlength // 2
@@ -172,18 +185,21 @@ class Grid:
             )
 
         else:
-            raise RuntimeError("Invalid source type.")
+            raise ValueError("Invalid source type.")
 
     def set_detector(self,
                      detector_type: str = 'linedetector',
                      x: int = 5,
                      y: int = 5,
                      z: int = 5,
-                     xlength: int = 5,
-                     ylength: int = 5,
-                     zlength: int = 1,
+                     xlength: int or float = 5,
+                     ylength: int or float= 5,
+                     zlength: int or float= 1,
                      name: str = 'detector'
                      ):
+
+        xlength, ylength, zlength = self._handle_unit([xlength, ylength, zlength],
+                                                      grid_spacing=self._grid.grid_spacing)
         x = x - xlength // 2
         y = y - ylength // 2
         z = z - zlength // 2
@@ -205,7 +221,8 @@ class Grid:
                  axis_number=0,
                  animate=False,
                  time=None,
-                 geo=None):
+                 geo=None,
+                 show_geometry=True):
         """
         保存图片
         @param geo: Solve.geometry，也可以为None，程序会自己计算
@@ -226,15 +243,15 @@ class Grid:
         if axis == "x":  # 绘制截面/剖面场图
             self._grid.visualize(x=axis_number, save=True, animate=animate,
                                  index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder, geo=geo,
-                                 background_index=self.background_index)
+                                 background_index=self.background_index, show_geometry=show_geometry)
         elif axis == "y":
             self._grid.visualize(y=axis_number, save=True, animate=animate,
                                  index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder, geo=geo,
-                                 background_index=self.background_index)
+                                 background_index=self.background_index, show_geometry=show_geometry)
         elif axis == "z":
             self._grid.visualize(z=axis_number, save=True, animate=animate,
                                  index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder, geo=geo,
-                                 background_index=self.background_index)
+                                 background_index=self.background_index, show_geometry=show_geometry)
         else:
             raise RuntimeError("Unknown axis parameter.")
 

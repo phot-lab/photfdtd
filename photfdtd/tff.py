@@ -3,28 +3,53 @@ import numpy as np
 
 
 class TFF(Waveguide):
-    """高折射率、低折射率交替排布的多层薄膜
+    """
     """
 
     def __init__(
             self,
-            xlength: int = 71,
-            ylength: int = 56,
-            zlength: int = 20,
-            x: int = 60,
-            y: int = 40,
-            z: int = 15,
+            xlength: int or float = 71,
+            ylength: int or float = 56,
+            zlength: int or float = 20,
+            x: int or float = None,
+            y: int or float = None,
+            z: int or float = None,
             low_index: float = None,
             high_index: float = None,
-            dl: int = None,
-            dh: int = None,
+            dl: int or float = None,
+            dh: int or float = None,
             layers: int = None,
-            name: str = "TFF",
-            background_index: float = 1.0,
-            axis: str = "z"
+            axis: str = "z",
+            name: str = "tf",
+            grid=None
     ) -> None:
+        """
+        # TODO:不需要xlength, ylength, zlength这几个参数？
+        高折射率、低折射率交替排布的多层薄膜
+        @param xlength:
+        @param ylength:
+        @param zlength:
+        @param x, y, z: 在传播方向上取最底端坐标，非传播方向上取中心坐标
+        @param low_index:
+        @param high_index:
+        @param dl:
+        @param dh:
+        @param layers:
+        @param axis:
+        @param name:
+        @param grid:
+        """
+        xlength, ylength, zlength, dl, dh, x, y, z = grid._handle_unit([xlength, ylength, zlength, dl, dh, x, y, z],
+                                                              grid_spacing=grid._grid.grid_spacing)
+
         x, y, z = np.full(layers, x), np.full(layers, y), np.full(layers, z)
         xlength_l, ylength_l, zlength_l = np.full(layers, xlength), np.full(layers, ylength), np.full(layers, zlength)
+        for i in range(len(xlength_l)):
+            xlength_l[i] = int(xlength_l[i])
+        ylength_l = ylength_l.astype(int)
+        zlength_l = zlength_l.astype(int)
+
+        # xlength_l, ylength_l, zlength_l = int(xlength_l), int(ylength_l), int(zlength_l)
         if axis == "z":
             z = self._calculate_position(z, layers, dl, dh)
             for i in range(layers):
@@ -54,11 +79,11 @@ class TFF(Waveguide):
         for i in range(layers):
             if i % 2 == 0:
                 layer[i] = Waveguide(xlength_l[i], ylength_l[i], zlength_l[i], int(x[i]), int(y[i]),
-                                     int(z[i]), ylength, name + "_layer_" + str(i), high_index, background_index)
+                                     int(z[i]), ylength, name + "_layer_" + str(i), high_index, grid=grid, reset_xyz=True)
 
             else:
                 layer[i] = Waveguide(xlength_l[i], ylength_l[i], zlength_l[i], int(x[i]), int(y[i]),
-                                     int(z[i]), ylength, name + "_layer_" + str(i), low_index, background_index)
+                                     int(z[i]), ylength, name + "_layer_" + str(i), low_index, grid=grid, reset_xyz=True)
 
         self._internal_objects.extend(layer)
 

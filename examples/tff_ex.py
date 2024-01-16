@@ -5,11 +5,15 @@ if __name__ == "__main__":
 
     background_index = 1.0
 
+    grid = Grid(grid_xlength=200, grid_ylength=300, grid_zlength=1, grid_spacing=grid_spacing, total_time=700,
+                foldername="test_fft",
+                permittivity=background_index ** 2)
+
     # 制作一个11层厚，1550nm波长的增返膜
     tff = TFF(
-        xlength=200,
-        ylength=220,
-        zlength=1,
+        xlength=200 * grid_spacing,
+        ylength=220 * grid_spacing,
+        zlength=1 * grid_spacing,
         x=100,
         y=0,
         z=0,
@@ -18,14 +22,10 @@ if __name__ == "__main__":
         axis="y",
         low_index=1.35,
         high_index=2.35,
-        dh=8,
-        dl=14,
-        background_index=background_index
+        dh=8 * grid_spacing,
+        dl=14 * grid_spacing,
+        grid=grid
     )
-
-    grid = Grid(grid_xlength=200, grid_ylength=300, grid_zlength=1, grid_spacing=grid_spacing, total_time=700,
-                foldername="test_fft",
-                permittivity=background_index ** 2)
 
     grid.set_source(source_type="linesource", period=1550e-9 / 299792458, name="source", x=100, y=275, z=1, xlength=50,
                     ylength=1, zlength=0)
@@ -53,12 +53,14 @@ if __name__ == "__main__":
     grid.add_object(tff)
 
     # 创建solve对象
-    solve = Solve(grid=grid)
+    solve = Solve(grid=grid,
+                  axis="z",
+                  index=0,
+                  filepath=grid.folder
+                  )
 
     # 绘制任一截面折射率分布
-    solve.plot(axis="z",
-               index=0,
-               filepath=grid.folder)
+    solve.plot()
 
     # # 绘制单模波导截面折射率分布并计算模式
     # solve._plot_(axis='x',
@@ -78,12 +80,13 @@ if __name__ == "__main__":
 
     # 运行仿真
     grid.run()
-
-    # 保存仿真结果
-    grid.save_simulation()
+    grid.save_fig(axis="z",
+                  axis_number=0)
+    # # 保存仿真结果
+    # grid.save_simulation()
 
     # 绘制任意截面场图
-    grid.visualize(z=0, showEnergy=True, show=True, save=True)
-
-    # 读取仿真结果
-    data = grid.read_simulation(folder=grid.folder)
+    # grid.visualize(z=0, showEnergy=True, show=True, save=True)
+    #
+    # # 读取仿真结果
+    # data = grid.read_simulation(folder=grid.folder)

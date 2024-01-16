@@ -22,27 +22,28 @@ class FWG(Arc):
 
     def __init__(
             self,
-            outer_radius: int = 60,
-            zlength: int = 20,
-            x: int = 100,
-            y: int = 100,
-            z: int = 1,
-            width: int = 20,
+            outer_radius: int or float = 60,
+            zlength: int or float = 20,
+            x: int or float = None,
+            y: int or float = None,
+            z: int or float = None,
+            width: int or float = 20,
             refractive_index: float = 3.47,
             name: str = "fwg",
             angle_phi: float = 0,
             angle_psi: float = 0,
-            background_index: float = 1.0,
-            gap: int = 1,
-            number: int = None
+            gap: int or float = 1,
+            number: int = None,
+            grid=None
     ) -> None:
         # TODO: FIXME: NOTE: python中赋值后面加逗号代表创建元组
-        self.gap = gap
+        gap = grid._handle_unit([gap], grid_spacing=grid._grid.grid_spacing)
+        self.gap = gap[0]
         self.number = number
 
         super().__init__(outer_radius=outer_radius, zlength=zlength, x=x, y=y, z=z, width=width,
                          refractive_index=refractive_index,
-                         name=name, angle_phi=angle_phi, angle_psi=angle_psi, background_index=background_index,
+                         name=name, angle_phi=angle_phi, angle_psi=angle_psi, grid=grid,
                          angle_to_radian=False)
 
     def _set_objects(self):
@@ -52,7 +53,7 @@ class FWG(Arc):
                       x=self.x_center,
                       y=self.y_center, z=self.z_center,
                       width=self.width, refractive_index=self.refractive_index, name="%s_arc%d" % (self.name, i + 1),
-                      background_index=self.background_index, angle_psi=self.psi, angle_phi=self.phi)
+                      grid=self.grid, angle_psi=self.psi, angle_phi=self.phi)
             self._internal_objects.append(arc)
 
     def _compute_permittivity(self):

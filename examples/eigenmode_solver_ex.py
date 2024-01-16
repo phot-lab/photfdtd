@@ -45,15 +45,15 @@ if __name__ == "__main__":
                     data=data,
                     content="amplitude")
     # 也可以是场的相位、实部或虚部
-    # solve.draw_mode(filepath=solve.filepath,
-    #                 data=data,
-    #                 content="phase")
-    # solve.draw_mode(filepath=solve.filepath,
-    #                 data=data,
-    #                 content="real_part")
-    # solve.draw_mode(filepath=solve.filepath,
-    #                 data=data,
-    #                 content="imaginary_part")
+    solve.draw_mode(filepath=solve.filepath,
+                    data=data,
+                    content="phase")
+    solve.draw_mode(filepath=solve.filepath,
+                    data=data,
+                    content="real_part")
+    solve.draw_mode(filepath=solve.filepath,
+                    data=data,
+                    content="imaginary_part")
 
     # 如果保存了模式的数据，则可以读取它再绘制模式场
     # Solve.save_mode(solve.filepath, data)

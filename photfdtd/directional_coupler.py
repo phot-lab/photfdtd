@@ -17,30 +17,31 @@ class DirectionalCoupler(Waveguide):
 
     def __init__(
         self,
-            xlength: int = 200,
-            ylength: int = 80,
-            zlength: int = 20,
-            x: int = 100,
-            y: int = 50,
-            z: int = 12,
+            xlength: int or float = 200,
+            ylength: int or float = 80,
+            zlength: int or float = 20,
+            x: int or float = None,
+            y: int or float = None,
+            z: int or float = None,
             direction: int = 1,
-            width: int = 20,
+            width: int or float = 20,
             name: str = "dc",
             refractive_index: float = 3.47,
-            xlength_rectangle: int = 50,
-            gap: int = 10,
-            background_index: float = 1.0
+            xlength_rectangle: int or float = 50,
+            gap: int or float = 10,
+            grid=None
     ) -> None:
         self.direction = direction
+        xlength, ylength, zlength, width, xlength_rectangle, gap = grid._handle_unit([xlength, ylength, zlength, width, xlength_rectangle, gap],
+                                                                                     grid_spacing=grid._grid.grid_spacing)
         self.xlength_rectangle = xlength_rectangle
         self.ylength_sbend = int((ylength - gap) / 2 + 0.5)
         self.xlength_sbend = int((xlength - xlength_rectangle) / 2 + 0.5)
         self.gap = gap
-        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index, background_index)
+        super().__init__(xlength=xlength, ylength=ylength, zlength=zlength, x=x, y=y, z=z, width=width,
+                         name=name, refractive_index=refractive_index, grid=grid)
 
     def _set_objects(self):
-        # permittivity_rectangle = 应该不用写矩形波导的介电常数？
-        # 23.3.22: 由于器件不能重名，更改了下面name的表达式
         sbend1 = sbend.Sbend(
             xlength=self.xlength_sbend,
             ylength=self.ylength_sbend,
@@ -52,7 +53,7 @@ class DirectionalCoupler(Waveguide):
             width=self.width,
             refractive_index=self.refractive_index,
             name="%s_sbend1" % self.name,
-            background_index=self.background_index
+            grid=self.grid
         )
 
         sbend2 = sbend.Sbend(
@@ -66,7 +67,7 @@ class DirectionalCoupler(Waveguide):
             width=self.width,
             refractive_index=self.refractive_index,
             name="%s_sbend2" % self.name,
-            background_index=self.background_index
+            grid=self.grid
         )
 
         sbend3 = sbend.Sbend(
@@ -80,7 +81,7 @@ class DirectionalCoupler(Waveguide):
             width=self.width,
             refractive_index=self.refractive_index,
             name="%s_sbend3" % self.name,
-            background_index=self.background_index
+            grid=self.grid
         )
 
         sbend4 = sbend.Sbend(
@@ -94,7 +95,7 @@ class DirectionalCoupler(Waveguide):
             width=self.width,
             refractive_index=self.refractive_index,
             name="%s_sbend4" % self.name,
-            background_index=self.background_index
+            grid=self.grid
         )
 
         wg1 = Waveguide(
@@ -107,7 +108,7 @@ class DirectionalCoupler(Waveguide):
             width=self.width,
             refractive_index=self.refractive_index,
             name="%s_wg1" % self.name,
-            background_index=self.background_index
+            grid=self.grid
         )
 
         wg2 = Waveguide(
@@ -120,7 +121,7 @@ class DirectionalCoupler(Waveguide):
             width=self.width,
             refractive_index=self.refractive_index,
             name="%s_wg2" % self.name,
-            background_index=self.background_index
+            grid=self.grid
         )
 
         self._internal_objects = [sbend1, sbend2, sbend3, sbend4, wg1, wg2]

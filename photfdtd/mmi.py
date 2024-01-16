@@ -23,26 +23,28 @@ class Mmi(Waveguide):
     # FIXME: 矩形波导与MMI之间有缝隙
     def __init__(
             self,
-            xlength: int = 71,
-            ylength: int = 56,
-            zlength: int = 20,
-            x: int = 60,
-            y: int = 40,
-            z: int = 15,
-            width_wg: int = 20,
-            width_port: int = 25,
+            xlength: int or float= 71,
+            ylength: int or float= 56,
+            zlength: int or float= 20,
+            x: int or float = None,
+            y: int or float = None,
+            z: int or float = None,
+            width_wg: int or float= 20,
+            width_port: int or float= 25,
             n: int = 1,
             m: int = 2,
-            We: int = 56,
-            ln: int = 20,
-            lm: int = 20,
-            l_port: int = 0,
+            We: int or float= 56,
+            ln: int or float= 20,
+            lm: int or float= 20,
+            l_port: int or float= 0,
             name: str = "mmi",
             refractive_index: float = 3.47,
-            background_index: float = 1.0
+            grid=None
     ) -> None:
         # TODO: 如果没有给定We，则算出We
         # TODO: 光路沿ｙ方向？
+        xlength, ylength, zlength, width_wg, width_port, We, ln, lm, l_port = grid._handle_unit(
+            [xlength, ylength, zlength, width_wg, width_port, We, ln, lm, l_port], grid_spacing=grid._grid.grid_spacing)
         self.n = n
         self.m = m
         self.width_port = width_port
@@ -53,7 +55,7 @@ class Mmi(Waveguide):
         self.We = We
 
         super().__init__(xlength, ylength, zlength, x, y, z,
-                         ylength, name, refractive_index, background_index, reset_xyz=False)
+                         ylength, name, refractive_index, grid=grid, reset_xyz=False)
 
     def _set_objects(self):
         self._set_box()
@@ -80,7 +82,7 @@ class Mmi(Waveguide):
             width=self.width,
             refractive_index=self.refractive_index,
             name="%s_waveguide0" % self.name,
-            background_index=self.background_index
+            grid=self.grid
         )
         self.waveguide = waveguide
 
@@ -137,20 +139,21 @@ class Mmi(Waveguide):
 
         for i in range(self.n):
             # 23.3.22: 由于器件不能重名，更改了下面name的表达式
-
-            port = Taper(
-                xlength=self.l_port,
-                ylength=self.width_port,
-                zlength=self.zlength,
-                x=x_port_in[i],
-                y=y_port_in[i],
-                z=self.z,
-                direction=1,
-                width=self.width_wg,
-                name="%s_port_input%d" % (self.name, i),
-                refractive_index=self.refractive_index,
-                background_index=self.background_index
-            )
+            if not self.l_port:
+                port = Taper(
+                    xlength=self.l_port,
+                    ylength=self.width_port,
+                    zlength=self.zlength,
+                    x=x_port_in[i],
+                    y=y_port_in[i],
+                    z=self.z,
+                    direction=1,
+                    width=self.width_wg,
+                    name="%s_port_input%d" % (self.name, i),
+                    refractive_index=self.refractive_index,
+                    grid=self.grid
+                )
+                ports_in[i] = port
             wg = Waveguide(
                 xlength=self.ln,
                 ylength=self.width_wg,
@@ -161,25 +164,27 @@ class Mmi(Waveguide):
                 width=self.width_wg,
                 name="%s_waveguide_input%d" % (self.name, i),
                 refractive_index=self.refractive_index,
-                background_index=self.background_index
+                grid=self.grid
             )
-            ports_in[i] = port
+
             waveguides_in[i] = wg
 
         for i in range(self.m):
-            port = Taper(
-                xlength=self.l_port,
-                ylength=self.width_port,
-                zlength=self.zlength,
-                x=x_port_out[i],
-                y=y_port_out[i],
-                z=self.z,
-                direction=-1,
-                width=self.width_wg,
-                name="%s_port_output%d" % (self.name, i),
-                refractive_index=self.refractive_index,
-                background_index=self.background_index
-            )
+            if not self.l_port:
+                port = Taper(
+                    xlength=self.l_port,
+                    ylength=self.width_port,
+                    zlength=self.zlength,
+                    x=x_port_out[i],
+                    y=y_port_out[i],
+                    z=self.z,
+                    direction=-1,
+                    width=self.width_wg,
+                    name="%s_port_output%d" % (self.name, i),
+                    refractive_index=self.refractive_index,
+                    grid=self.grid
+                )
+                ports_out[i] = port
             wg = Waveguide(
                 xlength=self.lm,
                 ylength=self.width_wg,
@@ -190,12 +195,13 @@ class Mmi(Waveguide):
                 width=self.width_wg,
                 name="%s_waveguide_output%d" % (self.name, i),
                 refractive_index=self.refractive_index,
-                background_index=self.background_index
+                grid=self.grid
             )
-            ports_out[i] = port
+
             waveguides_out[i] = wg
 
-        self.ports_in = ports_in
-        self.ports_out = ports_out
+        if not self.l_port:
+            self.ports_in = ports_in
+            self.ports_out = ports_out
         self.waveguides_in = waveguides_in
         self.waveguides_out = waveguides_out

@@ -21,23 +21,24 @@ class Arc(Waveguide):
     # FIXME: 在圆弧跨越x正半轴时存在问题
     def __init__(
             self,
-            outer_radius: int = 60,
-            zlength: int = 20,
-            x: int = 100,
-            y: int = 100,
-            z: int = 1,
-            width: int = 20,
+            outer_radius: int or float = 60,
+            zlength: int or float = 20,
+            x: int or float = None,
+            y: int or float = None,
+            z: int or float = None,
+            width: int or float = 20,
             refractive_index: float = 3.47,
             name: str = "arc",
             angle_phi: float = 0,
             angle_psi: float = 0,
-            background_index: float = 1,
-            angle_to_radian: bool = True
+            angle_to_radian: bool = True,
+            grid=None
     ) -> None:
         angle_phi = angle_phi % 360
         if angle_phi < 0:
             angle_phi += 360
 
+        outer_radius, width = grid._handle_unit([outer_radius, width], grid_spacing=grid._grid.grid_spacing)
         self.outer_radius = outer_radius
         if angle_to_radian:
             self.phi = np.radians(angle_phi)
@@ -45,10 +46,9 @@ class Arc(Waveguide):
         else:
             self.phi = angle_phi
             self.psi = angle_psi
-
         super().__init__(xlength=outer_radius, ylength=outer_radius, zlength=zlength, x=x,
-                         y=y, z=z, width=width, name=name, refractive_index=refractive_index,
-                         background_index=background_index, reset_xyz=False)
+                         y=y, z=z, width=width, name=name, refractive_index=refractive_index, reset_xyz=False,
+                         grid=grid)
 
     def _compute_permittivity(self):
         # 这里+2的原因：稍微扩大一点矩阵的大小，可以保证水平和竖直方向最边上的点不被丢出

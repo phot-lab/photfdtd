@@ -17,21 +17,21 @@ class Taper(Waveguide):
 
     def __init__(
             self,
-            xlength: int = 40,
-            ylength: int = 40,
-            zlength: int = 20,
-            x: int = 50,
-            y: int = 50,
-            z: int = 50,
+            xlength: int or float= 40,
+            ylength: int or float= 40,
+            zlength: int or float= 20,
+            x: int or float = None,
+            y: int or float = None,
+            z: int or float = None,
             direction: int = 1,
-            width: int = 20,
+            width: int or float= 20,
             name: str = "taper",
             refractive_index: float = 3.47,
-            background_index: float = 1
+            grid=None
     ):
 
         self.direction = direction
-        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index, background_index)
+        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index, grid=grid)
 
     def _compute_permittivity(self):
 
@@ -42,7 +42,7 @@ class Taper(Waveguide):
         m = np.zeros((self.xlength, self.ylength, 1))
 
         if self.direction == 1:
-            # 开口向下（x正方向）
+            # 开口向x正方向
             for i in range(self.xlength):
                 for j in range(self.ylength):
                     if (
@@ -57,7 +57,7 @@ class Taper(Waveguide):
                         m[i, j] = True
 
         if self.direction == -1:
-            # 开口向上（x负方向）
+            # 开口向x负方向
             for i in range(self.xlength):
                 for j in range(self.ylength):
                     if (
@@ -98,35 +98,34 @@ class Ysplitter(Waveguide):
 
     def __init__(
             self,
-            xlength: int = 200,
-            ylength: int = 160,
-            zlength: int = 20,
-            x: int = 100,
-            y: int = 100,
-            z: int = 13,
+            xlength: int or float = 200,
+            ylength: int or float = 160,
+            zlength: int or float = 20,
+            x: int or float = 100,
+            y: int or float = 100,
+            z: int or float = 13,
             direction: int = 1,
-            width: int = 20,
+            width: int or float = 20,
             name: str = "ysplitter",
             refractive_index: float = 3.47,
-            xlength_waveguide: int = 80,
-            xlength_taper: int = 40,
-            ylength_taper: int = 40,
-            width_sbend: int = 20,
-            background_index: float = 1
+            xlength_waveguide: int or float = 80,
+            xlength_taper: int or float = 40,
+            ylength_taper: int or float = 40,
+            width_sbend: int or float = 20,
+            grid=None
     ):
+        xlength, ylength, zlength,width, xlength_waveguide, xlength_taper, ylength_taper, width_sbend = \
+            grid._handle_unit([xlength, ylength, zlength,width, xlength_waveguide, xlength_taper, ylength_taper, width_sbend],
+                              grid_spacing=grid._grid.grid_spacing)
         self.direction = direction
         self.xlength_waveguide = xlength_waveguide
-        self.xlength_taper = xlength_taper
+        self.xlength_taper = xlength_taper + 2 # +2防止连接的位置出现空气
         self.ylength_taper = ylength_taper
         self.xlength_sbend = xlength - xlength_waveguide - xlength_taper
         self.ylength_sbend = int(ylength / 2 - ylength_taper / 2 + width_sbend + 0.5)
         self.width_sbend = width_sbend
 
-        x = x + int(xlength / 2)
-        y = y + int(ylength / 2)
-        z = z + int(zlength / 2)
-
-        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index, background_index)
+        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index, grid=grid, reset_xyz=False)
 
     def _set_objects(self):
 
@@ -142,7 +141,7 @@ class Ysplitter(Waveguide):
                 width=self.width,
                 name="%s_waveguide" % self.name,
                 refractive_index=self.refractive_index,
-                background_index=self.background_index
+                grid=self.grid
             )
             taper = Taper(
                 xlength=self.xlength_taper,
@@ -155,7 +154,7 @@ class Ysplitter(Waveguide):
                 width=self.width,
                 name="%s_trapezoid" % self.name,
                 refractive_index=self.refractive_index,
-                background_index=self.background_index
+                grid=self.grid
             )
             sbend1 = sbend.Sbend(
                 xlength=self.xlength_sbend,
@@ -168,7 +167,7 @@ class Ysplitter(Waveguide):
                 width=self.width_sbend,
                 name="%s_sbend1" % self.name,
                 refractive_index=self.refractive_index,
-                background_index=self.background_index
+                grid=self.grid
             )
             sbend2 = sbend.Sbend(
                 xlength=self.xlength_sbend,
@@ -181,7 +180,7 @@ class Ysplitter(Waveguide):
                 width=self.width_sbend,
                 name="%s_sbend2" % self.name,
                 refractive_index=self.refractive_index,
-                background_index=self.background_index
+                grid=self.grid
             )
         else:
             waveguide = Waveguide(
@@ -194,7 +193,7 @@ class Ysplitter(Waveguide):
                 width=self.width,
                 name="%s_waveguide" % self.name,
                 refractive_index=self.refractive_index,
-                background_index=self.background_index
+                grid=self.grid
             )
             taper = Taper(
                 xlength=self.xlength_taper,
@@ -207,7 +206,7 @@ class Ysplitter(Waveguide):
                 width=self.width,
                 name="%s_trapezoid" % self.name,
                 refractive_index=self.refractive_index,
-                background_index=self.background_index
+                grid=self.grid
             )
             sbend1 = sbend.Sbend(
                 xlength=self.xlength_sbend,
@@ -220,7 +219,7 @@ class Ysplitter(Waveguide):
                 width=self.width,
                 name="%s_sbend1" % self.name,
                 refractive_index=self.refractive_index,
-                background_index=self.background_index
+                grid=self.grid
             )
             sbend2 = sbend.Sbend(
                 xlength=self.xlength_sbend,
@@ -233,7 +232,7 @@ class Ysplitter(Waveguide):
                 width=self.width,
                 name="%s_sbend2" % self.name,
                 refractive_index=self.refractive_index,
-                background_index=self.background_index
+                grid=self.grid
             )
 
         self._internal_objects = [waveguide, taper, sbend1, sbend2]

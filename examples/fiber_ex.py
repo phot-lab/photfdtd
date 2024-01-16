@@ -11,23 +11,26 @@ if __name__ == "__main__":
 
     background_index = 1.4437
 
-    fiber = Fiber(length=1, x=100, y=100, z=0, radius=[20], refractive_index=[1.4504], name='fiber', axis='z',
-                  background_index=background_index)
+
 
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=200, grid_ylength=200, grid_zlength=1, grid_spacing=200e-9,
+    grid = Grid(grid_xlength=200 * 200e-9, grid_ylength=200 * 200e-9, grid_zlength=1, grid_spacing=200e-9,
                 foldername="test_fiber", permittivity=background_index ** 2)
+    fiber = Fiber(length=1 * 200e-9, radius=[20 * 200e-9], refractive_index=[1.4504], name='fiber', axis='z',
+                  grid=grid)
 
     # 往 grid 里添加fiber
     grid.add_object(fiber)
 
     # 创建solve对象
-    solve = Solve(grid=grid)
+    solve = Solve(grid=grid,
+                  axis="z",
+                  filepath=grid.folder,
+                  index=0
+                  )
 
     # 绘制折射率分布
-    solve.plot(axis="z",
-               filepath=grid.folder,
-               index=0)
+    solve.plot()
 
     # 计算这个截面处，波长1.55um，折射率3.47附近的2个模式，边界条件选择在四个方向上都是pml，厚度均为15格
     data = solve.calculate_mode(lam=1550e-9, neff=1.4504, neigs=2,
