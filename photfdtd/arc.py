@@ -50,6 +50,10 @@ class Arc(Waveguide):
                          y=y, z=z, width=width, name=name, refractive_index=refractive_index, reset_xyz=False,
                          grid=grid)
 
+        super().__init__(xlength=outer_radius, ylength=outer_radius, zlength=zlength, x=x,
+                         y=y, z=z, width=width, name=name, refractive_index=refractive_index,
+                         background_index=background_index, reset_xyz=False)
+
     def _compute_permittivity(self):
         # 这里+2的原因：稍微扩大一点矩阵的大小，可以保证水平和竖直方向最边上的点不被丢出
         x = y = np.linspace(1, 2 * self.outer_radius + 2, 2 * self.outer_radius + 2)
