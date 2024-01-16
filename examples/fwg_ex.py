@@ -1,16 +1,16 @@
-from photfdtd import FWG, Arc, Grid, Solve, Waveguide
+from photfdtd import FWG, Arc, Grid, Solve
 
 if __name__ == "__main__":
     background_index = 1.444
     n_Si = 3.476
 
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=320, grid_ylength=450, grid_zlength=1, grid_spacing=40e-9, total_time=1,
+    grid = Grid(grid_xlength=200, grid_ylength=200, grid_zlength=1, grid_spacing=20e-9, total_time=1,
                 foldername="test_fwg",
                 pml_width_x=25,
                 pml_width_y=25,
                 pml_width_z=0,
-                permittivity=background_index ** 2, )
+                permittivity=background_index ** 2,)
 
     # 设置器件参数
     fwg = FWG(outer_radius=150 * 40e-9, zlength=1 * 40e-9, width=12 * 40e-9, refractive_index=n_Si, name="fwg",
@@ -23,10 +23,8 @@ if __name__ == "__main__":
 
     # 往 grid 里添加器件
     grid.add_object(fwg)
-    grid.add_object(waveguide)
 
-    grid.set_source(source_type="linesource", period=1300e-9 / 299792458, x=160, y=30, z=0,
-                    xlength=15, ylength=1, zlength=1)
+    grid.set_source(source_type="pointsource", period=850e-9 / 299792458, x=65, y=75, z=0)
 
     solve = Solve(grid=grid,
                   axis='z',

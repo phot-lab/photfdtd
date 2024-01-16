@@ -9,7 +9,7 @@ if __name__ == "__main__":
         xlength=100, ylength=20, zlength=20, x=50, y=149, z=11, refractive_index=3.47, name="Waveguide1",
         background_index=background_index
     )
-    arc = Arc(outer_radius=60, zlength=20, x=100, y=100, z=1, width=20, refractive_index=3.47, name="arc",
+    arc = Arc(outer_radius=60, zlength=20, x=100, y=100, z=1, width=20, refractive_index=3.47, name="arc", direction=2,
               background_index=background_index)
     waveguide2 = Waveguide(
         xlength=20, ylength=100, zlength=20, x=149, y=50, z=11, refractive_index=3.47, name="Waveguide2",

@@ -18,8 +18,16 @@ if __name__ == "__main__":
                 foldername="test_ysplitter", permittivity=background_index ** 2)
 
     # 设置光源
-    grid.set_source(source_type="planesource", period=1550e-9 / constants.c, name="source", x=30, y=100, z=13,
-                    xlength=1, ylength=22, zlength=22)
+    grid.set_source(source_type="planesource",
+                    period=1550e-9 / constants.c,
+                    name="source",
+                    x=30,
+                    y=100,
+                    z=13,
+                    xlength=1,
+                    ylength=22,
+                    zlength=22
+                    )
 
     # 设置监视器
     grid.set_detector(detector_type="blockdetector",
@@ -35,10 +43,7 @@ if __name__ == "__main__":
     grid.add_object(ysplitter)
 
     # 创建solve对象
-    solve = Solve(grid=grid,
-                  axis='z',
-                  index=0,
-                  filepath=grid.folder)
+    solve = Solve(grid=grid)
 
     # 绘制任一截面折射率分布
     solve.plot()

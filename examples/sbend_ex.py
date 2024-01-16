@@ -21,8 +21,16 @@ if __name__ == "__main__":
                 permittivity=background_index ** 2)
 
     # 设置光源
-    grid.set_source(source_type="planesource", period=1550e-9 / constants.c, name="source", x=30, y=110, z=13,
-                    xlength=1, ylength=20, zlength=20)
+    grid.set_source(source_type="planesource",
+                    period=1550e-9/constants.c,
+                    name="source",
+                    x=30,
+                    y=110,
+                    z=13,
+                    xlength=1,
+                    ylength=20,
+                    zlength=20
+                    )
 
     # 设置监视器
     grid.set_detector(detector_type="blockdetector",

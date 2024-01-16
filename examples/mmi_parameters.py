@@ -1,16 +1,16 @@
 import numpy as np
 # 计算MMI参数
-ns = 1.4447  # 包层（限制层）折射率（论文里为nc）
-nf = 2.98 # 多模波导有效折射率
+ns = 1  # 包层（限制层）折射率（论文里为nc）
+nf = 3.47  # 折射率（论文里为nr）
 lambda0 = 1550e-9  # 入射光波长
 pi = np.pi
 k0 = 2 * pi / lambda0
-Wm = 2000 * 10 ** -9  # 多模波导宽度 单位m
+Wm = 56 * 20 * 10 ** -9  # 多模波导宽度 单位m
 grid_spacing = 20e-9
 c0 = 299792458
 
 # TE Mode，对于TE模，sigma = 0 ，对于TM模，sigma = 1
-sigma = 0
+sigma = 1
 We = Wm + (lambda0 / pi) * ((ns / nf) ** (2 * sigma)) * ((nf ** 2 - ns ** 2) ** (-1 / 2))  # 多模波导有效宽度
 print("TE: 多模波导有效宽度We, effective width =  ", We)
 beta = np.zeros(5)
@@ -32,7 +32,6 @@ W = int(Wm / grid_spacing)
 n = int(input('输入端口数：'))
 m = int(input('输出端口数：'))
 
-# TODO: 这个公式是哪来的？它是计算输入、输出波导宽度的公式吗
 W_wg = (1 / ((2 * m) ** (1 / 4))) * np.sqrt(lambda0 * We / neffapx[0])  # 输入、输出波导的宽度
 width_ports = int(W_wg / grid_spacing)
 
@@ -50,7 +49,7 @@ if n != 1 and n != 2:
     W_wg = (1 / ((2 * n) ** (1 / 4))) * np.sqrt(lambda0 * We / neffapx[0])  # 输入、输出波导的宽度
     width_ports = int(W_wg / grid_spacing)
     # (这个公式是怎么来的？)
-    print('多模波导长度应为：%.2fum, 即%d个网格' % (1e6 * 3 * Lpi_apx / m, int(3 * Lpi_apx / m / grid_spacing)))
+    print('多模波导长度应为：%.2fum, 即%d个网格' % (1e6 * 3 * Lpi_apx / n, int(3 * Lpi_apx / n / grid_spacing)))
     # print('输入、输出波导宽度应为：%.2fum, 即%d个网格' % (1e6 * W_wg, int(width_ports)))
     print('多模波导宽度应为：%.2fum, 即%d个网格' % (1e6 * Wm, int(Wm / grid_spacing)))
     print('多模波导有效宽度We应为：%.2fum, 即%d个网格' % (1e6 * We, int(We / grid_spacing)))

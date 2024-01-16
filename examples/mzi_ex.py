@@ -80,8 +80,17 @@ if __name__ == "__main__":
     # grid.add_object(ysplitter2)
 
     # 设置光源
-    grid.set_source(source_type="linesource", period=1550e-9 / constants.c, name="source", pulse_type="none", x=20,
-                    y=125, z=0, xlength=1, ylength=18, zlength=1)
+    grid.set_source(source_type="linesource",
+                    period=1550e-9 / constants.c,
+                    name="source",
+                    pulse_type="none",
+                    x=20,
+                    y=125,
+                    z=0,
+                    xlength=1,
+                    ylength=18,
+                    zlength=1
+                    )
 
     # 设置监视器
     # grid.set_detector(detector_type="linedetector",

@@ -14,11 +14,11 @@ class Arc(Waveguide):
     angle_phi: 与x轴正方向夹角, 单位: 角度
     angle_psi: 张角
     background_index: 环境折射率
-    angle_to_radian: bool: True表示需要从角度转弧度
+    angle_to_radian: bool: True表示从角度转弧度
     """
 
     # TODO：现在只有x-y平面
-    # FIXME: 在圆弧跨越x正半轴时存在问题
+    # FIXME: 在圆弧跨越x=0时存在问题
     def __init__(
             self,
             outer_radius: int or float = 60,
@@ -86,7 +86,7 @@ class Arc(Waveguide):
 
             return result_matrix, row_indices, col_indices
 
-        m_removed, row_indices, col_indices, zz = super().remove_zero_slices(m)
+        m_removed, row_indices, col_indices = remove_zero_rows_columns(m)
         self.x += row_indices[0][0] - self.outer_radius
         self.y += col_indices[0][0] - self.outer_radius
 
