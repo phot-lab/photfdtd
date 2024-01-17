@@ -14,8 +14,10 @@ from photfdtd import constants
 class Grid:
 
     def __init__(
-            self, grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=20e-9, total_time=1, pml_width_x=0,
-            pml_width_y=0, pml_width_z=0, permittivity=1.0, permeability=1.0, courant_number=None, foldername=" ",
+            self, grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=20e-9, total_time=1,
+            # pml_width_x=0,
+            # pml_width_y=0, pml_width_z=0, 
+            permittivity=1.0, permeability=1.0, courant_number=None, foldername=" ",
             folder=None
     ) -> None:
         """
@@ -42,15 +44,6 @@ class Grid:
                          permeability=permeability,
                          courant_number=courant_number
                          )
-        if pml_width_x != 0:
-            grid[0:pml_width_x, :, :] = fdtd.PML(name="pml_xlow")
-            grid[-pml_width_x:, :, :] = fdtd.PML(name="pml_xhigh")
-        if pml_width_y != 0:
-            grid[:, 0:pml_width_y, :] = fdtd.PML(name="pml_ylow")
-            grid[:, -pml_width_y:, :] = fdtd.PML(name="pml_yhigh")
-        if pml_width_z != 0:
-            grid[:, :, 0:pml_width_z] = fdtd.PML(name="pml_zlow")
-            grid[:, :, -pml_width_z:] = fdtd.PML(name="pml_zhigh")
 
         self._grid_xlength = grid_xlength
         self._grid_ylength = grid_ylength
@@ -68,12 +61,13 @@ class Grid:
         makedirs(self.folder, exist_ok=True)
 
         self.background_index = np.sqrt(permittivity * permeability)
+        self.flag_PML_not_set = True
 
     def _handle_unit(self, lengths, grid_spacing):
         # 把SI单位变成空间步长单位 SI unit -> grid spacing unit
         for i in range(len(lengths)):
             if not np.issubdtype(type(lengths[i]), np.integer):
-            # if not isinstance(lengths[i], int):
+                # if not isinstance(lengths[i], int):
                 lengths[i] = int(np.round(lengths[i] / grid_spacing))
 
         return lengths
@@ -110,9 +104,9 @@ class Grid:
             x: int = 5,
             y: int = 5,
             z: int = 5,
-            xlength: int or float= 5,
-            ylength: int or float= 5,
-            zlength: int or float= 5,
+            xlength: int or float = 5,
+            ylength: int or float = 5,
+            zlength: int or float = 5,
     ):
         """
         :param source_type: 光源种类：点或线或面
@@ -135,11 +129,36 @@ class Grid:
         :param ylength:
         :param zlength:
         """
+
+        # if pml_width_x != 0:
+        #     grid[0:pml_width_x, :, :] = fdtd.PML(name="pml_xlow")
+        #     grid[-pml_width_x:, :, :] = fdtd.PML(name="pml_xhigh")
+        # if pml_width_y != 0:
+        #     grid[:, 0:pml_width_y, :] = fdtd.PML(name="pml_ylow")
+        #     grid[:, -pml_width_y:, :] = fdtd.PML(name="pml_yhigh")
+        # if pml_width_z != 0:
+        #     grid[:, :, 0:pml_width_z] = fdtd.PML(name="pml_zlow")
+        #     grid[:, :, -pml_width_z:] = fdtd.PML(name="pml_zhigh")
+
         if period is None:
             if wavelength is not None:
                 period = wavelength / constants.c
             else:
                 raise ValueError("please set wavelength or period for the source")
+
+        if self.flag_PML_not_set:
+            pml_width = self._handle_unit([(period * constants.c) / 2],
+                                          grid_spacing=self._grid.grid_spacing)[0]
+            if self._grid_xlength != 1:
+                self._grid[0:pml_width, :, :] = fdtd.PML(name="pml_xlow")
+                self._grid[-pml_width:, :, :] = fdtd.PML(name="pml_xhigh")
+            if self._grid_ylength != 1:
+                self._grid[:, 0:pml_width, :] = fdtd.PML(name="pml_ylow")
+                self._grid[:, -pml_width:, :] = fdtd.PML(name="pml_yhigh")
+            if self._grid_zlength != 1:
+                self._grid[:, :, 0:pml_width] = fdtd.PML(name="pml_zlow")
+                self._grid[:, :, -pml_width:] = fdtd.PML(name="pml_zhigh")
+            self.flag_PML_not_set = False
         xlength, ylength, zlength = self._handle_unit([xlength, ylength, zlength], grid_spacing=self._grid.grid_spacing)
         x = x - xlength // 2
         y = y - ylength // 2
@@ -190,8 +209,8 @@ class Grid:
                      y: int = 5,
                      z: int = 5,
                      xlength: int or float = 5,
-                     ylength: int or float= 5,
-                     zlength: int or float= 1,
+                     ylength: int or float = 5,
+                     zlength: int or float = 1,
                      name: str = 'detector'
                      ):
 

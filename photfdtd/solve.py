@@ -116,7 +116,16 @@ class Solve:
             neff = np.max(self.n)
         self.lam = lam * 10 ** 6
         self.k = 2 * np.pi / self.lam
-
+        PML_with = int(np.round(lam / self.grid.grid_spacing / 4))
+        if x_boundary_low == "pml" and not x_thickness_low:
+            x_thickness_low = PML_with
+        if x_boundary_high == "pml" and not x_thickness_high:
+            x_thickness_high = PML_with
+        if y_boundary_low == "pml" and not y_thickness_low:
+            y_thickness_low = PML_with
+        if y_boundary_high == "pml" and not y_thickness_high:
+            y_thickness_high = PML_with
+        print(x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high)
         # Calculate modes
         # FIXME: 检查pml边界的四个方向是否有问题
         P, matrices = ps.eigen_build(self.k, self.n, self.grid.grid_spacing * 1e6, self.grid.grid_spacing * 1e6,

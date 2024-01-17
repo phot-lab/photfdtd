@@ -97,7 +97,7 @@ class DirectionalCoupler(Waveguide):
             name="%s_sbend4" % self.name,
             grid=self.grid
         )
-
+        self.xlength_rectangle += 2  # +2防止出现空隙
         wg1 = Waveguide(
             xlength=self.xlength_rectangle,
             ylength=self.width,

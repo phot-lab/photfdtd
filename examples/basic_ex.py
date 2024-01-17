@@ -10,9 +10,6 @@ if __name__ == "__main__":
     grid = Grid(grid_xlength=8e-6, grid_ylength=3e-6, grid_zlength=20e-9,
                 grid_spacing=20e-9,
                 total_time=1000,
-                pml_width_x=40,
-                pml_width_y=40,
-                pml_width_z=0,
                 permittivity=background_index ** 2,
                 foldername="basic_ex")
 

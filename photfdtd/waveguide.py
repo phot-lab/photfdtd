@@ -32,12 +32,8 @@ class Waveguide:
             name: str = "waveguide",
             refractive_index: float = None,
             material: str = "",
-<<<<<<< HEAD
             reset_xyz: bool = True,
             grid=None
-=======
-            reset_xyz: bool = True
->>>>>>> parent of 693a906 (test240111)
     ) -> None:
         if x == None:
             # 如果没设置x，自动选仿真区域中心If x not set, choose the center of grid
@@ -73,10 +69,7 @@ class Waveguide:
         self.y_center = y
         self.z_center = z
 
-<<<<<<< HEAD
         self.grid = grid
-=======
->>>>>>> parent of 693a906 (test240111)
 
         self._compute_permittivity()
         self._set_objects()
