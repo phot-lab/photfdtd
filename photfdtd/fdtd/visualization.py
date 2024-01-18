@@ -44,7 +44,8 @@ def visualize(
         folder=None,  # folder path to save frames
         geo: list = None,
         background_index: float = 1.0,
-        show_geometry: bool = True
+        show_structure: bool = True,
+        show_energy: bool = False,
 ):
     """visualize a projection of the grid and the optical energy inside the grid
 
@@ -123,10 +124,13 @@ def visualize(
         plt.plot([], lw=3, color=detcolor, label="Detectors")
 
     # Grid energy
-    grid_energy = bd.sum(grid.E ** 2 + grid.H ** 2, -1)
+    if not show_energy:
+        grid_energy = bd.zeros_like(grid.E[:,:,:,-1])
+    else:
+        grid_energy = bd.sum(grid.E ** 2 + grid.H ** 2, -1)
     if x is not None:
         assert grid.Ny > 1 and grid.Nz > 1
-        xlabel, ylabel = "y", "z"
+        xlabel, ylabel = "y/um", "z/um"
         Nx, Ny = grid.Ny, grid.Nz
         pbx, pby = _PeriodicBoundaryY, _PeriodicBoundaryZ
         pmlxl, pmlxh, pmlyl, pmlyh = _PMLYlow, _PMLYhigh, _PMLZlow, _PMLZhigh
@@ -137,7 +141,7 @@ def visualize(
         # plt.xlim(-1, Nx)
     elif y is not None:
         assert grid.Nx > 1 and grid.Nz > 1
-        xlabel, ylabel = "x", "z"
+        xlabel, ylabel = "x/um", "z/um"
         Nx, Ny = grid.Nx, grid.Nz
         pbx, pby = _PeriodicBoundaryX, _PeriodicBoundaryZ
         pmlxl, pmlxh, pmlyl, pmlyh = _PMLXlow, _PMLXhigh, _PMLZlow, _PMLZhigh
@@ -148,7 +152,7 @@ def visualize(
         plt.ylim(-1, Ny)
     elif z is not None:
         assert grid.Nx > 1 and grid.Ny > 1
-        xlabel, ylabel = "x", "y"
+        xlabel, ylabel = "x/um", "y/um"
         Nx, Ny = grid.Nx, grid.Ny
         pbx, pby = _PeriodicBoundaryX, _PeriodicBoundaryY
         pmlxl, pmlxh, pmlyl, pmlyh = _PMLXlow, _PMLXhigh, _PMLYlow, _PMLYhigh
@@ -307,7 +311,7 @@ def visualize(
             )
             plt.gca().add_patch(patch)
     # 只显示波导结构的轮廓，而不显示整个波导
-    if show_geometry:
+    if show_structure:
         if geo is None:
             geo = sqrt(1 / grid.inverse_permittivity)
 
@@ -349,15 +353,22 @@ def visualize(
     if norm == "log":
         cmap_norm = LogNorm(vmin=1e-4, vmax=grid_energy.max() + 1e-4)
     plt.imshow(bd.numpy(grid_energy), cmap=cmap, interpolation="sinc", norm=cmap_norm)
-
-    # finalize the plot
+    # 由于在前面对grid_energy做了转置，所以grid_energy.shape[0]实际上是竖直方向而grid_energy.shape[1]是水平方向
+    xticks = bd.arange(0, grid_energy.shape[1], int((1e-6) / grid.grid_spacing))
+    xlabels = xticks * grid.grid_spacing * 1e6
+    yticks = bd.arange(0, grid_energy.shape[0], int((1e-6) / grid.grid_spacing))
+    ylabels = yticks * grid.grid_spacing * 1e6
+    #
+    plt.xticks(xticks, xlabels)
+    plt.yticks(yticks, ylabels)
+    # # finalize the plot
     # plt.ylabel(xlabel)
     # plt.xlabel(ylabel)
     # plt.ylim(Nx, -1)
     # plt.xlim(-1, Ny)
     # plt.figlegend()
     plt.tight_layout()
-
+    # plt.axis("tight")
     # save frame (require folder path and index)
     if save:
         plt.savefig(os.path.join(folder, f"file{str(index).zfill(4)}.png"))
@@ -398,7 +409,7 @@ def dB_map_2D(block_det=None, interpolation="spline16", axis="z", field="E", fie
     a = []  # array to store wave intensities
     # 首先计算仿真空间上每一点在所有时间上的最大值与最小值之差
 
-    choose_axis = ord(field_axis) -120
+    choose_axis = ord(field_axis) - 120
     if axis == "z":
         for i in tqdm(range(len(block_det[0]))):
             a.append([])

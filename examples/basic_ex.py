@@ -7,38 +7,41 @@ if __name__ == "__main__":
     index = Index(material="Si", wavelength=1.55)
 
     # create the simulation region, which is a Grid object 新建一个 grid 对象
-    grid = Grid(grid_xlength=8e-6, grid_ylength=3e-6, grid_zlength=20e-9,
+    grid = Grid(grid_xlength=1, grid_ylength=3e-6, grid_zlength=8e-6,
                 grid_spacing=20e-9,
-                total_time=1000,
                 permittivity=background_index ** 2,
                 foldername="basic_ex")
 
     # set waveguide设置器件参数
     waveguide = Waveguide(
-        xlength=8e-6, ylength=200e-9, zlength=20e-9, refractive_index=3.47, name="waveguide", grid=grid
+        xlength=1, ylength=200e-9, zlength=5e-6, refractive_index=3.47, name="waveguide", grid=grid
     )
 
     # add waveguide to grid 往 grid 里添加器件
     grid.add_object(waveguide)
 
     # set a point source 设置一个点光源，波长为1550nm，波形为连续正弦
-    grid.set_source(source_type="linesource", wavelength=1550e-9, name="source", x=80, y=75, z=0,
-                    xlength=0, ylength=400e-9, zlength=0)
+    grid.set_source(source_type="linesource", wavelength=1550e-9, name="source", x=0, y=75, z=60,
+                    xlength=0, ylength=400e-9, zlength=0, polarization="x")
 
-    # set a line detector 设置一个线监视器
-    grid.set_detector(detector_type="linedetector",
-                      name="detector",
-                      x=300,
-                      y=75,
-                      z=0,
-                      xlength=0,
-                      ylength=400e-9,
-                      zlength=0
-                      )
+    # # set a line detector 设置一个线监视器
+    # grid.set_detector(detector_type="linedetector",
+    #                   name="detector",
+    #                   x=300,
+    #                   y=75,
+    #                   z=0,
+    #                   xlength=0,
+    #                   ylength=400e-9,
+    #                   zlength=0
+    #                   )
+
+    # We can plot the geometry now 绘制x=0截面结构图
+    grid.save_fig(axis="x",
+                  axis_number=0)
 
     # create a Solve object. You can use it to solve the eigenmodes (see eigenmode_solver_ex) 创建solve对象
     solve = Solve(grid=grid,
-                  axis='z',
+                  axis='x',
                   index=0,
                   filepath=grid.folder
                   )
@@ -52,10 +55,6 @@ if __name__ == "__main__":
     # Save the result of simulation, It will be saved in the file that you created when CREATING A GRID Object保存仿真结果，并传给data
     # data = grid.save_simulation()
 
-    # We can plot the field after simulation绘制z=0截面场图
-    grid.save_fig(axis="z",
-                  axis_number=0)
-
     # 也可以读取仿真结果
     # data = grid.read_simulation(folder=grid.folder)
 
@@ -64,7 +63,7 @@ if __name__ == "__main__":
     #             field="E", name_det="detector", interpolation="spline16", save=True, index="x-y")
 
     # # 绘制仿真结束时刻空间场分布
-    # Grid.plot_field(grid=grid, field="E", field_axis="z", axis="z", axis_index=0, folder=grid.folder)
+    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="x", axis_index=0, folder=grid.folder)
     #
     # # 如果添加了监视器，还可以绘制某一点时域场变化曲线，这里选择index=30即监视器中心
     # Grid.plot_fieldtime(folder=grid.folder, data=data, field_axis="z", index=30, name_det="detector")

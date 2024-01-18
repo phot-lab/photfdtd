@@ -14,7 +14,8 @@ from photfdtd import constants
 class Grid:
 
     def __init__(
-            self, grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=20e-9, total_time=1,
+            self, grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=20e-9,
+            # total_time=1,
             # pml_width_x=0,
             # pml_width_y=0, pml_width_z=0, 
             permittivity=1.0, permeability=1.0, courant_number=None, foldername=" ",
@@ -48,7 +49,7 @@ class Grid:
         self._grid_xlength = grid_xlength
         self._grid_ylength = grid_ylength
         self._grid_zlength = grid_zlength
-        self._total_time = total_time
+        # self._total_time = total_time
         self._grid = grid
 
         # makedirs(foldername, exist_ok=True)  # Output master folder declaration
@@ -71,6 +72,14 @@ class Grid:
                 lengths[i] = int(np.round(lengths[i] / grid_spacing))
 
         return lengths
+
+    def _calculate_time(self):
+        # calculate total time for FDTD simulation
+        # return: total time in timesteps
+        n = np.sqrt(1 / self._grid.inverse_permittivity.min())
+        L = max(self._grid_xlength, self._grid_ylength, self._grid_zlength) * self._grid.grid_spacing
+        time = int(L * n / constants.c / self._grid.time_step)
+        return time
 
     def add_object(self, object: Waveguide):
 
@@ -238,19 +247,24 @@ class Grid:
                  animate=False,
                  time=None,
                  geo=None,
-                 show_geometry=True):
+                 show_structure=True,
+                 show_energy=False):
         """
-        保存图片
+        Saving the geometry figure. This function can also show energy while show_energy = True.
         @param geo: Solve.geometry，也可以为None，程序会自己计算
-        @param axis: 轴(若为二维模拟，则axis只能='z')
+        @param axis: 轴(若为二维XY模拟，则axis只能='z')
         @param axis_number: 索引
         @param time: 绘制哪个时刻的场图（用户用不到，仅供run()使用
         @param animate: 是否播放动画 #TODO: 这个参数的作用？
         :
         """
         # TODO: grid.visualize函数还有animate等功能，尚待加入
-        if time == None:
-            time = self._total_time
+        if not show_energy:
+            time = 0
+
+        else:
+            time = self._grid.time_steps_passed
+        index = "_%s=%d, total_time=%d" % (axis, axis_number, time)
         if self._grid is None:
             raise RuntimeError("The grid should be set before saving figure.")
 
@@ -258,16 +272,19 @@ class Grid:
         folder = self.folder
         if axis == "x":  # 绘制截面/剖面场图
             self._grid.visualize(x=axis_number, save=True, animate=animate,
-                                 index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder, geo=geo,
-                                 background_index=self.background_index, show_geometry=show_geometry)
+                                 index=index, folder=folder, geo=geo,
+                                 background_index=self.background_index, show_structure=show_structure,
+                                 show_energy=show_energy)
         elif axis == "y":
             self._grid.visualize(y=axis_number, save=True, animate=animate,
-                                 index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder, geo=geo,
-                                 background_index=self.background_index, show_geometry=show_geometry)
+                                 index=index, folder=folder, geo=geo,
+                                 background_index=self.background_index, show_structure=show_structure,
+                                 show_energy=show_energy)
         elif axis == "z":
             self._grid.visualize(z=axis_number, save=True, animate=animate,
-                                 index="_%s=%d, total_time=%d" % (axis, axis_number, time), folder=folder, geo=geo,
-                                 background_index=self.background_index, show_geometry=show_geometry)
+                                 index=index, folder=folder, geo=geo,
+                                 background_index=self.background_index, show_structure=show_structure,
+                                 show_energy=show_energy)
         else:
             raise RuntimeError("Unknown axis parameter.")
 
@@ -278,29 +295,35 @@ class Grid:
             step: int = 5,
             axis="x",
             axis_number=0,
+            time=None
             ):
         """
-
+        @param time: int for timesteps or float for seconds
         @param axis: 与save_fig()相同
         @param axis_number:
         @param animate: 是否播放动画 %TODO: 完成它
         @param step: 每多少个时间步绘一次图
         """
         axis = axis.lower()
+        if time is None:
+            time = self._calculate_time()
         if animate == False:
-            self._grid.run(total_time=self._total_time)
-        elif animate:
-            for i in range(self._total_time):
-                self._grid.step()
-                if (i + 1) % step == 0:
-                    if axis == "x":
-                        self.visualize(x=axis_number, showEnergy=True, show=False, save=True, time=i)
-                    elif axis == "y":
-                        self.visualize(y=axis_number, showEnergy=True, show=False, save=True, time=i)
-                    elif axis == "z":
-                        self.visualize(z=axis_number, showEnergy=True, show=False, save=True, time=i)
-                    else:
-                        continue
+            if not isinstance(time, int):
+                time = self._grid._handle_time(time)
+            print("The total time for FDTD simulation in timesteps is %i" % time)
+            self._grid.run(total_time=time)
+        # elif animate:
+        #     for i in range(self._total_time):
+        #         self._grid.step()
+        #         if (i + 1) % step == 0:
+        #             if axis == "x":
+        #                 self.visualize(x=axis_number, showEnergy=True, show=False, save=True, time=i)
+        #             elif axis == "y":
+        #                 self.visualize(y=axis_number, showEnergy=True, show=False, save=True, time=i)
+        #             elif axis == "z":
+        #                 self.visualize(z=axis_number, showEnergy=True, show=False, save=True, time=i)
+        #             else:
+        #                 continue
 
     def animate(self,
                 axis: str = "z",
@@ -535,341 +558,6 @@ class Grid:
 
         return data
 
-    def visualize(
-            self,
-            x=None,
-            y=None,
-            z=None,
-            cmap="Blues",
-            pbcolor="C3",
-            pmlcolor=(0, 0, 0, 0.1),
-            objcolor=(1, 0, 0, 0.1),
-            srccolor="C0",
-            detcolor="C2",
-            norm="linear",
-            showEnergy=True,
-            legend=False,
-            show=False,  # default False to allow animate to be true
-            save=False,  # True to save frames (requires parameters index, folder)
-            filePath=None,
-            time=None
-    ):
-        """visualize a projection of the grid and the optical energy inside the grid
-
-        Args:
-            x: the x-value to make the yz-projection (leave None if using different projection)
-            y: the y-value to make the zx-projection (leave None if using different projection)
-            z: the z-value to make the xy-projection (leave None if using different projection)
-            cmap: the colormap to visualize the energy in the grid
-            pbcolor: the color to visualize the periodic boundaries
-            pmlcolor: the color to visualize the PML
-            objcolor: the color to visualize the objects in the grid
-            srccolor: the color to visualize the sources in the grid
-            detcolor: the color to visualize the detectors in the grid
-            norm: how to normalize the grid_energy color map ('linear' or 'log').
-            show: call pyplot.show() at the end of the function
-            save: save frames in a folder
-            folder: path to folder to save frames
-            showEnergy: 是否显示场
-        """
-        pass
-        if norm not in ("linear", "lin", "log"):
-            raise ValueError("Color map normalization should be 'linear' or 'log'.")
-        # imports (placed here to circumvent circular imports)
-        import matplotlib.pyplot as plt
-        import matplotlib.patches as ptc
-        from matplotlib.colors import LogNorm
-        # relative
-        from .fdtd.backend import backend as bd
-        from .fdtd.sources import PointSource, LineSource, PlaneSource
-        # from fdtd.boundaries import _PeriodicBoundaryX, _PeriodicBoundaryY, _PeriodicBoundaryZ
-        # from fdtd.boundaries import (
-        #     _PMLXlow,
-        #     _PMLXhigh,
-        #     _PMLYlow,
-        #     _PMLYhigh,
-        #     _PMLZlow,
-        #     _PMLZhigh,
-        # )
-
-        if time == None:
-            time = self._total_time
-        # validate x, y and z
-        if x is not None:
-            if not isinstance(x, int):
-                raise ValueError("the `x`-location supplied should be a single integer")
-            if y is not None or z is not None:
-                raise ValueError(
-                    "if an `x`-location is supplied, one should not supply a `y` or a `z`-location!"
-                )
-        elif y is not None:
-            if not isinstance(y, int):
-                raise ValueError("the `y`-location supplied should be a single integer")
-            if z is not None or x is not None:
-                raise ValueError(
-                    "if a `y`-location is supplied, one should not supply a `z` or a `x`-location!"
-                )
-        elif z is not None:
-            if not isinstance(z, int):
-                raise ValueError("the `z`-location supplied should be a single integer")
-            if x is not None or y is not None:
-                raise ValueError(
-                    "if a `z`-location is supplied, one should not supply a `x` or a `y`-location!"
-                )
-        else:
-            raise ValueError(
-                "at least one projection plane (x, y or z) should be supplied to visualize the grid!"
-            )
-
-        # Grid energy
-        grid = self._grid
-        grid_energy = bd.sum(grid.E ** 2 + grid.H ** 2, -1)
-        if x is not None:
-            assert grid.Ny > 1 and grid.Nz > 1
-            xlabel, ylabel = "y", "z"
-            Nx, Ny = grid.Ny, grid.Nz
-            pbx, pby = "_PeriodicBoundaryY", "_PeriodicBoundaryZ"
-            pmlxl, pmlxh, pmlyl, pmlyh = "_PMLYlow", "_PMLYhigh", "_PMLZlow", "_PMLZhigh"
-            grid_energy = grid_energy[x, :, :].T
-            plt.xlabel(xlabel)
-            plt.ylabel(ylabel)
-            plt.ylim(-1, Ny)
-            # plt.xlim(-1, Nx)
-        elif y is not None:
-            assert grid.Nx > 1 and grid.Nz > 1
-            xlabel, ylabel = "x", "z"
-            Nx, Ny = grid.Nx, grid.Nz
-            pbx, pby = "_PeriodicBoundaryX", "_PeriodicBoundaryZ"
-            pmlxl, pmlxh, pmlyl, pmlyh = "_PMLXlow", "_PMLXhigh", "_PMLZlow", "_PMLZhigh"
-            grid_energy = grid_energy[:, y, :].T
-            # plt.gca().yaxis.set_ticks_position('right')
-            plt.xlabel(xlabel)
-            plt.ylabel(ylabel)
-            plt.gca().yaxis.set_ticks_position('right')
-            plt.ylim(-1, Ny)
-            # plt.xlim(Nx, -1)
-        elif z is not None:
-            assert grid.Nx > 1 and grid.Ny > 1
-            xlabel, ylabel = "x", "y"
-            Nx, Ny = grid.Nx, grid.Ny
-            pbx, pby = "_PeriodicBoundaryX", "_PeriodicBoundaryY"
-            pmlxl, pmlxh, pmlyl, pmlyh = "_PMLXlow", "_PMLXhigh", "_PMLYlow", "_PMLYhigh"
-            grid_energy = grid_energy[:, :, z].T
-            # plt.gca().xaxis.set_ticks_position('top')
-            # plt.gca().yaxis.set_ticks_position('right')
-            plt.xlabel(xlabel)
-            plt.ylabel(ylabel)
-            plt.ylim(-1, Ny)
-            # plt.ylim(Ny, -1)
-            # plt.xlim(Nx, -1)
-        else:
-            raise ValueError("Visualization only works for 2D grids")
-
-        for source in grid.sources:
-            if isinstance(source, LineSource):
-                if x is not None:
-                    _x = [source.y[0], source.y[-1]]
-                    _y = [source.z[0], source.z[-1]]
-                elif y is not None:
-                    _x = [source.x[0], source.x[-1]]
-                    _y = [source.z[0], source.z[-1]]
-                elif z is not None:
-                    _x = [source.x[0], source.x[-1]]
-                    _y = [source.y[0], source.y[-1]]
-                plt.plot(_x, _y, lw=3, color=srccolor)
-            elif isinstance(source, PointSource):
-                if x is not None:
-                    _x = source.y
-                    _y = source.z
-                elif y is not None:
-                    _x = source.x
-                    _y = source.z
-                elif z is not None:
-                    _x = source.x
-                    _y = source.y
-                plt.plot(_x - 0.5, _y - 0.5, lw=3, marker="o", color=srccolor)
-                grid_energy[_x, _y] = 0  # do not visualize energy at location of source
-            elif isinstance(source, PlaneSource):
-                if x is not None:
-                    _x = (
-                        source.y
-                        if source.y.stop > source.y.start + 1
-                        else slice(source.y.start, source.y.start)
-                    )
-                    _y = (
-                        source.z
-                        if source.z.stop > source.z.start + 1
-                        else slice(source.z.start, source.z.start)
-                    )
-                elif y is not None:
-                    _x = (
-                        source.x
-                        if source.x.stop > source.x.start + 1
-                        else slice(source.x.start, source.x.start)
-                    )
-                    _y = (
-                        source.z
-                        if source.z.stop > source.z.start + 1
-                        else slice(source.z.start, source.z.start)
-                    )
-                elif z is not None:
-                    _x = (
-                        source.x
-                        if source.x.stop > source.x.start + 1
-                        else slice(source.x.start, source.x.start)
-                    )
-                    _y = (
-                        source.y
-                        if source.y.stop > source.y.start + 1
-                        else slice(source.y.start, source.y.start)
-                    )
-                patch = ptc.Rectangle(
-                    xy=(_x.start - 0.5, _y.start - 0.5),
-                    width=_x.stop - _x.start,
-                    height=_y.stop - _y.start,
-                    linewidth=0,
-                    edgecolor=srccolor,
-                    facecolor=srccolor,
-                )
-                plt.gca().add_patch(patch)
-
-        # Detector
-        for detector in grid.detectors:
-            if x is not None:
-                _x = [detector.y[0], detector.y[-1]]
-                _y = [detector.z[0], detector.z[-1]]
-            elif y is not None:
-                _x = [detector.x[0], detector.x[-1]]
-                _y = [detector.z[0], detector.z[-1]]
-            elif z is not None:
-                _x = [detector.x[0], detector.x[-1]]
-                _y = [detector.y[0], detector.y[-1]]
-
-            if detector.__class__.__name__ == "BlockDetector":
-                # BlockDetector
-                plt.plot(
-                    [_x[0], _x[1], _x[1], _x[0], _x[0]],
-                    [_y[0], _y[0], _y[1], _y[1], _y[0]],
-                    lw=3,
-                    color=detcolor,
-                )
-            else:
-                # LineDetector
-                plt.plot(_x, _y, lw=3, color=detcolor)
-
-        # Boundaries
-        for boundary in grid.boundaries:
-            if type(boundary).__name__ == pbx:
-                _x = [-0.5, -0.5, float("nan"), Nx - 0.5, Nx - 0.5]
-                _y = [-0.5, Ny - 0.5, float("nan"), -0.5, Ny - 0.5]
-                plt.plot(_y, _x, color=pbcolor, linewidth=3)
-            elif type(boundary).__name__ == pby:
-                _x = [-0.5, Nx - 0.5, float("nan"), -0.5, Nx - 0.5]
-                _y = [-0.5, -0.5, float("nan"), Ny - 0.5, Ny - 0.5]
-                plt.plot(_y, _x, color=pbcolor, linewidth=3)
-            elif type(boundary).__name__ == pmlyl:
-                patch = ptc.Rectangle(
-                    xy=(-0.5, -0.5),
-                    width=Nx,
-                    height=boundary.thickness,
-                    linewidth=0,
-                    edgecolor="none",
-                    facecolor=pmlcolor,
-                )
-                plt.gca().add_patch(patch)
-            elif type(boundary).__name__ == pmlxl:
-                patch = ptc.Rectangle(
-                    xy=(-0.5, -0.5),
-                    width=boundary.thickness,
-                    height=Ny,
-                    linewidth=0,
-                    edgecolor="none",
-                    facecolor=pmlcolor,
-                )
-                plt.gca().add_patch(patch)
-            elif type(boundary).__name__ == pmlyh:
-                patch = ptc.Rectangle(
-                    xy=(-0.5, Ny + 0.5 - boundary.thickness),
-                    width=Nx,
-                    height=boundary.thickness,
-                    linewidth=0,
-                    edgecolor="none",
-                    facecolor=pmlcolor,
-                )
-                plt.gca().add_patch(patch)
-            elif type(boundary).__name__ == pmlxh:
-                patch = ptc.Rectangle(
-                    xy=(Nx - boundary.thickness + 0.5, -0.5),
-                    width=boundary.thickness,
-                    height=Ny,
-                    linewidth=0,
-                    edgecolor="none",
-                    facecolor=pmlcolor,
-                )
-                plt.gca().add_patch(patch)
-
-        for obj in grid.objects:
-            import numpy as np
-            permittivity = np.sqrt(obj.permittivity)
-            n = permittivity
-            if x is not None and obj.x.start <= x <= obj.x.stop:
-                _x = (obj.y.start, obj.y.stop)
-                _y = (obj.z.start, obj.z.stop)
-                n = permittivity[x - obj.x.start, :, :, :]
-            elif y is not None and obj.y.start <= y <= obj.y.stop:
-                _x = (obj.x.start, obj.x.stop)
-                _y = (obj.z.start, obj.z.stop)
-                n = permittivity[:, y - obj.y.start, :, :]
-            elif z is not None and obj.z.start <= z <= obj.z.stop:
-                _x = (obj.x.start, obj.x.stop)
-                _y = (obj.y.start, obj.y.stop)
-                n = permittivity[:, :, z - obj.z.start, :]
-            else:
-                continue
-            px = min(_x)
-            py = min(_y)
-            for (mx, my), pmt in np.ndenumerate(n[:, :, 0]):
-                if pmt != self.background_index:
-                    rect = ptc.Rectangle((px + mx, py + my), 1, 1, facecolor=objcolor)
-                    plt.gca().add_patch(rect)
-
-        # visualize the energy in the grid
-        cmap_norm = None
-        if norm == "log":
-            cmap_norm = LogNorm(vmin=1e-4, vmax=grid_energy.max() + 1e-4)
-        if showEnergy:
-            plt.imshow(abs(bd.numpy(grid_energy)), cmap=cmap, interpolation="sinc", norm=cmap_norm)
-
-        # just to create the right legend entries:
-        if legend:
-            plt.plot([], lw=7, color=objcolor, label="Objects")
-            plt.plot([], lw=7, color=pmlcolor, label="PML")
-            plt.plot([], lw=3, color=pbcolor, label="Periodic Boundaries")
-            plt.plot([], lw=3, color=srccolor, label="Sources")
-            plt.plot([], lw=3, color=detcolor, label="Detectors")
-            plt.figlegend()
-
-        # finalize the plot
-        plt.tight_layout()
-
-        # save frame (require folder path and index)
-        if save:
-            if filePath is None:
-                fileName = "file_"
-                fileName += "x=" + str(x) + "," if x is not None else ""
-                fileName += "y=" + str(y) + "," if y is not None else ""
-                fileName += "z=" + str(z) + "," if z is not None else ""
-                fileName += "show_energy=" + str(showEnergy) + ","
-                fileName += "time=" + str(time) if time is not None else ""
-                filePath = os.path.join(self.folder, f"{fileName}.png")
-            plt.savefig(filePath)
-
-        # show if not animating
-        if show:
-            plt.show()
-
-        plt.clf()
-
     @staticmethod
     def dB_map(folder=None, total_time=None, block_det=None, data=None, axis="x", field="E", field_axis="z",
                name_det=None,
@@ -899,55 +587,110 @@ class Grid:
                        folder=folder, name_det=name_det, total_time=total_time)
 
     @staticmethod
-    def plot_field(grid=None, axis="z", axis_index=0, field="E", field_axis="z", folder="", cmap="jet"):
+    def plot_field(grid=None, axis="z", axis_index=0, field="E", field_axis=None, folder="", cmap="jet",
+                   show_geometry=True):
         """
         绘制当前时刻场分布（不需要监视器）
+        @param show_geometry: bool 是否绘制波导结构
         @param grid: grid
         @param field: "E"或"H"
-        @param field_axis: {x,y,z} of E or H
+        @param field_axis: {x,y,z,None} of E or H, if None, the amplitude of E or H will be plotted
         @param axis: "x"或"y"或"z"表示绘制哪个截面
         @param axis_index: 例如绘制z=0截面 ，则axis设为"z"而axis_index为0
         @param folder: 保存图片的地址
         @param cmap: matplotlib.pyplot.imshow(cmap)
         """
-        title = "%s%s" % (field, field_axis)
+        if not field_axis:
+            title = "%s intensity" % field
+        else:
+            title = "%s%s" % (field, field_axis)
+        background_index = grid.background_index
         grid = grid._grid
         if field == "E":
-            if axis == "z":
-                field = grid.E[:, :, axis_index, ord(field_axis) - 120]
-            elif axis == "y":
-                field = grid.E[:, axis_index, :, ord(field_axis) - 120]
-            elif axis == "x":
-                field = grid.E[axis_index, :, :, ord(field_axis) - 120]
+            if not field_axis:
+                # 能量场
+                if axis == "z":
+                    field = grid.E[:, :, axis_index, 0] ** 2 + grid.E[:, :, axis_index, 1] ** 2 + grid.E[:, :,
+                                                                                                  axis_index, 2] ** 2
+                elif axis == "y":
+                    field = grid.E[:, axis_index, :, 0] ** 2 + grid.E[:, axis_index, :, 1] ** 2 + grid.E[:, axis_index,
+                                                                                                  :, 2] ** 2
+                elif axis == "x":
+                    field = grid.E[axis_index, :, :, 0] ** 2 + grid.E[axis_index, :, :, 1] ** 2 + grid.E[axis_index, :,
+                                                                                                  :, 2] ** 2
+            else:
+                if axis == "z":
+                    field = grid.E[:, :, axis_index, ord(field_axis) - 120]
+                elif axis == "y":
+                    field = grid.E[:, axis_index, :, ord(field_axis) - 120]
+                elif axis == "x":
+                    field = grid.E[axis_index, :, :, ord(field_axis) - 120]
         elif field == "H":
-            if axis == "z":
-                field = grid.H[:, :, axis_index, ord(field_axis) - 120]
-            elif axis == "y":
-                field = grid.H[:, axis_index, :, ord(field_axis) - 120]
-            elif axis == "x":
-                field = grid.H[axis_index, :, :, ord(field_axis) - 120]
+            if not field_axis:
+                # 能量场
+                if axis == "z":
+                    field = grid.H[:, :, axis_index, 0] ** 2 + grid.H[:, :, axis_index, 1] ** 2 + grid.H[:, :,
+                                                                                                  axis_index, 2] ** 2
+                elif axis == "y":
+                    field = grid.H[:, axis_index, :, 0] ** 2 + grid.H[:, axis_index, :, 1] ** 2 + grid.H[:, axis_index,
+                                                                                                  :, 2] ** 2
+                elif axis == "x":
+                    field = grid.H[axis_index, :, :, 0] ** 2 + grid.H[axis_index, :, :, 1] ** 2 + grid.H[axis_index, :,
+                                                                                                  :, 2] ** 2
+            else:
+                if axis == "z":
+                    field = grid.H[:, :, axis_index, ord(field_axis) - 120]
+                elif axis == "y":
+                    field = grid.H[:, axis_index, :, ord(field_axis) - 120]
+                elif axis == "x":
+                    field = grid.H[axis_index, :, :, ord(field_axis) - 120]
 
         m = max(abs(field.min().item()), abs(field.max().item()))
 
         # 创建颜色图
         plt.figure()
-        plt.imshow(np.transpose(field), vmin=-m, vmax=m, cmap=cmap)  # cmap 可以选择不同的颜色映射
-        plt.ylim(-1, field.shape[1])
-        # 添加颜色条
+
+        plt.imshow(np.transpose(field), vmin=-m, vmax=m, cmap=cmap,
+                   extent=[0, field.shape[0] * grid.grid_spacing * 1e6, 0, field.shape[1] * grid.grid_spacing * 1e6],
+                   origin="lower")  # cmap 可以选择不同的颜色映射
         cbar = plt.colorbar()
+        if show_geometry:
+
+            geo = np.sqrt(1 / grid.inverse_permittivity)
+
+            # geo是四维矩阵
+            geo = geo[:, :, :, -1]
+            if axis == "x":
+                n_to_draw = geo[axis_index, :, :]
+            elif axis == "y":
+                n_to_draw = geo[:, axis_index, :]
+            elif axis == "z":
+                n_to_draw = geo[:, :, axis_index]
+            # n_to_draw /= n_to_draw.max()
+            contour_data = np.where(n_to_draw != background_index, 1, 0)
+            plt.contour(np.linspace(0, field.shape[0] * grid.grid_spacing * 1e6, field.shape[0]),
+                        np.linspace(0, field.shape[1] * grid.grid_spacing * 1e6, field.shape[1]),
+                        contour_data.T, colors='black', linewidths=1)
+
+        # plt.ylim(-1, field.shape[1])
+        # Make the figure full the canvas让画面铺满整个画布
+        # plt.axis("tight")
+        # 添加颜色条
+
         # cbar.set_label('')
 
         # 添加标题和坐标轴标签
         plt.title(title)
+
         if axis == "z":
-            plt.xlabel('X/grids')
-            plt.ylabel('Y/grids')
+            plt.xlabel('x/um')
+            plt.ylabel('y/um')
         elif axis == "x":
-            plt.xlabel('Y/grids')
-            plt.ylabel('Z/grids')
+            plt.xlabel('y/um')
+            plt.ylabel('z/um')
         elif axis == "y":
-            plt.xlabel('X/grids')
-            plt.ylabel('Z/grids')
+            plt.xlabel('x/um')
+            plt.ylabel('z/um')
 
         plt.savefig(fname="%s//%s_%s=%i.png" % (folder, title, axis, axis_index))
         plt.close()
@@ -1063,9 +806,6 @@ class Grid:
                            grid_zlength=z_slice[1] - z_slice[0],
                            grid_spacing=grid._grid.grid_spacing, total_time=grid._total_time,
                            foldername="%s_sliced_grid" % grid.folder,
-                           pml_width_x=0,
-                           pml_width_y=0,
-                           pml_width_z=0,
                            permittivity=self.background_index ** 2)
         grid_sliced._grid.inverse_permittivity = grid._grid.inverse_permittivity[x_slice[0]:x_slice[1],
                                                  y_slice[0]:y_slice[1], z_slice[0]:z_slice[1]]

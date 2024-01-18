@@ -5,7 +5,7 @@ if __name__ == "__main__":
     background_index = 1.0
 
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=150, grid_ylength=150, grid_zlength=1, grid_spacing=20e-9,
+    grid = Grid(grid_xlength=140, grid_ylength=150, grid_zlength=1, grid_spacing=20e-9,
                 permittivity=background_index ** 2,
                 foldername="test_eigenmode_solver")
 
@@ -17,6 +17,7 @@ if __name__ == "__main__":
 
     # 添加波导
     grid.add_object(waveguide)
+    grid.save_fig(axis="z", axis_number=0)
 
     # 接下来我们绘制z=0截面的折射率分布，并计算在该截面处的五个模式
     # 创建solve对象
@@ -28,7 +29,7 @@ if __name__ == "__main__":
     # 绘制截面折射率分布
     solve.plot()
 
-    # 计算这个截面处，波长1.55um，折射率3.47附近的2个模式，边界条件选择在四个方向上都是pml，厚度均为15格
+    # Now we can calculate modes
     data = solve.calculate_mode(lam=1550e-9, neff=3.47, neigs=5,
                                 x_boundary_low="pml",
                                 y_boundary_low="pml",
@@ -36,7 +37,7 @@ if __name__ == "__main__":
                                 y_boundary_high="pml",
                                 background_index=background_index)
 
-    # 接下来即可绘制模式场，我们选择绘制amplitude，即幅值。filepath为保存绘制的图片的路径
+    # Draw the modes 接下来即可绘制模式场，我们选择绘制amplitude，即幅值。filepath为保存绘制的图片的路径
     solve.draw_mode(filepath=solve.filepath,
                     data=data,
                     content="amplitude")

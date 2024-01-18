@@ -54,7 +54,6 @@ class Solve:
 
         # 日后加入判断是否是各向异性材料
 
-
     def plot(self):
         """
         绘制截面折射率分布图。
@@ -67,17 +66,21 @@ class Solve:
 
         # It's quite important to transpose n
         self.n = np.transpose(self.n, [1, 0, 2])
-        plt.pcolor(self.n[:,:,0], cmap=cm.jet)
+        plt.imshow(self.n[:, :, 0], cmap=cm.jet, origin="lower",
+                   extent=[0, self.x * self.grid.grid_spacing * 1e6, 0,self.y * self.grid.grid_spacing * 1e6])
+        # plt.axis("tight")
         plt.clim([np.amin(self.n), np.amax(self.n)])
+        # plt.xlim((0, self.n.shape[0] * self.grid.grid_spacing * 1e6))
+        # plt.ylim((0, self.n.shape[1] * self.grid.grid_spacing * 1e6))
         if self.axis == "x":
-            plt.xlabel('Y/grids')
-            plt.ylabel('Z/grids')
+            plt.xlabel('y/um')
+            plt.ylabel('z/um')
         elif self.axis == "y":
-            plt.xlabel('X/grids')
-            plt.ylabel('Z/grids')
+            plt.xlabel('x/um')
+            plt.ylabel('z/um')
         elif self.axis == "z":
-            plt.xlabel('X/grids')
-            plt.ylabel('Y/grids')
+            plt.xlabel('x/um')
+            plt.ylabel('z/um')
         plt.colorbar()
         plt.title("refractive_index_real")
         # 保存图片
@@ -198,7 +201,7 @@ class Solve:
         dic["number_of_modes"] = neigs
         dic["effective_index"] = self.effective_index
         dic["axis"] = self.axis
-
+        dic["grid_spacing"] = self.grid.grid_spacing
         return dic
 
     @staticmethod
@@ -214,6 +217,7 @@ class Solve:
         '''
         axis = data["axis"]
         effective_index = data["effective_index"]
+        grid_spacing = data["grid_spacing"]
         # plot mode figures
         for j in ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz"):
             for i in range(data["number_of_modes"]):  # For each eigenvalue
@@ -227,18 +231,22 @@ class Solve:
                 elif content == "phase":
                     plot_matrix = np.transpose(np.angle(data[j][i]))
 
-                plt.pcolor(plot_matrix, cmap=cm.jet)
+                plt.imshow(plot_matrix, cmap=cm.jet, origin="lower",
+                           # 由于做了转置，所以这里要交换x， y
+                           extent=[0, plot_matrix.shape[1] * grid_spacing * 1e6,
+                                   0, plot_matrix.shape[0] * grid_spacing * 1e6])
+                # plt.axis("tight")
                 plt.clim([np.amin(plot_matrix), np.amax(plot_matrix)])
                 plt.colorbar()
                 if axis == "x":
-                    plt.xlabel('Y/grids')
-                    plt.ylabel('Z/grids')
+                    plt.xlabel('y/um')
+                    plt.ylabel('z/um')
                 elif axis == "y":
-                    plt.xlabel('X/grids')
-                    plt.ylabel('Z/grids')
+                    plt.xlabel('x/um')
+                    plt.ylabel('z/um')
                 elif axis == "z":
-                    plt.xlabel('X/grids')
-                    plt.ylabel('Y/grids')
+                    plt.xlabel('x/um')
+                    plt.ylabel('y/um')
 
                 plt.title('%s_of_%s, neff=%f' % (content, j, effective_index[i]))
                 # 保存图片
