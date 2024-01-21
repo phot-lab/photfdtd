@@ -15,7 +15,7 @@ from matplotlib.colors import LogNorm
 
 # 3rd party
 from tqdm import tqdm
-from numpy import log10, where, sqrt, transpose
+from numpy import log10, where, sqrt, transpose, round
 from scipy.signal import hilbert  # TODO: Write hilbert function to replace using scipy
 
 # relative
@@ -354,13 +354,21 @@ def visualize(
         cmap_norm = LogNorm(vmin=1e-4, vmax=grid_energy.max() + 1e-4)
     plt.imshow(bd.numpy(grid_energy), cmap=cmap, interpolation="sinc", norm=cmap_norm)
     # 由于在前面对grid_energy做了转置，所以grid_energy.shape[0]实际上是竖直方向而grid_energy.shape[1]是水平方向
-    xticks = bd.arange(0, grid_energy.shape[1], int((1e-6) / grid.grid_spacing))
+    if grid_energy.shape[1] * grid.grid_spacing < 10e-6:
+        xticks = bd.arange(0, grid_energy.shape[1], int((1e-6) / grid.grid_spacing))
+    else:
+        xticks = bd.arange(0, grid_energy.shape[1], int((10e-6) / grid.grid_spacing))
+        
+    if grid_energy.shape[0] * grid.grid_spacing < 10e-6:
+        yticks = bd.arange(0, grid_energy.shape[0], int((1e-6) / grid.grid_spacing))
+    else:
+        yticks = bd.arange(0, grid_energy.shape[0], int((10e-6) / grid.grid_spacing))
     xlabels = xticks * grid.grid_spacing * 1e6
-    yticks = bd.arange(0, grid_energy.shape[0], int((1e-6) / grid.grid_spacing))
     ylabels = yticks * grid.grid_spacing * 1e6
+    xlabels.astype(int)
     #
-    plt.xticks(xticks, xlabels)
-    plt.yticks(yticks, ylabels)
+    plt.xticks(xticks, round(xlabels).astype(int))
+    plt.yticks(yticks, round(ylabels).astype(int))
     # # finalize the plot
     # plt.ylabel(xlabel)
     # plt.xlabel(ylabel)

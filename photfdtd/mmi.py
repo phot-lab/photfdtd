@@ -73,7 +73,7 @@ class Mmi(Waveguide):
         """设置多模波导"""
 
         waveguide = Waveguide(
-            xlength=self.xlength,
+            xlength=self.xlength + 2, #防止空隙
             ylength=self.ylength,
             zlength=self.zlength,
             x=self.x,
@@ -189,7 +189,7 @@ class Mmi(Waveguide):
                 xlength=self.lm,
                 ylength=self.width_wg,
                 zlength=self.zlength,
-                x=x_port_out[i] + int(self.ln / 2 + self.l_port / 2),
+                x=x_port_out[i] + int(self.lm / 2 + self.l_port / 2),
                 y=y_port_out[i],
                 z=self.z,
                 width=self.width_wg,

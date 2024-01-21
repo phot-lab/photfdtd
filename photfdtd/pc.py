@@ -77,27 +77,27 @@ class Hexagonal_PC():
             for j in np.arange(-n_x / 2 + 1 / 2, n_x / 2 + 1 / 2, 1):
                 if i < self.H_number:
                     if j >= (self.H_number - i / 2) or j <= -(self.H_number - i / 2):
-                        circle = Fiber(radius=[self.radius], length=self.zlength, x=self.x + j * self.a,
-                                       y=self.y + i * self.a * np.sqrt(3) / 2, z=self.z,
+                        circle = Fiber(radius=[self.radius], length=self.zlength, x=int(np.round(self.x + j * self.a)),
+                                       y=int(np.round(self.y + i * self.a * np.sqrt(3) / 2)), z=self.z,
                                        refractive_index=[self.refractive_index], name="%s_circle_%d" % (self.name, flag),
                                        axis="z", grid=self.grid)
                         flag+=1
                         self._internal_objects.append(circle)
-                        circle = Fiber(radius=[self.radius], length=self.zlength, x=self.x + j * self.a,
-                                       y=self.y - i * self.a * np.sqrt(3) / 2, z=self.z,
+                        circle = Fiber(radius=[self.radius], length=self.zlength, x=int(np.round(self.x + j * self.a)),
+                                       y=int(np.round(self.y - i * self.a * np.sqrt(3) / 2)), z=self.z,
                                        refractive_index=[self.refractive_index], name="%s_circle_%d" % (self.name, flag),
                                        axis="z", grid=self.grid)
                         flag += 1
                         self._internal_objects.append(circle)
                 else:
-                    circle = Fiber(radius=[self.radius], length=self.zlength, x=self.x + j * self.a,
-                                   y=self.y + i * self.a * np.sqrt(3) / 2, z=self.z,
+                    circle = Fiber(radius=[self.radius], length=self.zlength, x=int(np.round(self.x + j * self.a)),
+                                   y=int(np.round(self.y + i * self.a * np.sqrt(3) / 2)), z=self.z,
                                    refractive_index=[self.refractive_index], name="%s_circle_%d" % (self.name, flag),
                                    axis="z", grid=self.grid)
                     flag += 1
                     self._internal_objects.append(circle)
-                    circle = Fiber(radius=[self.radius], length=self.zlength, x=self.x + j * self.a,
-                                   y=self.y - i * self.a * np.sqrt(3) / 2, z=self.z,
+                    circle = Fiber(radius=[self.radius], length=self.zlength, x=int(np.round(self.x + j * self.a)),
+                                   y=int(np.round(self.y - i * self.a * np.sqrt(3) / 2)), z=self.z,
                                    refractive_index=[self.refractive_index], name="%s_circle_%d" % (self.name, flag),
                                    axis="z", grid=self.grid)
                     flag += 1

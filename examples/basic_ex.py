@@ -1,3 +1,4 @@
+import utils
 from photfdtd import Waveguide, Grid, Solve, Index
 
 if __name__ == "__main__":
@@ -36,8 +37,7 @@ if __name__ == "__main__":
     #                   )
 
     # We can plot the geometry now 绘制x=0截面结构图
-    grid.save_fig(axis="x",
-                  axis_number=0)
+    grid.save_fig(axis="x", axis_number=0)
 
     # create a Solve object. You can use it to solve the eigenmodes (see eigenmode_solver_ex) 创建solve对象
     solve = Solve(grid=grid,

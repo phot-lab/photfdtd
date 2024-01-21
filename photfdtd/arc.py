@@ -50,9 +50,6 @@ class Arc(Waveguide):
                          y=y, z=z, width=width, name=name, refractive_index=refractive_index, reset_xyz=False,
                          grid=grid)
 
-        super().__init__(xlength=outer_radius, ylength=outer_radius, zlength=zlength, x=x,
-                         y=y, z=z, width=width, name=name, refractive_index=refractive_index,
-                         background_index=background_index, reset_xyz=False)
 
     def _compute_permittivity(self):
         # 这里+2的原因：稍微扩大一点矩阵的大小，可以保证水平和竖直方向最边上的点不被丢出
@@ -91,8 +88,12 @@ class Arc(Waveguide):
             return result_matrix, row_indices, col_indices
 
         m_removed, row_indices, col_indices = remove_zero_rows_columns(m)
-        self.x += row_indices[0][0] - self.outer_radius
-        self.y += col_indices[0][0] - self.outer_radius
+        try:
+            self.x += row_indices[0][0] - self.outer_radius
+            self.y += col_indices[0][0] - self.outer_radius
+        except:
+            self.x += row_indices[0] - self.outer_radius
+            self.y += col_indices[0] - self.outer_radius
 
         m_removed = m_removed.astype(float)
         m_removed[m_removed == 1] *= self.refractive_index ** 2

@@ -80,7 +80,7 @@ class Solve:
             plt.ylabel('z/um')
         elif self.axis == "z":
             plt.xlabel('x/um')
-            plt.ylabel('z/um')
+            plt.ylabel('y/um')
         plt.colorbar()
         plt.title("refractive_index_real")
         # 保存图片
@@ -94,9 +94,11 @@ class Solve:
                        lam: float = 1550e-9,
                        neff: float = None,
                        neigs: int = 1,
-                       x_boundary_low=None, y_boundary_low=None, x_thickness_low=0, y_thickness_low=0,
-                       x_boundary_high=None, y_boundary_high=None, x_thickness_high=0, y_thickness_high=0,
-                       background_index=1
+                       x_boundary_low=None, y_boundary_low=None,
+                       x_boundary_high=None, y_boundary_high=None,
+                       x_thickness_low: int or float = None, y_thickness_low: int or float = None,
+                       x_thickness_high: int or float = None, y_thickness_high: int or float = None,
+                       background_index=None
                        ):
         """
         调用phisol包，计算模式
@@ -113,7 +115,9 @@ class Solve:
         @param y_thickness_high:
         @return:
         """
-        # TODO: 识别并删除不存在的模式
+        if background_index == None:
+            # If background_index not given, it will be min(self.n) which is not right in some cases (like photonic crystal)
+            background_index = np.amin(self.n)
         # NOTE: fdtd的单位是m，而philsol的单位是um
         if neff == None:
             neff = np.max(self.n)
@@ -128,6 +132,9 @@ class Solve:
             y_thickness_low = PML_with
         if y_boundary_high == "pml" and not y_thickness_high:
             y_thickness_high = PML_with
+        x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high = \
+            self.grid._handle_distance(x_thickness_low), self.grid._handle_distance(x_thickness_high), \
+            self.grid._handle_distance(y_thickness_low), self.grid._handle_distance(y_thickness_high),
         print(x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high)
         # Calculate modes
         # FIXME: 检查pml边界的四个方向是否有问题
@@ -139,6 +146,21 @@ class Solve:
                                      y_thickness_high=y_thickness_high, background_index=background_index)
         beta_in = 2. * np.pi * neff / self.lam
         self.beta, Ex_field, Ey_field = ps.solve.solve(P, beta_in, neigs=neigs)
+
+        flag_deleted = []
+        print("%i modes are found" % neigs)
+        print("neff=", self.beta * self.lam / (2 * np.pi))
+        for i in range(len(self.beta)):
+            # Discard dispersion modes丢掉耗散模
+            # print(abs(self.beta[i].imag * self.lam / (2 * np.pi)))
+            if abs(self.beta[i].imag * self.lam / (2 * np.pi)) > 1e-5:
+                flag_deleted.append(i)
+                neigs -= 1
+        self.beta, Ex_field, Ey_field = np.delete(self.beta, flag_deleted), \
+                                        np.delete(Ex_field, flag_deleted, 0), \
+                                        np.delete(Ey_field, flag_deleted, 0)
+        print("%i dispersion modes are discarded" % len(flag_deleted))
+
         self.effective_index = self.beta * self.lam / (2 * np.pi)
         print("neff=", self.effective_index)
 
@@ -202,6 +224,7 @@ class Solve:
         dic["effective_index"] = self.effective_index
         dic["axis"] = self.axis
         dic["grid_spacing"] = self.grid.grid_spacing
+        dic["lam"] = lam
         return dic
 
     @staticmethod
@@ -218,6 +241,7 @@ class Solve:
         axis = data["axis"]
         effective_index = data["effective_index"]
         grid_spacing = data["grid_spacing"]
+        lam = data["lam"]
         # plot mode figures
         for j in ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz"):
             for i in range(data["number_of_modes"]):  # For each eigenvalue
@@ -248,10 +272,31 @@ class Solve:
                     plt.xlabel('x/um')
                     plt.ylabel('y/um')
 
-                plt.title('%s_of_%s, neff=%f' % (content, j, effective_index[i]))
+                plt.title('%s_of_%s, neff=%s' % (content, j, str(effective_index[i])))
                 # 保存图片
                 plt.savefig(fname='%s\\%s%d_%s_%s.png' % (filepath, 'mode', i + 1, content, j))
                 plt.close()
+
+        # Draw neff plot
+        plt.plot(np.linspace(1, len(effective_index), len(effective_index)), effective_index.real, label='Line',
+                 marker="o")
+        plt.title('neff plot')
+        plt.xticks(np.arange(1, len(effective_index), 1))
+        plt.xlabel('mode')
+        plt.savefig(fname='%s\\%s.png' % (filepath, 'neff_plot'))
+        plt.close()
+
+        # Draw loss plot
+        loss = -20 * np.log10(np.e ** (-2*np.pi*effective_index.imag/lam))
+        plt.plot(np.linspace(1, len(effective_index), len(effective_index)), loss, label='Line',
+                 marker="o")
+        plt.title('loss plot')
+        plt.xticks(np.arange(1, len(effective_index), 1))
+        plt.xlabel('mode')
+        plt.ylabel('dB/m')
+        plt.savefig(fname='%s\\%s.png' % (filepath, 'loss_plot'))
+        plt.close()
+
 
     @staticmethod
     def save_mode(folder, dic):

@@ -1,23 +1,17 @@
+import utils
 from photfdtd import Waveguide, Grid, Solve, constants
 
 if __name__ == "__main__":
     background_index = 1.0
-
-    # 设置器件参数
-    waveguide = Waveguide(
-        xlength=400, ylength=20, zlength=1, x=200, y=100, z=0, refractive_index=3.47, name="Waveguide",
-        background_index=background_index
-    )
-
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=400, grid_ylength=200, grid_zlength=1,
                 grid_spacing=20e-9,
-                total_time=100,
-                pml_width_x=40,
-                pml_width_y=40,
-                pml_width_z=0,
                 permittivity=background_index ** 2,
                 foldername="test_waveguide_2D")
+    # 设置器件参数
+    waveguide = Waveguide(
+        xlength=400, ylength=20, zlength=1, x=200, y=100, z=0, refractive_index=3.47, name="Waveguide", grid=grid
+    )
 
     # 往 grid 里添加器件
     grid.add_object(waveguide)
@@ -37,19 +31,17 @@ if __name__ == "__main__":
     #                   zlength=0)
 
     # 创建solve对象
-    solve = Solve(grid=grid)
+    solve = Solve(grid=grid, axis='z',
+                  index=0,
+                  filepath=grid.folder)
 
     # 绘制任一截面折射率分布
-    solve.plot(axis='z',
-               index=0,
-               filepath=grid.folder)
+    solve.plot()
 
     # 运行仿真
     grid.run()
 
-    grid.save_fig(axis="z",
-                  axis_number=0,
-                  geo=solve.geometry)
+    grid.save_fig(axis="z", axis_number=0, geo=solve.geometry)
 
     # 保存仿真结果，并传给data
     data = grid.save_simulation()
@@ -69,3 +61,5 @@ if __name__ == "__main__":
     Grid.plot_field(grid=grid, field="E", axis=2, axis_number=0, cross_section="z", folder=grid.folder)
 
     Grid.plot_fieldtime(folder=grid.folder, data=data, axis=2, field="E", index=0, name_det="detector")
+
+

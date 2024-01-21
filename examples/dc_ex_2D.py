@@ -4,25 +4,23 @@ from photfdtd import DirectionalCoupler, Grid, Solve
 if __name__ == "__main__":
     background_index = 1.455
 
-    grid = Grid(grid_xlength=200 * 20e-9, grid_ylength=100 * 20e-9, grid_zlength=1, grid_spacing=20e-9, total_time=1000,
-                pml_width_x=20,
-                pml_width_y=8, pml_width_z=0,
-                permittivity=background_index ** 2, foldername="test_dc")
+    grid = Grid(grid_xlength=600 * 20e-9, grid_ylength=200 * 20e-9, grid_zlength=1, grid_spacing=20e-9,
+                permittivity=background_index ** 2, foldername="test_dc_2D")
     dc = DirectionalCoupler(
-        xlength=200 * 20e-9,
+        xlength=500 * 20e-9,
         ylength=80 * 20e-9,
         zlength=1,
         direction=1,
-        width=20 * 20e-9,
+        width=500e-9,
         name="dc",
         refractive_index=3.47,
-        xlength_rectangle=50,
-        gap=10,
+        xlength_rectangle=200 * 20e-9,
+        gap=2,
         grid=grid
     )
 
-    grid.set_source(source_type="linesource", period=1550e-9 / 299792458, x=25, y=80, z=0, xlength=0,
-                    ylength=dc.width + 4, zlength=1 * 20e-9)
+    grid.set_source(source_type="linesource", period=1550e-9 / 299792458, x=0.99e-6, y=2.5e-6, z=0, xlength=0,
+                    ylength=dc.width + 8, zlength=1 * 20e-9, polarization="y")
 
     # grid.set_detector(detector_type='blockdetector',
     #                   x=175, xlength=0,
@@ -41,11 +39,14 @@ if __name__ == "__main__":
 
     solve.plot()
 
+    grid.save_fig(axis="z", axis_number=0, geo=solve.geometry)
+
     grid.run()
 
-    grid.save_fig(axis="z",
-                  axis_number=0,
-                  geo=solve.geometry)
+    # # 绘制仿真结束时刻空间场分布
+    Grid.plot_field(grid=grid, field="E", field_axis="y", axis="z", axis_index=0, folder=grid.folder)
+
+
     #
     # # 保存仿真结果
     # grid.save_simulation()

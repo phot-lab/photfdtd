@@ -1,3 +1,4 @@
+import utils
 from photfdtd import Fiber, Grid, Solve, constants
 
 if __name__ == "__main__":
@@ -10,8 +11,6 @@ if __name__ == "__main__":
     # 波长：1.55um
 
     background_index = 1.4437
-
-
 
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=200 * 200e-9, grid_ylength=200 * 200e-9, grid_zlength=1, grid_spacing=200e-9,
@@ -31,21 +30,21 @@ if __name__ == "__main__":
 
     # 绘制折射率分布
     solve.plot()
+    # We can plot the geometry now 绘制x=0截面结构图
+    grid.save_fig(axis="z", axis_number=0)
 
     # 计算这个截面处，波长1.55um，折射率3.47附近的2个模式，边界条件选择在四个方向上都是pml，厚度均为15格
-    data = solve.calculate_mode(lam=1550e-9, neff=1.4504, neigs=2,
+    data = solve.calculate_mode(lam=1550e-9, neff=1.4504, neigs=20,
                                 x_boundary_low="pml", y_boundary_low="pml",
                                 x_boundary_high="pml",
                                 y_boundary_high="pml",
                                 x_thickness_low=15,
-                                y_thickness_low=15,  x_thickness_high=15,
+                                y_thickness_low=15, x_thickness_high=15,
                                 y_thickness_high=15)
 
-    Solve.save_mode(solve.filepath, data)
+    # Solve.save_mode(solve.filepath, data)
 
     Solve.draw_mode(filepath=solve.filepath, data=data, content="amplitude")
-    Solve.draw_mode(filepath=solve.filepath, data=data, content="real_part")
-    Solve.draw_mode(filepath=solve.filepath, data=data, content="imaginary_part")
-    Solve.draw_mode(filepath=solve.filepath, data=data, content="phase")
-
-
+    # Solve.draw_mode(filepath=solve.filepath, data=data, content="real_part")
+    # Solve.draw_mode(filepath=solve.filepath, data=data, content="imaginary_part")
+    # Solve.draw_mode(filepath=solve.filepath, data=data, content="phase")

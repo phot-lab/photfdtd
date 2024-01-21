@@ -101,9 +101,9 @@ class Ysplitter(Waveguide):
             xlength: int or float = 200,
             ylength: int or float = 160,
             zlength: int or float = 20,
-            x: int or float = 100,
-            y: int or float = 100,
-            z: int or float = 13,
+            x: int or float = None,
+            y: int or float = None,
+            z: int or float = None,
             direction: int = 1,
             width: int or float = 20,
             name: str = "ysplitter",
@@ -119,7 +119,7 @@ class Ysplitter(Waveguide):
                               grid_spacing=grid._grid.grid_spacing)
         self.direction = direction
         self.xlength_waveguide = xlength_waveguide
-        self.xlength_taper = xlength_taper + 2 # +2防止连接的位置出现空气
+        self.xlength_taper = xlength_taper
         self.ylength_taper = ylength_taper
         self.xlength_sbend = xlength - xlength_waveguide - xlength_taper
         self.ylength_sbend = int(ylength / 2 - ylength_taper / 2 + width_sbend + 0.5)
@@ -144,7 +144,7 @@ class Ysplitter(Waveguide):
                 grid=self.grid
             )
             taper = Taper(
-                xlength=self.xlength_taper,
+                xlength=self.xlength_taper + 2, # +2防止连接的位置出现空气
                 ylength=self.ylength_taper,
                 zlength=self.zlength,
                 x=self.x,

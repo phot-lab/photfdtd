@@ -30,17 +30,14 @@ if __name__ == "__main__":
     solve.plot()
 
     # Now we can calculate modes
-    data = solve.calculate_mode(lam=1550e-9, neff=3.47, neigs=5,
+    data = solve.calculate_mode(lam=1550e-9, neff=3.47, neigs=20,
                                 x_boundary_low="pml",
                                 y_boundary_low="pml",
                                 x_boundary_high="pml",
                                 y_boundary_high="pml",
                                 background_index=background_index)
 
-    # Draw the modes 接下来即可绘制模式场，我们选择绘制amplitude，即幅值。filepath为保存绘制的图片的路径
-    solve.draw_mode(filepath=solve.filepath,
-                    data=data,
-                    content="amplitude")
+
     # # 也可以是场的相位、实部或虚部
     # solve.draw_mode(filepath=solve.filepath,
     #                 data=data,
@@ -53,7 +50,12 @@ if __name__ == "__main__":
     #                 content="imaginary_part")
 
     # 如果保存了模式的数据，则可以读取它再绘制模式场
-    # Solve.save_mode(solve.filepath, data)
+    Solve.save_mode(solve.filepath, data)
+
+    # Draw the modes 接下来即可绘制模式场，我们选择绘制amplitude，即幅值。filepath为保存绘制的图片的路径
+    solve.draw_mode(filepath=solve.filepath,
+                    data=data,
+                    content="amplitude")
     #
     # data_from_saved_modes = Solve.read_mode(solve.filepath)
     #

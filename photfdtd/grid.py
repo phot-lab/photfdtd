@@ -67,7 +67,7 @@ class Grid:
     def _handle_unit(self, lengths, grid_spacing):
         # 把SI单位变成空间步长单位 SI unit -> grid spacing unit
         for i in range(len(lengths)):
-            if not np.issubdtype(type(lengths[i]), np.integer):
+            if not np.issubdtype(type(lengths[i]), np.integer) and lengths[i] is not None:
                 # if not isinstance(lengths[i], int):
                 lengths[i] = int(np.round(lengths[i] / grid_spacing))
 
@@ -110,9 +110,9 @@ class Grid:
             polarization: str = "x",
             pulse_length: float = 39e-15,
             offset: float = 112e-15,
-            x: int = 5,
-            y: int = 5,
-            z: int = 5,
+            x: int or float = 5,
+            y: int or float = 5,
+            z: int or float = 5,
             xlength: int or float = 5,
             ylength: int or float = 5,
             zlength: int or float = 5,
@@ -168,7 +168,7 @@ class Grid:
                 self._grid[:, :, 0:pml_width] = fdtd.PML(name="pml_zlow")
                 self._grid[:, :, -pml_width:] = fdtd.PML(name="pml_zhigh")
             self.flag_PML_not_set = False
-        xlength, ylength, zlength = self._handle_unit([xlength, ylength, zlength], grid_spacing=self._grid.grid_spacing)
+        xlength, ylength, zlength, x, y, z = self._handle_unit([xlength, ylength, zlength, x, y, z], grid_spacing=self._grid.grid_spacing)
         x = x - xlength // 2
         y = y - ylength // 2
         z = z - zlength // 2
@@ -214,16 +214,16 @@ class Grid:
 
     def set_detector(self,
                      detector_type: str = 'linedetector',
-                     x: int = 5,
-                     y: int = 5,
-                     z: int = 5,
+                     x: int or float = 5,
+                     y: int or float = 5,
+                     z: int or float = 5,
                      xlength: int or float = 5,
                      ylength: int or float = 5,
                      zlength: int or float = 1,
                      name: str = 'detector'
                      ):
 
-        xlength, ylength, zlength = self._handle_unit([xlength, ylength, zlength],
+        xlength, ylength, zlength, x, y, z = self._handle_unit([xlength, ylength, zlength, x, y, z],
                                                       grid_spacing=self._grid.grid_spacing)
         x = x - xlength // 2
         y = y - ylength // 2
@@ -588,7 +588,7 @@ class Grid:
 
     @staticmethod
     def plot_field(grid=None, axis="z", axis_index=0, field="E", field_axis=None, folder="", cmap="jet",
-                   show_geometry=True):
+                   show_geometry=True, vmax=None):
         """
         绘制当前时刻场分布（不需要监视器）
         @param show_geometry: bool 是否绘制波导结构
@@ -644,13 +644,13 @@ class Grid:
                     field = grid.H[:, axis_index, :, ord(field_axis) - 120]
                 elif axis == "x":
                     field = grid.H[axis_index, :, :, ord(field_axis) - 120]
-
-        m = max(abs(field.min().item()), abs(field.max().item()))
+        if not vmax:
+            vmax = max(abs(field.min().item()), abs(field.max().item()))
 
         # 创建颜色图
         plt.figure()
 
-        plt.imshow(np.transpose(field), vmin=-m, vmax=m, cmap=cmap,
+        plt.imshow(np.transpose(field), vmin=-vmax, vmax=vmax, cmap=cmap,
                    extent=[0, field.shape[0] * grid.grid_spacing * 1e6, 0, field.shape[1] * grid.grid_spacing * 1e6],
                    origin="lower")  # cmap 可以选择不同的颜色映射
         cbar = plt.colorbar()

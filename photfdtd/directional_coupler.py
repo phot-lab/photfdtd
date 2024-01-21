@@ -97,14 +97,14 @@ class DirectionalCoupler(Waveguide):
             name="%s_sbend4" % self.name,
             grid=self.grid
         )
-        self.xlength_rectangle += 2  # +2防止出现空隙
+        self.xlength_rectangle += 2  # +4防止出现空隙
         wg1 = Waveguide(
             xlength=self.xlength_rectangle,
             ylength=self.width,
             zlength=self.zlength,
-            x=self.x + self.xlength_sbend + int(self.xlength_rectangle / 2),
+            x=self.x_center,
             y=self.y + self.ylength_sbend - int(self.width / 2),
-            z=self.z + int(self.zlength / 2),
+            z=self.z_center,
             width=self.width,
             refractive_index=self.refractive_index,
             name="%s_wg1" % self.name,
@@ -115,9 +115,9 @@ class DirectionalCoupler(Waveguide):
             xlength=self.xlength_rectangle,
             ylength=self.width,
             zlength=self.zlength,
-            x=self.x + self.xlength_sbend + int(self.xlength_rectangle / 2),
+            x=self.x_center,
             y=self.y + self.ylength_sbend + self.gap + int(self.width / 2),
-            z=self.z + int(self.zlength / 2),
+            z=self.z_center,
             width=self.width,
             refractive_index=self.refractive_index,
             name="%s_wg2" % self.name,

@@ -22,7 +22,7 @@ class Fiber(Waveguide):
         length, x, y, z = grid._handle_unit([length, x, y, z], grid_spacing=grid._grid.grid_spacing)
         radius = grid._handle_unit(radius, grid_spacing=grid._grid.grid_spacing)
         self.radius = radius
-        self.length = length[0]
+        self.length = length
         self.axis = axis
         if x == None:
             # 如果没设置x，自动选仿真区域中心If x not set, choose the center of grid
