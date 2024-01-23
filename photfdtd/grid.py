@@ -533,6 +533,7 @@ class Grid:
         dic["detectors"] = self._grid.detectors
         dic["sources"] = self._grid.sources
         dic["time_passed"] = self._grid.time_passed
+        dic["grid"] = self._grid
 
         # 保存detector_readings_sweep.npz文件
         savez(path.join(self.folder, "detector_readings"), **dic)

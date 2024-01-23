@@ -67,7 +67,7 @@ class Solve:
         # It's quite important to transpose n
         self.n = np.transpose(self.n, [1, 0, 2])
         plt.imshow(self.n[:, :, 0], cmap=cm.jet, origin="lower",
-                   extent=[0, self.x * self.grid.grid_spacing * 1e6, 0,self.y * self.grid.grid_spacing * 1e6])
+                   extent=[0, self.x * self.grid.grid_spacing * 1e6, 0, self.y * self.grid.grid_spacing * 1e6])
         # plt.axis("tight")
         plt.clim([np.amin(self.n), np.amax(self.n)])
         # plt.xlim((0, self.n.shape[0] * self.grid.grid_spacing * 1e6))
@@ -277,26 +277,80 @@ class Solve:
                 plt.savefig(fname='%s\\%s%d_%s_%s.png' % (filepath, 'mode', i + 1, content, j))
                 plt.close()
 
+        # Draw E/H intensity
+        for i in range(data["number_of_modes"]):
+            if axis == "x":
+                E_intensity = data["Ey"][i].real ** 2 + data["Ez"][i].real ** 2
+                H_intensity = data["Hy"][i].real ** 2 + data["Hz"][i].real ** 2
+            if axis == "y":
+                E_intensity = data["Ex"][i].real ** 2 + data["Ez"][i].real ** 2
+                H_intensity = data["Hx"][i].real ** 2 + data["Hz"][i].real ** 2
+            if axis == "z":
+                E_intensity = data["Ex"][i].real ** 2 + data["Ey"][i].real ** 2
+                H_intensity = data["Hx"][i].real ** 2 + data["Hy"][i].real ** 2
+            E_intensity = np.transpose(E_intensity)
+            H_intensity = np.transpose(H_intensity)
+            plt.figure()
+            plt.imshow(E_intensity, cmap=cm.jet, origin="lower",
+                       # 由于做了转置，所以这里要交换x， y
+                       extent=[0, E_intensity.shape[1] * grid_spacing * 1e6,
+                               0, E_intensity.shape[0] * grid_spacing * 1e6])
+            plt.clim([np.amin(E_intensity), np.amax(E_intensity)])
+            plt.colorbar()
+            if axis == "x":
+                plt.xlabel('y/um')
+                plt.ylabel('z/um')
+            elif axis == "y":
+                plt.xlabel('x/um')
+                plt.ylabel('z/um')
+            elif axis == "z":
+                plt.xlabel('x/um')
+                plt.ylabel('y/um')
+            plt.title('E_intensity, neff=%s' % (str(effective_index[i])))
+            # 保存图片
+            plt.savefig(fname='%s\\%s%d_E_intensity.png' % (filepath, 'mode', i + 1))
+            plt.close()
+
+            plt.figure()
+            plt.imshow(H_intensity, cmap=cm.jet, origin="lower",
+                       # 由于做了转置，所以这里要交换x， y
+                       extent=[0, H_intensity.shape[1] * grid_spacing * 1e6,
+                               0, H_intensity.shape[0] * grid_spacing * 1e6])
+            plt.clim([np.amin(H_intensity), np.amax(H_intensity)])
+            plt.colorbar()
+            if axis == "x":
+                plt.xlabel('y/um')
+                plt.ylabel('z/um')
+            elif axis == "y":
+                plt.xlabel('x/um')
+                plt.ylabel('z/um')
+            elif axis == "z":
+                plt.xlabel('x/um')
+                plt.ylabel('y/um')
+            plt.title('H_intensity, neff=%s' % (str(effective_index[i])))
+            # 保存图片
+            plt.savefig(fname='%s\\%s%d_H_intensity.png' % (filepath, 'mode', i + 1))
+            plt.close()
+
         # Draw neff plot
-        plt.plot(np.linspace(1, len(effective_index), len(effective_index)), effective_index.real, label='Line',
-                 marker="o")
-        plt.title('neff plot')
-        plt.xticks(np.arange(1, len(effective_index), 1))
-        plt.xlabel('mode')
-        plt.savefig(fname='%s\\%s.png' % (filepath, 'neff_plot'))
-        plt.close()
+        # plt.plot(np.linspace(1, len(effective_index), len(effective_index)), effective_index.real, label='Line',
+        #          marker="o")
+        # plt.title('neff plot')
+        # plt.xticks(np.arange(1, len(effective_index), 1))
+        # plt.xlabel('mode')
+        # plt.savefig(fname='%s\\%s.png' % (filepath, 'neff_plot'))
+        # plt.close()
 
         # Draw loss plot
-        loss = -20 * np.log10(np.e ** (-2*np.pi*effective_index.imag/lam))
-        plt.plot(np.linspace(1, len(effective_index), len(effective_index)), loss, label='Line',
-                 marker="o")
-        plt.title('loss plot')
-        plt.xticks(np.arange(1, len(effective_index), 1))
-        plt.xlabel('mode')
-        plt.ylabel('dB/m')
-        plt.savefig(fname='%s\\%s.png' % (filepath, 'loss_plot'))
-        plt.close()
-
+        loss = -20 * np.log10(np.e ** (-2 * np.pi * effective_index.imag / lam))
+        # plt.plot(np.linspace(1, len(effective_index), len(effective_index)), loss, label='Line',
+        #          marker="o")
+        # plt.title('loss plot')
+        # plt.xticks(np.arange(1, len(effective_index), 1))
+        # plt.xlabel('mode')
+        # plt.ylabel('dB/m')
+        # plt.savefig(fname='%s\\%s.png' % (filepath, 'loss_plot'))
+        # plt.close()
 
     @staticmethod
     def save_mode(folder, dic):
