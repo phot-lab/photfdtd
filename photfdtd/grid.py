@@ -116,6 +116,12 @@ class Grid:
             xlength: int or float = 5,
             ylength: int or float = 5,
             zlength: int or float = 5,
+            x_start: int or float = None,
+            y_start: int or float = None,
+            z_start: int or float = None,
+            x_end: int or float = None,
+            y_end: int or float = None,
+            z_end: int or float = None,
     ):
         """
         :param source_type: 光源种类：点或线或面
@@ -168,7 +174,17 @@ class Grid:
                 self._grid[:, :, 0:pml_width] = fdtd.PML(name="pml_zlow")
                 self._grid[:, :, -pml_width:] = fdtd.PML(name="pml_zhigh")
             self.flag_PML_not_set = False
-        xlength, ylength, zlength, x, y, z = self._handle_unit([xlength, ylength, zlength, x, y, z], grid_spacing=self._grid.grid_spacing)
+        xlength, ylength, zlength, x, y, z, x_start, y_start, z_start, x_end, y_end, z_end = self._handle_unit([xlength,
+                                                                                                                ylength,
+                                                                                                                zlength,
+                                                                                                                x, y, z,
+                                                                                                                x_start,
+                                                                                                                y_start,
+                                                                                                                z_start,
+                                                                                                                x_end,
+                                                                                                                y_end,
+                                                                                                                z_end],
+                                                                                                               grid_spacing=self._grid.grid_spacing)
         x = x - xlength // 2
         y = y - ylength // 2
         z = z - zlength // 2
@@ -183,25 +199,33 @@ class Grid:
                                                    pulse_length=pulse_length, offset=offset, polarization=polarization)
 
         elif source_type == "linesource":  # 创建一个线光源
-
+            if not x_start:
+                x_start = x
+                y_start = y
+                z_start = z
+                x_end = x + xlength
+                y_end = y + ylength
+                z_end = z + zlength
             if self._grid_zlength == 1:
-                self._grid[x: x + xlength, y: y + ylength] = fdtd.LineSource(period=period, amplitude=amplitude,
+                self._grid[x_start: x_end, y_start: y_end] = fdtd.LineSource(period=period, amplitude=amplitude,
                                                                              phase_shift=phase_shift, name=name,
                                                                              pulse_type=pulse_type, cycle=cycle,
-                                                                             pulse_length=pulse_length, offset=offset,
+                                                                             pulse_length=pulse_length,
+                                                                             offset=offset,
                                                                              waveform=waveform,
                                                                              polarization=polarization)
             else:
-                self._grid[x: x + xlength, y: y + ylength, z: z + zlength] = fdtd.LineSource(period=period,
-                                                                                             amplitude=amplitude,
-                                                                                             phase_shift=phase_shift,
-                                                                                             name=name,
-                                                                                             pulse_type=pulse_type,
-                                                                                             cycle=cycle,
-                                                                                             pulse_length=pulse_length,
-                                                                                             offset=offset,
-                                                                                             waveform=waveform,
-                                                                                             polarization=polarization)
+                self._grid[x_start: x_end, y_start: y_end, z_start: z_end] = fdtd.LineSource(period=period,
+                                                                                                 amplitude=amplitude,
+                                                                                                 phase_shift=phase_shift,
+                                                                                                 name=name,
+                                                                                                 pulse_type=pulse_type,
+                                                                                                 cycle=cycle,
+                                                                                                 pulse_length=pulse_length,
+                                                                                                 offset=offset,
+                                                                                                 waveform=waveform,
+                                                                                                 polarization=polarization)
+            
 
         elif source_type == "planesource":
             # 创建一个面光源
@@ -224,7 +248,7 @@ class Grid:
                      ):
 
         xlength, ylength, zlength, x, y, z = self._handle_unit([xlength, ylength, zlength, x, y, z],
-                                                      grid_spacing=self._grid.grid_spacing)
+                                                               grid_spacing=self._grid.grid_spacing)
         x = x - xlength // 2
         y = y - ylength // 2
         z = z - zlength // 2
