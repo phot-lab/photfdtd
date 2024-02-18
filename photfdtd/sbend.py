@@ -5,28 +5,29 @@ import numpy as np
 class Sbend(Waveguide):
     """
     s波导代码，继承自waveguide
-    xlength: 波导区域x方向宽度
-    ylength: 波导区域y方向宽度
-    zlength: 波导区域z方向宽度，通常也是波导高度
-    x,y,z: 中心位置坐标
-    direction: = 1表示形状左上至右下，=-1表示形状从左下到右上
+    xlength: x跨度
+    ylength: 厚度
+    zlength: 长度
+    x,y,z: 中心坐标
+    direction:
     width：波导宽度
     refractive_index: 折射率
-    background_index: 背景折射率
+    grid: grid
+    direction: 1 or -1, 波导方向从左下到右上或~
     """
-
+    # TODO: 像Rsoft里那样设置sbend。The settings of Sbend should be like that in Rsoft.
     def __init__(
             self,
-            xlength: int or float = 200,
-            ylength: int or float= 100,
-            zlength: int or float= 20,
+            xlength: int or float = None,
+            ylength: int or float = None,
+            zlength: int or float = None,
             x: int or float = None,
             y: int or float = None,
             z: int or float = None,
             width: int or float = 20,
             name: str = "sbend",
             refractive_index: float = 3.47,
-            direction: int = -1,
+            direction: int = 1,
             grid=None
     ) -> None:
         self.direction = direction
@@ -35,18 +36,18 @@ class Sbend(Waveguide):
     def _compute_permittivity(self):
         """
         """
+        z = np.linspace(0, self.zlength, self.zlength)
         x = np.linspace(0, self.xlength, self.xlength)
-        y = np.linspace(0, self.ylength, self.ylength)
-        X, Y = np.meshgrid(x, y, indexing="ij")  # indexing = 'ij'很重要
+        Z, X = np.meshgrid(z, x, indexing="ij")  # indexing = 'ij'很重要
         m = np.zeros((self.xlength, self.ylength, self.zlength))
 
         if self.direction == 1:
-            # direction=1, 波导方向从左上到右下
+            # direction=1, 波导方向从左下到右上
             m1 = (
-                    Y
-                    <= 0.5 * (self.ylength - self.width) * np.sin((X / self.xlength - 0.5) * np.pi)
+                    X
+                    <= 0.5 * (self.xlength - self.width) * np.sin((Z / self.zlength - 0.5) * np.pi)
                     + int(self.width / 2 + 0.5)
-                    + self.ylength / 2
+                    + self.xlength / 2
             )
             # 上下翻转
             m2 = np.flipud(m1)
@@ -54,43 +55,43 @@ class Sbend(Waveguide):
             m2 = np.fliplr(m2)
 
             # m2 = (
-            #         Y
-            #         <= 0.5 * (self.ylength - self.width) * np.sin((X / self.xlength - 0.5) * np.pi)
+            #         X
+            #         <= 0.5 * (self.xlength - self.width) * np.sin((Z / self.zlength - 0.5) * np.pi)
             #         - int(self.width / 2 + 0.5)
-            #         + self.ylength / 2
+            #         + self.xlength / 2
             # )
 
             # m2 = (
-            #     Y
-            #     >= 0.5 * (self.ylength - self.width) * np.sin((X / self.xlength - 0.5) * np.pi)
+            #     X
+            #     >= 0.5 * (self.xlength - self.width) * np.sin((Z / self.zlength - 0.5) * np.pi)
             #     - self.width / 2
-            #     + self.ylength / 2
+            #     + self.xlength / 2
             # )
         elif self.direction == -1:
-            # direction=-1, 波导方向从左下到右上
+            # direction=-1, 波导方向从左上到右下
             m1 = (
-                    Y
-                    <= -0.5 * (self.ylength - self.width) * np.sin((X / self.xlength - 0.5) * np.pi)
+                    X
+                    <= -0.5 * (self.xlength - self.width) * np.sin((Z / self.zlength - 0.5) * np.pi)
                     + int(self.width / 2 + 0.5)
-                    + self.ylength / 2
+                    + self.xlength / 2
             )
             # 上下翻转
             m2 = np.flipud(m1)
             # 左右翻转
             m2 = np.fliplr(m2)
             # m2 = (
-            #     Y
-            #     >= -0.5 * (self.ylength - self.width) * np.sin((X / self.xlength - 0.5) * np.pi)
+            #     X
+            #     >= -0.5 * (self.xlength - self.width) * np.sin((Z / self.zlength - 0.5) * np.pi)
             #     - self.width / 2
-            #     + self.ylength / 2
+            #     + self.xlength / 2
             # )
         else:
             raise RuntimeError("Unknown direction")
 
-        for i in range(self.xlength):
-            for j in range(self.ylength):
+        for i in range(self.zlength):
+            for j in range(self.xlength):
                 if m1[i, j] == m2[i, j]:
-                    m[i, j, :] = True
+                    m[j, :, i] = True
 
         permittivity = np.ones((self.xlength, self.ylength, self.zlength))
         permittivity += m[:, :] * (self.refractive_index ** 2 - 1)

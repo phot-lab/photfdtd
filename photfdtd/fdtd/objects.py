@@ -77,10 +77,6 @@ class Object:
 
         # set the permittivity values of the object at its border to be equal
         # to the grid permittivity. This way, the object is made symmetric.
-        a = self.inverse_permittivity[-1, :, :, 0]
-        b = self.grid.inverse_permittivity[
-                -1, self.y, self.z, 0
-            ]
         if self.Nx > 1:
             self.inverse_permittivity[-1, :, :, 0] = self.grid.inverse_permittivity[
                 -1, self.y, self.z, 0

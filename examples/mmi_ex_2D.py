@@ -2,30 +2,30 @@ import utils
 from photfdtd import Mmi, Grid, Solve
 
 if __name__ == "__main__":
-    n = 1  # 输入端口数
+    n = 3  # 输入端口数
     m = 2  # 输出端口数
     grid_spacing = 20e-9  # 空间步长
 
     background_index = 1.4447
 
-    grid = Grid(grid_xlength=500, grid_ylength=150, grid_zlength=1, grid_spacing=grid_spacing, foldername="test_mmi_2D",
+    grid = Grid(grid_xlength=6e-6, grid_ylength=1, grid_zlength=10e-6, grid_spacing=grid_spacing, foldername="test_mmi_2D",
                 permittivity=background_index ** 2)
 
     mmi = Mmi(
-        xlength=73,
-        ylength=56,
-        zlength=1,
-        We=57,
+        xlength=2e-6,
+        ylength=1,
+        zlength=3e-6,
+        We=100 * grid_spacing,
         name="mmi",
         refractive_index=3.47,
         n=n,
         m=m,
-        x=3e-6,
+        # x=225,
         width_port=25,
         width_wg=20,
-        l_port=0,
-        ln=60,
-        lm=4e-6,
+        l_port=1e-6,
+        ln=1e-6,
+        lm=1e-6,
         grid=grid
     )
 
@@ -41,8 +41,8 @@ if __name__ == "__main__":
     #         period=1550e-9 / 299792458,
     #     )
 
-    grid.set_source(source_type="linesource", period=1550e-9 / 299792458, name="source", x=0.9e-6, y=1.5e-6, z=0, xlength=1,
-                    ylength=30, zlength=1, polarization="y")
+    # grid.set_source(source_type="linesource", period=1550e-9 / 299792458, name="source", x=0.9e-6, y=3e-6, z=0, xlength=1,
+    #                 ylength=25, zlength=1, polarization="y")
 
     # 设置监视器
     # grid.set_detector(detector_type="blockdetector",
@@ -66,12 +66,12 @@ if __name__ == "__main__":
 
     grid.add_object(mmi)
 
-    grid.save_fig(axis="z",
+    grid.save_fig(axis="y",
                   axis_number=0)
 
     # 创建solve对象
     solve = Solve(grid=grid,
-                  axis='z',
+                  axis='y',
                   index=0,
                   filepath=grid.folder)
 

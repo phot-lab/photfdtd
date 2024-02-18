@@ -8,7 +8,6 @@ class DirectionalCoupler(Waveguide):
     ylength: 波导区域y方向宽度
     zlength: 波导区域厚度
     x,y,z: 中心坐标
-    direction：确定方向(暂时没用) TODO: 完成竖直方向
     width：波导宽度
     refractive_index:折射率
     gap:直波导间距
@@ -23,20 +22,19 @@ class DirectionalCoupler(Waveguide):
             x: int or float = None,
             y: int or float = None,
             z: int or float = None,
-            direction: int = 1,
             width: int or float = 20,
             name: str = "dc",
             refractive_index: float = 3.47,
-            xlength_rectangle: int or float = 50,
+            zlength_rectangle: int or float = 50,
             gap: int or float = 10,
             grid=None
     ) -> None:
-        self.direction = direction
-        xlength, ylength, zlength, width, xlength_rectangle, gap = grid._handle_unit([xlength, ylength, zlength, width, xlength_rectangle, gap],
+        xlength, ylength, zlength, width, zlength_rectangle, gap = grid._handle_unit([xlength, ylength, zlength, width,
+                                                                                      zlength_rectangle, gap],
                                                                                      grid_spacing=grid._grid.grid_spacing)
-        self.xlength_rectangle = xlength_rectangle
-        self.ylength_sbend = int((ylength - gap) / 2 + 0.5)
-        self.xlength_sbend = int((xlength - xlength_rectangle) / 2 + 0.5)
+        self.zlength_rectangle = zlength_rectangle
+        self.xlength_sbend = int((xlength - gap) / 2 + 0.5)
+        self.zlength_sbend = int((zlength - zlength_rectangle) / 2 + 0.5)
         self.gap = gap
         super().__init__(xlength=xlength, ylength=ylength, zlength=zlength, x=x, y=y, z=z, width=width,
                          name=name, refractive_index=refractive_index, grid=grid)
@@ -44,11 +42,11 @@ class DirectionalCoupler(Waveguide):
     def _set_objects(self):
         sbend1 = sbend.Sbend(
             xlength=self.xlength_sbend,
-            ylength=self.ylength_sbend,
-            zlength=self.zlength,
+            ylength=self.ylength,
+            zlength=self.zlength_sbend,
             x=self.x + int(self.xlength_sbend / 2),
-            y=self.y + int(self.ylength_sbend / 2),
-            z=self.z + int(self.zlength / 2),
+            y=self.y + int(self.ylength / 2),
+            z=self.z + int(self.zlength_sbend / 2),
             direction=1,
             width=self.width,
             refractive_index=self.refractive_index,
@@ -58,11 +56,11 @@ class DirectionalCoupler(Waveguide):
 
         sbend2 = sbend.Sbend(
             xlength=self.xlength_sbend,
-            ylength=self.ylength_sbend,
-            zlength=self.zlength,
-            x=self.x + int(self.xlength_sbend / 2),
-            y=self.y + int(self.gap + self.ylength_sbend * 1.5),
-            z=self.z + int(self.zlength / 2),
+            ylength=self.ylength,
+            zlength=self.zlength_sbend,
+            x=self.x + int(self.gap + self.xlength_sbend * 1.5),
+            y=self.y + int(self.ylength / 2),
+            z=self.z + int(self.zlength_sbend / 2),
             direction=-1,
             width=self.width,
             refractive_index=self.refractive_index,
@@ -72,11 +70,11 @@ class DirectionalCoupler(Waveguide):
 
         sbend3 = sbend.Sbend(
             xlength=self.xlength_sbend,
-            ylength=self.ylength_sbend,
-            zlength=self.zlength,
-            x=self.x + int(self.xlength_sbend * 1.5) + self.xlength_rectangle,
-            y=self.y + int(self.gap + self.ylength_sbend * 1.5),
-            z=self.z + int(self.zlength / 2),
+            ylength=self.ylength,
+            zlength=self.zlength_sbend,
+            x=self.x + int(self.gap + self.xlength_sbend * 1.5),
+            y=self.y + int(self.ylength / 2),
+            z=self.z + int(self.zlength_sbend * 1.5) + self.zlength_rectangle,
             direction=1,
             width=self.width,
             refractive_index=self.refractive_index,
@@ -86,24 +84,24 @@ class DirectionalCoupler(Waveguide):
 
         sbend4 = sbend.Sbend(
             xlength=self.xlength_sbend,
-            ylength=self.ylength_sbend,
-            zlength=self.zlength,
-            x=self.x + int(self.xlength_sbend * 1.5) + self.xlength_rectangle,
-            y=self.y + int(self.ylength_sbend / 2),
-            z=self.z + int(self.zlength / 2),
+            ylength=self.ylength,
+            zlength=self.zlength_sbend,
+            x=self.x + int(self.xlength_sbend / 2),
+            y=self.y + int(self.ylength / 2),
+            z=self.z + int(self.zlength_sbend * 1.5) + self.zlength_rectangle,
             direction=-1,
             width=self.width,
             refractive_index=self.refractive_index,
             name="%s_sbend4" % self.name,
             grid=self.grid
         )
-        self.xlength_rectangle += 2  # +4防止出现空隙
+        self.zlength_rectangle += 2  # +4防止出现空隙
         wg1 = Waveguide(
-            xlength=self.xlength_rectangle,
-            ylength=self.width,
-            zlength=self.zlength,
-            x=self.x_center,
-            y=self.y + self.ylength_sbend - int(self.width / 2),
+            xlength=self.width,
+            ylength=self.ylength,
+            zlength=self.zlength_rectangle,
+            x=self.x + self.xlength_sbend - int(self.width / 2),
+            y=self.y_center,
             z=self.z_center,
             width=self.width,
             refractive_index=self.refractive_index,
@@ -112,11 +110,11 @@ class DirectionalCoupler(Waveguide):
         )
 
         wg2 = Waveguide(
-            xlength=self.xlength_rectangle,
-            ylength=self.width,
-            zlength=self.zlength,
-            x=self.x_center,
-            y=self.y + self.ylength_sbend + self.gap + int(self.width / 2),
+            xlength=self.width,
+            ylength=self.ylength,
+            zlength=self.zlength_rectangle,
+            x=self.x + self.xlength_sbend + self.gap + int(self.width / 2),
+            y=self.y_center,
             z=self.z_center,
             width=self.width,
             refractive_index=self.refractive_index,

@@ -110,9 +110,9 @@ class Grid:
             polarization: str = "x",
             pulse_length: float = 39e-15,
             offset: float = 112e-15,
-            x: int or float = 5,
-            y: int or float = 5,
-            z: int or float = 5,
+            x: int or float = None,
+            y: int or float = None,
+            z: int or float = None,
             xlength: int or float = 5,
             ylength: int or float = 5,
             zlength: int or float = 5,
@@ -185,6 +185,13 @@ class Grid:
                                                                                                                 y_end,
                                                                                                                 z_end],
                                                                                                                grid_spacing=self._grid.grid_spacing)
+        if x == None:
+            # 如果没设置x，自动选仿真区域中心If x not set, choose the center of grid
+            x = int(self._grid_xlength / 2)
+        if y == None:
+            y = int(self._grid_ylength / 2)
+        if z == None:
+            z = int(self._grid_zlength / 2)
         x = x - xlength // 2
         y = y - ylength // 2
         z = z - zlength // 2
@@ -225,7 +232,7 @@ class Grid:
                                                                                                  offset=offset,
                                                                                                  waveform=waveform,
                                                                                                  polarization=polarization)
-            
+
 
         elif source_type == "planesource":
             # 创建一个面光源

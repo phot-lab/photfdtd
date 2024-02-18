@@ -3,26 +3,24 @@ from .waveguide import Waveguide
 
 
 class Arc(Waveguide):
-    """四分之一圆环
+    """圆弧
     outer_radius: 外环半径
-    zlength: 波导厚度
+    length: 波导y厚度
     x,y,z: 圆心位置
     width: 波导宽度
     refractive_index:折射率
     name: 名称
-    direction: 等于1，2，3，4，分别表示四个方向
     angle_phi: 与x轴正方向夹角, 单位: 角度
     angle_psi: 张角
     background_index: 环境折射率
     angle_to_radian: bool: True表示从角度转弧度
     """
 
-    # TODO：现在只有x-y平面
     # FIXME: 在圆弧跨越x=0时存在问题
     def __init__(
             self,
             outer_radius: int or float = 60,
-            zlength: int or float = 20,
+            ylength: int or float = 20,
             x: int or float = None,
             y: int or float = None,
             z: int or float = None,
@@ -32,7 +30,7 @@ class Arc(Waveguide):
             angle_phi: float = 0,
             angle_psi: float = 0,
             angle_to_radian: bool = True,
-            grid=None
+            grid=None,
     ) -> None:
         angle_phi = angle_phi % 360
         if angle_phi < 0:
@@ -46,31 +44,35 @@ class Arc(Waveguide):
         else:
             self.phi = angle_phi
             self.psi = angle_psi
-        super().__init__(xlength=outer_radius, ylength=outer_radius, zlength=zlength, x=x,
+
+        super().__init__(xlength=outer_radius, ylength=ylength, zlength=outer_radius, x=x,
                          y=y, z=z, width=width, name=name, refractive_index=refractive_index, reset_xyz=False,
                          grid=grid)
 
 
     def _compute_permittivity(self):
         # 这里+2的原因：稍微扩大一点矩阵的大小，可以保证水平和竖直方向最边上的点不被丢出
-        x = y = np.linspace(1, 2 * self.outer_radius + 2, 2 * self.outer_radius + 2)
-        X, Y = np.meshgrid(x, y, indexing="ij")  # indexing = 'ij'很重要
+        z = x = np.linspace(1, 2 * self.outer_radius + 2, 2 * self.outer_radius + 2)
+        Z, X = np.meshgrid(z, x, indexing="ij")  # indexing = 'ij'很重要
 
-        m = (X - self.outer_radius - 1) ** 2 + (Y - self.outer_radius - 1) ** 2 >= (self.outer_radius - self.width) ** 2
-        m1 = (X - self.outer_radius - 1) ** 2 + (Y - self.outer_radius - 1) ** 2 <= self.outer_radius ** 2
-
+        m = (Z - self.outer_radius - 1) ** 2 + (X - self.outer_radius - 1) ** 2 >= (self.outer_radius - self.width) ** 2
+        m1 = (Z - self.outer_radius - 1) ** 2 + (X - self.outer_radius - 1) ** 2 <= self.outer_radius ** 2
+        m = m == m1
         # 以中心点为圆心创建角度矩阵
-        radient_matrix = np.arctan2((Y - self.outer_radius - 1), (X - self.outer_radius - 1))
+        radient_matrix = np.arctan2((X - self.outer_radius - 1), (Z - self.outer_radius - 1))
         # 将负角度变为正角度
         radient_matrix[radient_matrix < 0] = 2 * np.pi + radient_matrix[radient_matrix < 0]
 
         m2 = radient_matrix >= self.phi
-        m3 = radient_matrix <= self.phi + self.psi
-
-        for i in range(2 * self.outer_radius + 2):
-            for j in range(2 * self.outer_radius + 2):
-                if m1[i, j] != m[i, j] or m2[i, j] != m[i, j] or m3[i, j] != m[i, j]:
-                    m[i, j] = 0
+        m3 = radient_matrix <= (self.phi + self.psi) % (2 * np.pi)
+        if (self.phi + self.psi) // (2 * np.pi) == 0:
+            m = (m2 == m3) & m
+        else:
+            m = (m2 + m3) & m
+        # for i in range(2 * self.outer_radius + 2):
+        #     for j in range(2 * self.outer_radius + 2):
+        #         if m1[i, j] != m[i, j] or m2[i, j] != m[i, j] or m3[i, j] != m[i, j]:
+        #             m[i, j] = 0
 
         def remove_zero_rows_columns(matrix):
             # 删除矩阵所有元素都为0的行和列
@@ -89,35 +91,25 @@ class Arc(Waveguide):
 
         m_removed, row_indices, col_indices = remove_zero_rows_columns(m)
         try:
-            self.x += row_indices[0][0] - self.outer_radius
-            self.y += col_indices[0][0] - self.outer_radius
+            self.z += row_indices[0][0] - self.outer_radius
+            self.x += col_indices[0][0] - self.outer_radius
         except:
-            self.x += row_indices[0] - self.outer_radius
-            self.y += col_indices[0] - self.outer_radius
+            self.z += row_indices[0] - self.outer_radius
+            self.x += col_indices[0] - self.outer_radius
 
         m_removed = m_removed.astype(float)
         m_removed[m_removed == 1] *= self.refractive_index ** 2
         m_removed[m_removed == 0] = self.background_index ** 2
-        self.permittivity = m_removed[:, :, None]
+        self.zlength = np.shape(m_removed)[0]
+        self.xlength = np.shape(m_removed)[1]
 
-        self.xlength = np.shape(m_removed)[0]
-        self.ylength = np.shape(m_removed)[1]
+        m_broadcast = np.empty((self.xlength, 1, self.zlength))
+        m_broadcast[:,0,:] = m_removed[:, :].T
+        self.permittivity = np.ones((self.xlength, self.ylength, self.zlength))
+        self.permittivity *= m_broadcast
+        if self.grid.background_index != 1:
+            self.permittivity[self.permittivity == 1] = self.grid.background_index
+        pass
 
-        # self.permittivity = np.zeros((m.shape[0], m.shape[1], 1))
-        # self.permittivity[:, :, 0] = m * self.refractive_index ** 2
-        # # Remove all-zero slices, xx, yy, zz represents the indexes that be keeped.
-        # self.permittivity, xx, yy, zz = super().remove_zero_slices(self.permittivity)
-        #
-        # self.x = self.x_center + (xx[0] - self.outer_radius)
-        # self.y = self.y_center + (yy[0] - self.outer_radius)
-        #
-        # if self.phi:
-        #     super()._rotate_Z(angle=self.phi, center=[-self.outer_radius + self.permittivity.shape[0], 0, 0],
-        #                       angle_to_radian=False)
-        #     self.x = self.x_center + self.x_changed
-        #     self.y = self.y_center + self.y_changed
-        #
-        # self.permittivity[self.permittivity == 0] = self.background_index ** 2
-        # self.xlength = self.permittivity.shape[0]
-        # self.ylength = self.permittivity.shape[1]
-        # self.zlength = self.permittivity.shape[2]
+
+
