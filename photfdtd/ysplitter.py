@@ -91,6 +91,7 @@ class Taper(Waveguide):
 
 class Ysplitter(Waveguide):
     """
+    Ysplitter or Ybranch, cascaded by a Taper and 2 Sbends
     Y分支波导，由一段直波导，一个梯形taper，两个S波导组成
     x, y, z：taper中心坐标
     xlength: 区域x方向全长,
@@ -102,7 +103,9 @@ class Ysplitter(Waveguide):
     refractive_index：折射率
     zlength_waveguide: 矩形区域z方向长度，
     xlength_taper：taper x方向长度,
+    xlength_sbend：Sbend x方向长度,
     zlength_taper：taper z方向长度,
+    zlength_sbend：Sbend z方向长度,
     width_sbend: sbend的波导宽度,
     """
 
@@ -118,25 +121,37 @@ class Ysplitter(Waveguide):
             width: int or float = 20,
             name: str = "ysplitter",
             refractive_index: float = 3.47,
-            zlength_waveguide: int or float = 80,
             xlength_taper: int or float = 40,
+            xlength_sbend: int or float = None,
             zlength_taper: int or float = 40,
+            zlength_waveguide: int or float = 80,
+            zlength_sbend: int or float = None,
             width_sbend: int or float = 20,
             grid=None
     ):
-        xlength, ylength, zlength, width, zlength_waveguide, zlength_taper, xlength_taper, width_sbend = \
+        xlength, ylength, zlength, width, zlength_waveguide, zlength_taper, xlength_taper, width_sbend, xlength_sbend, zlength_sbend = \
             grid._handle_unit(
-                [xlength, ylength, zlength, width, zlength_waveguide, zlength_taper, xlength_taper, width_sbend],
+                [xlength, ylength, zlength, width, zlength_waveguide, zlength_taper, xlength_taper, width_sbend, xlength_sbend, zlength_sbend],
                 grid_spacing=grid._grid.grid_spacing)
         self.direction = direction
         self.zlength_waveguide = zlength_waveguide
         self.zlength_taper = zlength_taper
         self.xlength_taper = xlength_taper
-        self.zlength_sbend = zlength - zlength_waveguide - zlength_taper
-        self.xlength_sbend = int(xlength / 2 - xlength_taper / 2 + width_sbend + 0.5)
+
+        if zlength_sbend is not None:
+            self.zlength_sbend = zlength_sbend
+            zlength = self.zlength_waveguide + self.zlength_taper + self.zlength_sbend
+        else:
+            self.zlength_sbend = zlength - zlength_waveguide - zlength_taper
+        if xlength_sbend is not None:
+            self.xlength_sbend = xlength_sbend
+            xlength = self.xlength_sbend * 2 - width_sbend * 2 + xlength_taper
+        else:
+            self.xlength_sbend = int(xlength / 2 - xlength_taper / 2 + width_sbend + 0.5)
         self.width_sbend = width_sbend
 
-        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index, grid=grid, reset_xyz=False)
+        super().__init__(xlength, ylength, zlength, x, y, z,
+                         width, name, refractive_index, grid=grid, reset_xyz=False)
 
     def _set_objects(self):
 

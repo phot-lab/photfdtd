@@ -122,9 +122,10 @@ class Grid:
             x_end: int or float = None,
             y_end: int or float = None,
             z_end: int or float = None,
+            axis: str = "y"
     ):
         """
-        :param source_type: 光源种类：点或线或面
+        :param source_type: 光源种类：点或线或面 "pointsource", "linesource", "planesource"
         :param wavelength: 波长(m)
         :param period:周期
         :param amplitude: 振幅(V/m)
@@ -137,12 +138,10 @@ class Grid:
         :param pulse_type: 脉冲类型 "gaussian" 或 "hanning" 或 "none"
         :param pulse_length: 脉宽(s)（仅用于高斯脉冲）
         :param offset: 脉冲中心(s)（仅用于高斯脉冲）
-        :param x: 位置坐标（中心）
-        :param y:
-        :param z:
-        :param xlength:
-        :param ylength:
-        :param zlength:
+        @param x_start, y_start, z_start, x_end, y_end, z_end: parameters for 'linesource'
+        @param x, y, z: center position, parameters for 'linesource' & pointsource
+        @param xlength, ylength, zlength: cross length, parameters for '"planesource"
+        @param axis: "x", "y", "z", only for "planesource"
         """
 
         # if pml_width_x != 0:
@@ -236,24 +235,48 @@ class Grid:
 
         elif source_type == "planesource":
             # 创建一个面光源
-            self._grid[x: x + xlength, y: y + ylength, z: z + zlength] = fdtd.PlaneSource(
-                period=period, amplitude=amplitude, phase_shift=phase_shift, name=name, polarization=polarization
-            )
+            if axis == "x":
+                self._grid[x: x,y: y + ylength,z: z + zlength] = \
+                    fdtd.PlaneSource(period=period, amplitude=amplitude, phase_shift=phase_shift, name=name,
+                                     polarization=polarization)
+            elif axis == "y":
+                self._grid[x: x + xlength, y: y, z: z + zlength] = \
+                    fdtd.PlaneSource(period=period, amplitude=amplitude, phase_shift=phase_shift, name=name,
+                                     polarization=polarization)
+            elif axis == "z":
+                self._grid[x: x + xlength, y: y + ylength, z: z] = \
+                    fdtd.PlaneSource(period=period, amplitude=amplitude, phase_shift=phase_shift, name=name,
+                                     polarization=polarization)
 
         else:
             raise ValueError("Invalid source type.")
 
     def set_detector(self,
                      detector_type: str = 'linedetector',
+                     x_start: int or float = None,
+                     y_start: int or float = None,
+                     z_start: int or float = None,
+                     x_end: int or float = None,
+                     y_end: int or float = None,
+                     z_end: int or float = None,
                      x: int or float = 5,
                      y: int or float = 5,
                      z: int or float = 5,
                      xlength: int or float = 5,
                      ylength: int or float = 5,
                      zlength: int or float = 1,
-                     name: str = 'detector'
+                     name: str = 'detector',
+                     axis: str = "y",
                      ):
-
+        """
+        Adding detectors
+        @param detector_type: 'blockdetector' or 'linedetector'
+        @param x_start, y_start, z_start, x_end, y_end, z_end: parameters for 'linedetector'
+        @param x, y, z: center position, parameters for 'blockdetector'
+        @param xlength, ylength, zlength: cross length, parameters for 'blockdetector'
+        @param name:
+        @param axis: "x", "y", "z", only for blockdetector
+        """
         xlength, ylength, zlength, x, y, z = self._handle_unit([xlength, ylength, zlength, x, y, z],
                                                                grid_spacing=self._grid.grid_spacing)
         x = x - xlength // 2
@@ -261,14 +284,28 @@ class Grid:
         z = z - zlength // 2
         # 设置监视器
         if detector_type == 'linedetector':
-            self._grid[x: x + xlength,
-            y: y + ylength,
-            z: z + zlength] = fdtd.LineDetector(name=name)
+            if not x_start:
+                x_start = x
+                y_start = y
+                z_start = z
+                x_end = x + xlength
+                y_end = y + ylength
+                z_end = z + zlength
+            self._grid[x_start: x_end, y_start: y_end, z_start: z_end] = fdtd.LineDetector(name=name)
 
         elif detector_type == 'blockdetector':
-            self._grid[x: x + xlength,
-            y: y + ylength,
-            z: z + zlength] = fdtd.BlockDetector(name=name)
+            if axis == "x":
+                self._grid[x: x,
+                y: y + ylength,
+                z: z + zlength] = fdtd.BlockDetector(name=name)
+            elif axis == "y":
+                self._grid[x: x + xlength,
+                y: y,
+                z: z + zlength] = fdtd.BlockDetector(name=name)
+            elif axis == "z":
+                self._grid[x: x + xlength,
+                y: y + ylength,
+                z: z] = fdtd.BlockDetector(name=name)
         else:
             raise RuntimeError("Invalid detector type.")
 

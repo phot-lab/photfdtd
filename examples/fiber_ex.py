@@ -15,8 +15,8 @@ if __name__ == "__main__":
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=200 * 200e-9, grid_ylength=200 * 200e-9, grid_zlength=1, grid_spacing=200e-9,
                 foldername="test_fiber", permittivity=background_index ** 2)
-    fiber = Fiber(length=1 * 200e-9, radius=[20 * 200e-9], refractive_index=[1.4504], name='fiber', axis='z',
-                  grid=grid)
+    fiber = Fiber(length=1 * 200e-9, radius=[20 * 200e-9, 40 * 200e-9], refractive_index=[1.4504, 1.4555],
+                  name='fiber', axis='z', grid=grid)
 
     # 往 grid 里添加fiber
     grid.add_object(fiber)
@@ -38,9 +38,7 @@ if __name__ == "__main__":
                                 x_boundary_low="pml", y_boundary_low="pml",
                                 x_boundary_high="pml",
                                 y_boundary_high="pml",
-                                x_thickness_low=15,
-                                y_thickness_low=15, x_thickness_high=15,
-                                y_thickness_high=15)
+                                background_index=background_index)
 
     # Solve.save_mode(solve.filepath, data)
 

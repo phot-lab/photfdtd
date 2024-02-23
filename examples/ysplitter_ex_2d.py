@@ -12,6 +12,7 @@ if __name__ == "__main__":
     ysplitter = Ysplitter(xlength=200, ylength=1, zlength=250, direction=1, width=20,
                           name="ysplitter",
                           refractive_index=3.47, zlength_waveguide=80, xlength_taper=40, zlength_taper=40,
+                          zlength_sbend=80,
                           width_sbend=20, grid=grid)
 
     # 设置光源

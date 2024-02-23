@@ -5,11 +5,11 @@ from .waveguide import Waveguide
 class Fiber(Waveguide):
     """光纤
     radius: list，表示从里到外每一层的半径
+    refractive_index: list，表示从里到外每一层的折射率
     length: 长度
     x,y,z: 位置坐标（中心）
-    refractive_index: list，表示从里到外每一层的折射率
     name: 名称
-    axis: 'x', 'y' 光纤沿哪个轴
+    axis: 'x', 'y', "z" 光纤沿哪个轴
     background_index：背景折射率
     #TODO: 给弯曲结构加上抗锯齿弯曲边界?
     """

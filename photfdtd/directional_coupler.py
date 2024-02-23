@@ -12,6 +12,8 @@ class DirectionalCoupler(Waveguide):
     refractive_index:折射率
     gap:直波导间距
     xlength_waveguide：直波导长度(耦合长度)
+    zlength_sbend: Sbend z方向长度,
+    xlength_sbend: Sbend x方向长度,
     background_index：环境折射率"""
 
     def __init__(
@@ -26,15 +28,25 @@ class DirectionalCoupler(Waveguide):
             name: str = "dc",
             refractive_index: float = 3.47,
             zlength_rectangle: int or float = 50,
+            zlength_sbend: int or float = None,
+            xlength_sbend: int or float = None,
             gap: int or float = 10,
             grid=None
     ) -> None:
-        xlength, ylength, zlength, width, zlength_rectangle, gap = grid._handle_unit([xlength, ylength, zlength, width,
-                                                                                      zlength_rectangle, gap],
+        xlength, ylength, zlength, width, zlength_rectangle, gap, zlength_sbend, xlength_sbend = \
+            grid._handle_unit([xlength, ylength, zlength, width, zlength_rectangle, gap, zlength_sbend, xlength_sbend],
                                                                                      grid_spacing=grid._grid.grid_spacing)
         self.zlength_rectangle = zlength_rectangle
-        self.xlength_sbend = int((xlength - gap) / 2 + 0.5)
-        self.zlength_sbend = int((zlength - zlength_rectangle) / 2 + 0.5)
+        if xlength_sbend is not None:
+            self.xlength_sbend = xlength_sbend
+            xlength = self.xlength_sbend * 2 + gap
+        else:
+            self.xlength_sbend = int((xlength - gap) / 2 + 0.5)
+        if zlength_sbend is not None:
+            self.zlength_sbend = zlength_sbend
+            zlength = self.zlength_sbend * 2 + self.zlength_rectangle
+        else:
+            self.zlength_sbend = int((zlength - zlength_rectangle) / 2 + 0.5)
         self.gap = gap
         super().__init__(xlength=xlength, ylength=ylength, zlength=zlength, x=x, y=y, z=z, width=width,
                          name=name, refractive_index=refractive_index, grid=grid)
