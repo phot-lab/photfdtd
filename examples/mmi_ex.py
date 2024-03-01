@@ -28,7 +28,7 @@ if __name__ == "__main__":
         background_index=background_index
     )
 
-    grid = Grid(grid_xlength=120, grid_ylength=80, grid_zlength=30, grid_spacing=grid_spacing, total_time=500,
+    grid = Grid(grid_xlength=120, grid_ylength=80, grid_zlength=30, grid_spacing=20e-9, total_time=500,
                 pml_width_x=10,
                 pml_width_y=5, pml_width_z=1, foldername="test_mmi",
                 permittivity=background_index ** 2)
@@ -103,10 +103,9 @@ if __name__ == "__main__":
     grid.save_simulation()
 
     # 绘制任意截面场图
-    grid.visualize(x=20, showEnergy=True, show=True, save=True)
-    grid.visualize(x=60, showEnergy=True, show=True, save=True)
-    grid.visualize(x=100, showEnergy=True, show=True, save=True)
-    grid.visualize(z=15, showEnergy=True, show=True, save=True)
+    grid.save_fig(axis="x", axis_number=20, show_energy=True, show_structure=True)
+    grid.save_fig(axis="x", axis_number=100, show_energy=True, show_structure=True)
+    grid.save_fig(axis="z", axis_number=15, show_energy=True, show_structure=True)
 
     # 读取仿真结果
     data = grid.read_simulation(folder=grid.folder)
