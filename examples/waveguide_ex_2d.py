@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     # 设置光源
     grid.set_source(source_type="linesource", period=1550e-9 / constants.c, name="source", x=100, y=100, z=0, xlength=1,
-                    ylength=waveguide.ylength + 20, zlength=0, polarization="y")
+                    ylength=waveguide.ylength + 20, zlength=0, polarization="x")
 
     # 设置监视器
     # grid.set_detector(detector_type="blockdetector",
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     # 也可以读取仿真结果
     # data = grid.read_simulation(folder=grid.folder)
     # 如果设置了监视器，绘制监视器范围内光场分布
-    Grid.plot_field(grid=grid, field="E", field_axis="y", axis="z", axis_index=0, folder=grid.folder,
+    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="z", axis_index=0, folder=grid.folder,
                     vmax=1)
 
 

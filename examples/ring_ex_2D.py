@@ -7,17 +7,8 @@ if __name__ == "__main__":
     grid = Grid(grid_xlength=350, grid_ylength=1, grid_zlength=350, grid_spacing=20e-9,
                 permittivity=background_index ** 2, foldername="test_ring_2D")
 
-    ring = Ring(
-        outer_radius=100 * 20e-9,
-        ylength=1 * 20e-9,
-        width=10 * 20e-9,
-        length=50 * 20e-9,
-        gap=5 * 20e-9,
-        name="ring",
-        refractive_index=3.47,
-        direction=1,
-        grid=grid
-    )
+    ring = Ring(outer_radius=100 * 20e-9, ylength=1 * 20e-9, width_s=10 * 40e-9,length=50 * 20e-9, gap=5 * 20e-9,
+                name="ring", refractive_index=3.47, direction=1, grid=grid)
 
     grid.set_source(source_type="linesource", period=1550e-9 / 299792458, pulse_type="None", x=1.3e-6, y=0, z=1e-6,
                     xlength=21, ylength=1, zlength=1, polarization="x")

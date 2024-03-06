@@ -15,12 +15,12 @@ if __name__ == "__main__":
         xlength=100 * 20e-9, ylength=1, zlength=150 * 20e-9,
         direction=1, width=20 * 20e-9, refractive_index=3.47,
         name="sbend",
-        grid=grid
+        grid=grid,
     )
 
     # 设置光源
-    grid.set_source(source_type="linesource", period=1550e-9 / constants.c, name="source",x=2e-6, y=0, z=1e-6,
-                    xlength=20 * 20e-9, ylength=1, zlength=1, polarization="x")
+    # grid.set_source(source_type="linesource", period=1550e-9 / constants.c, name="source",x=2e-6, y=0, z=1e-6,
+    #                 xlength=20 * 20e-9, ylength=1, zlength=1, polarization="x")
 
     # 设置监视器
     # grid.set_detector(detector_type="blockdetector",

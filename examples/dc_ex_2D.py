@@ -4,23 +4,23 @@ from photfdtd import DirectionalCoupler, Grid, Solve
 if __name__ == "__main__":
     background_index = 1.455
 
-    grid = Grid(grid_xlength=500 * 20e-9, grid_ylength=1, grid_zlength=600 * 20e-9, grid_spacing=20e-9,
+    grid = Grid(grid_xlength=8e-6, grid_ylength=1, grid_zlength=12e-6, grid_spacing=20e-9,
                 permittivity=background_index ** 2, foldername="test_dc_2D")
     dc = DirectionalCoupler(
-        xlength_sbend=90 * 20e-9,
-        zlength_sbend=150 * 20e-9,
+        xlength_sbend=1.8e-6,
+        zlength_sbend=3e-6,
         ylength=1,
-        zlength=500 * 20e-9,
-        width=500e-9,
+        width_1=0.6e-6,
+        width_2=0.4e-6,
         name="dc",
         refractive_index=3.47,
-        zlength_rectangle=200 * 20e-9,
-        gap=20,
+        zlength_rectangle=4e-6,
+        gap=0.6e-6,
         grid=grid
     )
     #
-    # grid.set_source(source_type="linesource", period=1550e-9 / 299792458, x=0.99e-6, y=0, z=2.5e-6, xlength=0,
-    #                 zlength=dc.width + 8, ylength=1 * 20e-9, polarization="x")
+    # grid.set_source(source_type="linesource", period=1550e-9 / 299792458, x=5.7e-6, y=0, z=0.9e-6, xlength=0.5e-6,
+    #                 zlength=1, ylength=1 * 20e-9, polarization="x")
 
     # grid.set_detector(detector_type='blockdetector',
     #                   x=175, xlength=0,

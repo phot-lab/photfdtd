@@ -28,7 +28,7 @@ class Waveguide:
             x: int or float = None,
             y: int or float = None,
             z: int or float = None,
-            width: int or float = 10,
+            width: int or float = None,
             name: str = "waveguide",
             refractive_index: float = None,
             material: str = "",
@@ -58,7 +58,6 @@ class Waveguide:
             self.x = x
             self.y = y
             self.z = z
-
         self.width = width
         self.name = name
         self.refractive_index = refractive_index

@@ -109,7 +109,7 @@ class Grid:
             hanning_dt: float = 10.0,
             polarization: str = "x",
             pulse_length: float = 39e-15,
-            offset: float = 112e-15,
+            offset: float = 50e-15,
             x: int or float = None,
             y: int or float = None,
             z: int or float = None,
@@ -135,7 +135,7 @@ class Grid:
         :param cycle: 汉宁窗脉冲的周期（仅使用汉宁hanning脉冲时有用）
         :param hanning_dt: 汉宁窗宽度（仅使用汉宁hanning脉冲时有用）
         :param polarization: 偏振
-        :param pulse_type: 脉冲类型 "gaussian" 或 "hanning" 或 "none"
+        :param pulse_type: 脉冲类型 "gaussian" 或 "hanning" 或 "CW"
         :param pulse_length: 脉宽(s)（仅用于高斯脉冲）
         :param offset: 脉冲中心(s)（仅用于高斯脉冲）
         @param x_start, y_start, z_start, x_end, y_end, z_end: parameters for 'linesource'
@@ -153,6 +153,8 @@ class Grid:
         # if pml_width_z != 0:
         #     grid[:, :, 0:pml_width_z] = fdtd.PML(name="pml_zlow")
         #     grid[:, :, -pml_width_z:] = fdtd.PML(name="pml_zhigh")
+        if pulse_type == "cw" or pulse_type == "CW" or pulse_type == "cW" or pulse_type == "Cw":
+            pulse_type = "none"
 
         if period is None:
             if wavelength is not None:
@@ -378,7 +380,7 @@ class Grid:
         if animate == False:
             if not isinstance(time, int):
                 time = self._grid._handle_time(time)
-            print("The total time for FDTD simulation in timesteps is %i" % time)
+            print("The total time for FDTD simulation is %i timesteps or %f fs." % (time, time * self._grid.time_step * 1e15))
             self._grid.run(total_time=time)
         # elif animate:
         #     for i in range(self._total_time):
@@ -657,17 +659,20 @@ class Grid:
 
     @staticmethod
     def plot_field(grid=None, axis="z", axis_index=0, field="E", field_axis=None, folder="", cmap="jet",
-                   show_geometry=True, vmax=None):
+                   show_geometry=True, vmax=None, vmin=None):
         """
         绘制当前时刻场分布（不需要监视器）
         @param show_geometry: bool 是否绘制波导结构
         @param grid: grid
         @param field: "E"或"H"
-        @param field_axis: {x,y,z,None} of E or H, if None, the amplitude of E or H will be plotted
+        @param field_axis: {x,y,z,None} of E or H, if None, the energy intensity of E or H will be plotted
         @param axis: "x"或"y"或"z"表示绘制哪个截面
         @param axis_index: 例如绘制z=0截面 ，则axis设为"z"而axis_index为0
         @param folder: 保存图片的地址
         @param cmap: matplotlib.pyplot.imshow(cmap)
+        @param vmax: 颜色条的最大、最小值
+        @param vmin:
+
         """
         if not field_axis:
             title = "%s intensity" % field
@@ -677,7 +682,7 @@ class Grid:
         grid = grid._grid
         if field == "E":
             if not field_axis:
-                # 能量场
+                # 能量
                 if axis == "z":
                     field = grid.E[:, :, axis_index, 0] ** 2 + grid.E[:, :, axis_index, 1] ** 2 + grid.E[:, :,
                                                                                                   axis_index, 2] ** 2
@@ -714,14 +719,18 @@ class Grid:
                 elif axis == "x":
                     field = grid.H[axis_index, :, :, ord(field_axis) - 120]
         if not vmax:
-            vmax = max(abs(field.min().item()), abs(field.max().item()))
+            # vmax = max(abs(field.min().item()), abs(field.max().item()))
+            vmax = field.max().item()
+        if not vmin:
+            vmin = field.min().item()
 
         # 创建颜色图
         plt.figure()
 
-        plt.imshow(np.transpose(field), vmin=-vmax, vmax=vmax, cmap=cmap,
-                   extent=[0, field.shape[0] * grid.grid_spacing * 1e6, 0, field.shape[1] * grid.grid_spacing * 1e6],
-                   origin="lower")  # cmap 可以选择不同的颜色映射
+        plt.imshow(np.transpose(field), vmin=vmin, vmax=vmax, cmap=cmap,
+                   extent=[0, field.shape[0] * grid.grid_spacing * 1e6, 0,
+                           field.shape[1] * grid.grid_spacing * 1e6],
+                   origin="lower")# cmap 可以选择不同的颜色映射
         cbar = plt.colorbar()
         if show_geometry:
 

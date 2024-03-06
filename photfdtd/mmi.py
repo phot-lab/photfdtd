@@ -33,7 +33,7 @@ class Mmi(Waveguide):
             width_port: int or float= 25,
             n: int = 1,
             m: int = 2,
-            We: int or float= 56,
+            We: int or float= None,
             ln: int or float= 20,
             lm: int or float= 20,
             l_port: int or float= 0,
@@ -52,7 +52,10 @@ class Mmi(Waveguide):
         self.ln = ln
         self.lm = lm
         self.l_port = l_port
-        self.We = We
+        if not We:
+            self.We = xlength
+        else:
+            self.We = We
 
         super().__init__(xlength, ylength, zlength, x, y, z,
                          ylength, name, refractive_index, grid=grid, reset_xyz=False)
@@ -140,18 +143,9 @@ class Mmi(Waveguide):
         for i in range(self.n):
             if self.l_port:
                 print(1)
-                port = Taper(
-                    xlength=self.width_port,
-                    ylength=self.ylength,
-                    zlength=self.l_port,
-                    x=x_port_in[i],
-                    y=self.y,
-                    z=z_port_in[i],
-                    width=self.width_wg,
-                    name="%s_port_input%d" % (self.name, i),
-                    refractive_index=self.refractive_index,
-                    grid=self.grid
-                )
+                port = Taper(xlength=self.width_port, width=self.width_wg, ylength=self.ylength, zlength=self.l_port,
+                             x=x_port_in[i], y=self.y, z=z_port_in[i], name="%s_port_input%d" % (self.name, i),
+                             refractive_index=self.refractive_index, grid=self.grid)
                 ports_in[i] = port
             wg = Waveguide(
                 xlength=self.width_wg,
@@ -170,19 +164,10 @@ class Mmi(Waveguide):
 
         for i in range(self.m):
             if self.l_port:
-                port = Taper(
-                    xlength_high=self.width_wg,
-                    xlength_low=self.width_port,
-                    ylength=self.ylength,
-                    zlength=self.l_port,
-                    x=x_port_out[i],
-                    y=self.y,
-                    z=z_port_out[i],
-                    width=self.width_wg,
-                    name="%s_port_output%d" % (self.name, i),
-                    refractive_index=self.refractive_index,
-                    grid=self.grid
-                )
+                port = Taper(xlength_upper=self.width_wg, xlength_lower=self.width_port, width=self.width_wg,
+                             ylength=self.ylength, zlength=self.l_port, x=x_port_out[i], y=self.y, z=z_port_out[i],
+                             name="%s_port_output%d" % (self.name, i), refractive_index=self.refractive_index,
+                             grid=self.grid)
                 ports_out[i] = port
             wg = Waveguide(
                 xlength=self.width_wg,

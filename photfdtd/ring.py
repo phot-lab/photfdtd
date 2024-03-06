@@ -23,7 +23,8 @@ class Ring(Waveguide):
             x: int or float = None,
             y: int or float = None,
             z: int or float = None,
-            width: int or float = 20,
+            width_s: int or float = 20,
+            width_r: int or float = None,
             length: int or float = 0,
             gap: int or float = 5,
             name: str = "ring",
@@ -31,16 +32,19 @@ class Ring(Waveguide):
             direction: int = 1,
             grid=None
     ) -> None:
-        outer_radius, ylength, width, length, gap = grid._handle_unit([outer_radius, ylength, width, length, gap],
-                                                                      grid_spacing=grid._grid.grid_spacing)
+        outer_radius, ylength, width_s, width_r,  length, gap = grid._handle_unit([outer_radius, ylength, width_s, width_r, length, gap],
+                                                                        grid_spacing=grid._grid.grid_spacing)
         self.outer_r = outer_radius
         self.length = length
         self.gap = gap
         self.direction = direction
         zlength = self.outer_r * 2 + self.length
         xlength = self.outer_r * 2
-
-        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index, grid=grid, reset_xyz=False)
+        if not width_r:
+            self.width_r = width_s
+        else:
+            self.width_r = width_r
+        super().__init__(xlength, ylength, zlength, x, y, z, width_s, name, refractive_index, grid=grid, reset_xyz=False)
 
     def _compute_permittivity(self):
         # y = np.linspace(1, 2 * self.outer_r, 2 * self.outer_r)
@@ -50,35 +54,35 @@ class Ring(Waveguide):
         #
 
         delta_z = int(np.round(self.length / 2))
-        arc1 = Arc(outer_radius=self.outer_r, ylength=self.ylength, width=self.width,
-                   x=self.x, y=self.y,z=self.z - delta_z,refractive_index=self.refractive_index,
-                   name="%s_arc1" % self.name, angle_phi=90, angle_psi=180, grid=self.grid)
-        arc2 = Arc(outer_radius=self.outer_r, ylength=self.ylength, width=self.width,
-                   x=self.x, y=self.y, z=self.z + delta_z, refractive_index=self.refractive_index,
-                   name="%s_arc3" % self.name, angle_phi=270, angle_psi=180, grid=self.grid)
+        arc1 = Arc(outer_radius=self.outer_r, ylength=self.ylength, width=self.width_r,
+                   x=self.x, y=self.y,z=self.z + delta_z,refractive_index=self.refractive_index,
+                   name="%s_arc1" % self.name, angle_phi=0, angle_psi=180, grid=self.grid)
+        arc2 = Arc(outer_radius=self.outer_r, ylength=self.ylength, width=self.width_r,
+                   x=self.x, y=self.y, z=self.z - delta_z, refractive_index=self.refractive_index,
+                   name="%s_arc3" % self.name, angle_phi=180, angle_psi=180, grid=self.grid)
         self._internal_objects = [arc1, arc2]
         if self.length > 0:
             wg3 = Waveguide(
-                xlength=self.width,
+                xlength=self.width_r,
                 ylength=self.ylength,
                 zlength=self.length,
-                x=self.x - self.outer_r + int(self.width / 2),
+                x=self.x - self.outer_r + int(self.width_r / 2),
                 y=self.y,
                 z=self.z,
-                width=self.width,
+                width=self.width_r,
                 name="%s_waveguide3" % self.name,
                 refractive_index=self.refractive_index,
                 grid=self.grid
             )
 
             wg4 = Waveguide(
-                xlength=self.width,
+                xlength=self.width_r,
                 ylength=self.ylength,
                 zlength=self.length,
-                x=self.x + self.outer_r - int(self.width / 2),
+                x=self.x + self.outer_r - int(self.width_r / 2),
                 y=self.y,
                 z=self.z,
-                width=self.width,
+                width=self.width_r,
                 name="%s_waveguide4" % self.name,
                 refractive_index=self.refractive_index,
                 grid=self.grid

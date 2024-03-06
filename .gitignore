@@ -27,3 +27,4 @@ examples/*.png
 *.pdf
 /test_*/
 examples/test_*/
+*.rar

@@ -5,15 +5,13 @@ import numpy as np
 class Sbend(Waveguide):
     """
     s波导代码，继承自waveguide
-    xlength: x跨度
+    xlength: x跨度，+-号控制波导方向
     ylength: 厚度
     zlength: 长度
-    x,y,z: 中心坐标
-    direction:
+    x,y,z: 中心坐标 (若希望x,y,z为波导起始位置，把center_postion设为False)
     width：波导宽度
     refractive_index: 折射率
     grid: grid
-    direction: 1 or -1, 波导方向从左下到右上或~
     """
     # TODO: 像Rsoft里那样设置sbend。The settings of Sbend should be like that in Rsoft.
     def __init__(
@@ -27,11 +25,21 @@ class Sbend(Waveguide):
             width: int or float = 20,
             name: str = "sbend",
             refractive_index: float = 3.47,
-            direction: int = 1,
-            grid=None
+            grid=None,
+            center_postion: bool = True,
+            direction: int = None,
     ) -> None:
+        xlength, ylength, zlength, width, x, y, z = grid._handle_unit([xlength, ylength, zlength, width, x, y, z],
+                                                                      grid_spacing=grid._grid.grid_spacing)
+        if not center_postion:
+            x, y, z = x + xlength / 2 - width / 2, y, z + zlength / 2
+        if not direction:
+            if xlength < 0:
+                direction = -1
+            else:
+                direction = 1
         self.direction = direction
-        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index, grid=grid)
+        super().__init__(abs(xlength), ylength, zlength, x, y, z, width, name, refractive_index, grid=grid)
 
     def _compute_permittivity(self):
         """

@@ -4,7 +4,7 @@ from photfdtd import Waveguide, Arc, Grid, Solve, constants
 if __name__ == "__main__":
     background_index = 1.4
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=200, grid_ylength=1, grid_zlength=200, grid_spacing=20e-9,
+    grid = Grid(grid_xlength=300, grid_ylength=1, grid_zlength=300, grid_spacing=20e-9,
                 foldername="test_arc_2D",
                 permittivity=background_index ** 2, )
 
@@ -13,8 +13,8 @@ if __name__ == "__main__":
     #     xlength=45, ylength=20, zlength=1, x=80, y=150, z=0, refractive_index=3.47, name="Waveguide1",
     #     grid=grid
     # )
-    arc = Arc(outer_radius=60 * 20e-9, ylength=1, width=20, refractive_index=3.47, name="arc",
-              angle_phi=-90, angle_psi=180,
+    arc = Arc(outer_radius=2e-6, ylength=1, width=0.4e-6, refractive_index=3.47, name="arc",
+              angle_phi=0, angle_psi=90,
               grid=grid)
     # waveguide2 = Waveguide(
     #     xlength=20, ylength=40, zlength=1, x=150, y=80, z=0, refractive_index=3.47, name="Waveguide2",

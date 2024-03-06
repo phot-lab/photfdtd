@@ -53,7 +53,7 @@ class Arc(Waveguide):
     def _compute_permittivity(self):
         # 这里+2的原因：稍微扩大一点矩阵的大小，可以保证水平和竖直方向最边上的点不被丢出
         z = x = np.linspace(1, 2 * self.outer_radius + 2, 2 * self.outer_radius + 2)
-        Z, X = np.meshgrid(z, x, indexing="ij")  # indexing = 'ij'很重要
+        X, Z = np.meshgrid(x, z, indexing="ij")  # indexing = 'ij'很重要
 
         m = (Z - self.outer_radius - 1) ** 2 + (X - self.outer_radius - 1) ** 2 >= (self.outer_radius - self.width) ** 2
         m1 = (Z - self.outer_radius - 1) ** 2 + (X - self.outer_radius - 1) ** 2 <= self.outer_radius ** 2

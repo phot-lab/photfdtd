@@ -2,7 +2,7 @@ import utils
 from photfdtd import Mmi, Grid, Solve
 
 if __name__ == "__main__":
-    n = 3  # 输入端口数
+    n = 1  # 输入端口数
     m = 2  # 输出端口数
     grid_spacing = 20e-9  # 空间步长
 
@@ -14,8 +14,8 @@ if __name__ == "__main__":
     mmi = Mmi(
         xlength=2e-6,
         ylength=1,
-        zlength=3e-6,
-        We=100 * grid_spacing,
+        zlength=4.2e-6,
+        We=2.09e-6,
         name="mmi",
         refractive_index=3.47,
         n=n,
@@ -23,9 +23,9 @@ if __name__ == "__main__":
         # x=225,
         width_port=25,
         width_wg=20,
-        l_port=1e-6,
-        ln=1e-6,
-        lm=1e-6,
+        l_port=0,
+        ln=1.7e-6,
+        lm=2e-6,
         grid=grid
     )
 
@@ -41,8 +41,8 @@ if __name__ == "__main__":
     #         period=1550e-9 / 299792458,
     #     )
 
-    # grid.set_source(source_type="linesource", period=1550e-9 / 299792458, name="source", x=0.9e-6, y=3e-6, z=0, xlength=1,
-    #                 ylength=25, zlength=1, polarization="y")
+    grid.set_source(source_type="linesource", period=1550e-9 / 299792458, name="source", z=1e-6, xlength=20,
+                    ylength=0, zlength=1, polarization="x")
 
     # 设置监视器
     # grid.set_detector(detector_type="blockdetector",
@@ -96,9 +96,9 @@ if __name__ == "__main__":
     grid.run()
 
     # # 绘制仿真结束时刻空间场分布
-    Grid.plot_field(grid=grid, field="E", field_axis="y", axis="z", axis_index=0, folder=grid.folder,
-                    vmax=1)
-    grid.save_fig(axis="z",
+    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0, folder=grid.folder,
+                    vmax=2, vmin=-2)
+    grid.save_fig(axis="y",
                   axis_number=0,
                   show_energy=True)
 
