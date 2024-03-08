@@ -19,7 +19,7 @@ class Solve:
                  grid: fdtd.grid,
                  axis: str = 'x',
                  index: int = 0,
-                 filepath: str = ''
+                 filepath: str = None
                  ):
         '''
         23.03.18
@@ -31,6 +31,8 @@ class Solve:
         :param: index: 轴上哪点
         :param: filepath: 保存图片的文件夹
         '''
+        if not filepath:
+            filepath=grid.folder
         self.grid = grid._grid
         self.geometry = np.sqrt(1 / self.grid.inverse_permittivity)
         # for i in range(len(self.grid.objects)):

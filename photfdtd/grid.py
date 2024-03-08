@@ -224,21 +224,21 @@ class Grid:
                                                                              polarization=polarization)
             else:
                 self._grid[x_start: x_end, y_start: y_end, z_start: z_end] = fdtd.LineSource(period=period,
-                                                                                                 amplitude=amplitude,
-                                                                                                 phase_shift=phase_shift,
-                                                                                                 name=name,
-                                                                                                 pulse_type=pulse_type,
-                                                                                                 cycle=cycle,
-                                                                                                 pulse_length=pulse_length,
-                                                                                                 offset=offset,
-                                                                                                 waveform=waveform,
-                                                                                                 polarization=polarization)
+                                                                                             amplitude=amplitude,
+                                                                                             phase_shift=phase_shift,
+                                                                                             name=name,
+                                                                                             pulse_type=pulse_type,
+                                                                                             cycle=cycle,
+                                                                                             pulse_length=pulse_length,
+                                                                                             offset=offset,
+                                                                                             waveform=waveform,
+                                                                                             polarization=polarization)
 
 
         elif source_type == "planesource":
             # 创建一个面光源
             if axis == "x":
-                self._grid[x: x,y: y + ylength,z: z + zlength] = \
+                self._grid[x: x, y: y + ylength, z: z + zlength] = \
                     fdtd.PlaneSource(period=period, amplitude=amplitude, phase_shift=phase_shift, name=name,
                                      polarization=polarization)
             elif axis == "y":
@@ -313,7 +313,8 @@ class Grid:
 
     def save_fig(self,
                  axis="x",
-                 axis_number=0,
+                 axis_index=None,
+                 axis_number=None,
                  animate=False,
                  time=None,
                  geo=None,
@@ -323,35 +324,41 @@ class Grid:
         Saving the geometry figure. This function can also show energy while show_energy = True.
         @param geo: Solve.geometry，也可以为None，程序会自己计算
         @param axis: 轴(若为二维XY模拟，则axis只能='z')
-        @param axis_number: 索引
+        @param axis_number, axis_index: 索引（better use axis_index), 最好用axis_index
         @param time: 绘制哪个时刻的场图（用户用不到，仅供run()使用
         @param animate: 是否播放动画 #TODO: 这个参数的作用？
         :
         """
         # TODO: grid.visualize函数还有animate等功能，尚待加入
+        if axis_index == None:
+            if axis_number == None:
+                raise ValueError("Please set parameter axis_index!")
+            else:
+                axis_index = axis_number
+
         if not show_energy:
             time = 0
 
         else:
             time = self._grid.time_steps_passed
-        index = "_%s=%d, total_time=%d" % (axis, axis_number, time)
+        index = "_%s=%d, total_time=%d" % (axis, axis_index, time)
         if self._grid is None:
             raise RuntimeError("The grid should be set before saving figure.")
 
         axis = axis.lower()  # 识别大写的 "X"
         folder = self.folder
         if axis == "x":  # 绘制截面/剖面场图
-            self._grid.visualize(x=axis_number, save=True, animate=animate,
+            self._grid.visualize(x=axis_index, save=True, animate=animate,
                                  index=index, folder=folder, geo=geo,
                                  background_index=self.background_index, show_structure=show_structure,
                                  show_energy=show_energy)
         elif axis == "y":
-            self._grid.visualize(y=axis_number, save=True, animate=animate,
+            self._grid.visualize(y=axis_index, save=True, animate=animate,
                                  index=index, folder=folder, geo=geo,
                                  background_index=self.background_index, show_structure=show_structure,
                                  show_energy=show_energy)
         elif axis == "z":
-            self._grid.visualize(z=axis_number, save=True, animate=animate,
+            self._grid.visualize(z=axis_index, save=True, animate=animate,
                                  index=index, folder=folder, geo=geo,
                                  background_index=self.background_index, show_structure=show_structure,
                                  show_energy=show_energy)
@@ -359,6 +366,55 @@ class Grid:
             raise RuntimeError("Unknown axis parameter.")
 
         plt.close()  # 清除画布
+
+    @staticmethod
+    def plot_n(grid=None,
+               axis: str = 'x',
+               axis_index: int = 0,
+               filepath: str = None):
+        if not grid:
+            raise ValueError("Parameter 'grid' shold not be None!")
+        if not filepath:
+            filepath = grid.folder
+        grid = grid._grid
+        geometry = np.sqrt(1 / grid.inverse_permittivity)
+        axis = axis.lower()
+
+        # 去掉作为轴的那一维
+        if axis == 'x':
+            n = geometry[axis_index, :, :, :]
+        elif axis == 'y':
+            n = geometry[:, axis_index, :, :]
+        elif axis == 'z':
+            n = geometry[:, :, axis_index, :]
+        else:
+            raise ValueError('Parameter "axis" should be x, y or z! ')
+        x = n.shape[0]
+        y = n.shape[1]
+
+        # It's quite important to transpose n
+        from matplotlib import cm
+        n = np.transpose(n, [1, 0, 2])
+        plt.imshow(n[:, :, 0], cmap=cm.jet, origin="lower",
+                   extent=[0, x * grid.grid_spacing * 1e6, 0, y * grid.grid_spacing * 1e6])
+        plt.clim([np.amin(n), np.amax(n)])
+        if axis == "x":
+            plt.xlabel('y/um')
+            plt.ylabel('z/um')
+        elif axis == "y":
+            plt.xlabel('x/um')
+            plt.ylabel('z/um')
+        elif axis == "z":
+            plt.xlabel('x/um')
+            plt.ylabel('y/um')
+        plt.colorbar()
+        plt.title("refractive_index_real")
+        # 保存图片
+        plt.savefig(fname='%s\\%s_%s=%d.png' % (filepath, 'index', axis, axis_index))
+
+        # plt.show()
+        plt.clf()
+        plt.close()
 
     def run(self,
             animate: bool = False,
@@ -380,7 +436,8 @@ class Grid:
         if animate == False:
             if not isinstance(time, int):
                 time = self._grid._handle_time(time)
-            print("The total time for FDTD simulation is %i timesteps or %f fs." % (time, time * self._grid.time_step * 1e15))
+            print("The total time for FDTD simulation is %i timesteps or %f fs." % (
+            time, time * self._grid.time_step * 1e15))
             self._grid.run(total_time=time)
         # elif animate:
         #     for i in range(self._total_time):
@@ -658,11 +715,12 @@ class Grid:
                        folder=folder, name_det=name_det, total_time=total_time)
 
     @staticmethod
-    def plot_field(grid=None, axis="z", axis_index=0, field="E", field_axis=None, folder="", cmap="jet",
-                   show_geometry=True, vmax=None, vmin=None):
+    def plot_field(grid=None, axis="z", axis_index=0, field="E", field_axis=None, folder=None, cmap="jet",
+                   show_geometry=True, show_field=True, vmax=None, vmin=None):
         """
         绘制当前时刻场分布（不需要监视器）
         @param show_geometry: bool 是否绘制波导结构
+        @param show_field: bool 是否绘制场
         @param grid: grid
         @param field: "E"或"H"
         @param field_axis: {x,y,z,None} of E or H, if None, the energy intensity of E or H will be plotted
@@ -674,55 +732,73 @@ class Grid:
         @param vmin:
 
         """
-        if not field_axis:
+        if not show_field:
+            title = "%s=%i" % (axis, axis_index)
+        elif not field_axis:
             title = "%s intensity" % field
         else:
             title = "%s%s" % (field, field_axis)
+        if not folder:
+            folder = grid.folder
         background_index = grid.background_index
         grid = grid._grid
-        if field == "E":
-            if not field_axis:
-                # 能量
-                if axis == "z":
-                    field = grid.E[:, :, axis_index, 0] ** 2 + grid.E[:, :, axis_index, 1] ** 2 + grid.E[:, :,
-                                                                                                  axis_index, 2] ** 2
-                elif axis == "y":
-                    field = grid.E[:, axis_index, :, 0] ** 2 + grid.E[:, axis_index, :, 1] ** 2 + grid.E[:, axis_index,
-                                                                                                  :, 2] ** 2
-                elif axis == "x":
-                    field = grid.E[axis_index, :, :, 0] ** 2 + grid.E[axis_index, :, :, 1] ** 2 + grid.E[axis_index, :,
-                                                                                                  :, 2] ** 2
-            else:
-                if axis == "z":
-                    field = grid.E[:, :, axis_index, ord(field_axis) - 120]
-                elif axis == "y":
-                    field = grid.E[:, axis_index, :, ord(field_axis) - 120]
-                elif axis == "x":
-                    field = grid.E[axis_index, :, :, ord(field_axis) - 120]
-        elif field == "H":
-            if not field_axis:
-                # 能量场
-                if axis == "z":
-                    field = grid.H[:, :, axis_index, 0] ** 2 + grid.H[:, :, axis_index, 1] ** 2 + grid.H[:, :,
-                                                                                                  axis_index, 2] ** 2
-                elif axis == "y":
-                    field = grid.H[:, axis_index, :, 0] ** 2 + grid.H[:, axis_index, :, 1] ** 2 + grid.H[:, axis_index,
-                                                                                                  :, 2] ** 2
-                elif axis == "x":
-                    field = grid.H[axis_index, :, :, 0] ** 2 + grid.H[axis_index, :, :, 1] ** 2 + grid.H[axis_index, :,
-                                                                                                  :, 2] ** 2
-            else:
-                if axis == "z":
-                    field = grid.H[:, :, axis_index, ord(field_axis) - 120]
-                elif axis == "y":
-                    field = grid.H[:, axis_index, :, ord(field_axis) - 120]
-                elif axis == "x":
-                    field = grid.H[axis_index, :, :, ord(field_axis) - 120]
-        if not vmax:
-            # vmax = max(abs(field.min().item()), abs(field.max().item()))
-            vmax = field.max().item()
-        if not vmin:
-            vmin = field.min().item()
+        if not show_field:
+            if axis == "z":
+                field = np.zeros_like(grid.E[:, :, axis_index, 0])
+            elif axis == "y":
+                field = np.zeros_like(grid.E[:, axis_index, :, 0])
+            elif axis == "x":
+                field = np.zeros_like(grid.E[axis_index, :, :, 0])
+        else:
+            if field == "E":
+                if not field_axis:
+                    # 能量
+                    if axis == "z":
+                        field = grid.E[:, :, axis_index, 0] ** 2 + grid.E[:, :, axis_index, 1] ** 2 + grid.E[:, :,
+                                                                                                      axis_index,
+                                                                                                      2] ** 2
+                    elif axis == "y":
+                        field = grid.E[:, axis_index, :, 0] ** 2 + grid.E[:, axis_index, :, 1] ** 2 + grid.E[:,
+                                                                                                      axis_index,
+                                                                                                      :, 2] ** 2
+                    elif axis == "x":
+                        field = grid.E[axis_index, :, :, 0] ** 2 + grid.E[axis_index, :, :, 1] ** 2 + grid.E[axis_index,
+                                                                                                      :,
+                                                                                                      :, 2] ** 2
+                else:
+                    if axis == "z":
+                        field = grid.E[:, :, axis_index, ord(field_axis) - 120]
+                    elif axis == "y":
+                        field = grid.E[:, axis_index, :, ord(field_axis) - 120]
+                    elif axis == "x":
+                        field = grid.E[axis_index, :, :, ord(field_axis) - 120]
+            elif field == "H":
+                if not field_axis:
+                    # 能量场
+                    if axis == "z":
+                        field = grid.H[:, :, axis_index, 0] ** 2 + grid.H[:, :, axis_index, 1] ** 2 + grid.H[:, :,
+                                                                                                      axis_index,
+                                                                                                      2] ** 2
+                    elif axis == "y":
+                        field = grid.H[:, axis_index, :, 0] ** 2 + grid.H[:, axis_index, :, 1] ** 2 + grid.H[:,
+                                                                                                      axis_index,
+                                                                                                      :, 2] ** 2
+                    elif axis == "x":
+                        field = grid.H[axis_index, :, :, 0] ** 2 + grid.H[axis_index, :, :, 1] ** 2 + grid.H[axis_index,
+                                                                                                      :,
+                                                                                                      :, 2] ** 2
+                else:
+                    if axis == "z":
+                        field = grid.H[:, :, axis_index, ord(field_axis) - 120]
+                    elif axis == "y":
+                        field = grid.H[:, axis_index, :, ord(field_axis) - 120]
+                    elif axis == "x":
+                        field = grid.H[axis_index, :, :, ord(field_axis) - 120]
+            if not vmax:
+                # vmax = max(abs(field.min().item()), abs(field.max().item()))
+                vmax = field.max().item()
+            if not vmin:
+                vmin = field.min().item()
 
         # 创建颜色图
         plt.figure()
@@ -730,8 +806,9 @@ class Grid:
         plt.imshow(np.transpose(field), vmin=vmin, vmax=vmax, cmap=cmap,
                    extent=[0, field.shape[0] * grid.grid_spacing * 1e6, 0,
                            field.shape[1] * grid.grid_spacing * 1e6],
-                   origin="lower")# cmap 可以选择不同的颜色映射
-        cbar = plt.colorbar()
+                   origin="lower")  # cmap 可以选择不同的颜色映射
+        if show_field:
+            cbar = plt.colorbar()
         if show_geometry:
 
             geo = np.sqrt(1 / grid.inverse_permittivity)
@@ -769,8 +846,11 @@ class Grid:
         elif axis == "y":
             plt.xlabel('x/um')
             plt.ylabel('z/um')
-
-        plt.savefig(fname="%s//%s_%s=%i.png" % (folder, title, axis, axis_index))
+        if show_field:
+            fname = "%s//%s_%s=%i.png" % (folder, title, axis, axis_index)
+        else:
+            fname = "%s//%s.png" % (folder, title)
+        plt.savefig(fname=fname)
         plt.close()
 
     @staticmethod
