@@ -81,13 +81,32 @@ class Grid:
         time = int(L * n / constants.c / self._grid.time_step)
         return time
 
+    def _check_parameters(self, x_start=None, x_end=None, y_start=None, y_end=None, z_start=None, z_end=None,
+                          object_to_check=None, name=None):
+        # Check if the object exceeds the region
+        if object_to_check:
+            x_start, x_end, y_start, y_end, z_start, z_end = object_to_check.x, object_to_check.xlength + object_to_check.x, \
+            object_to_check.y, object_to_check.ylength + object_to_check.y,\
+            object_to_check.z, object_to_check.zlength + object_to_check.z
+            name = object_to_check.name
+        if max(x_start, x_end) > self._grid_xlength or min(x_start, x_end) < 0:
+            raise ValueError("X range of %s (%i, %i) has exceeded the simulation region (0, %i)!"
+                             % (name, x_start, x_end, self._grid_xlength))
+        if max(y_start, y_end) > self._grid_ylength or min(y_start, y_end) < 0:
+            raise ValueError("Y range of %s (%i, %i) has exceeded the simulation region (0, %i)!"
+                             % (name, y_start, y_end, self._grid_ylength))
+        if max(z_start, z_end) > self._grid_zlength or min(z_start, z_end) < 0:
+            raise ValueError("Z range of %s (%i, %i) has exceeded the simulation region (0, %i)!"
+                             % (name, z_start, z_end, self._grid_zlength))
+
     def add_object(self, object: Waveguide):
 
         for internal_object in object._internal_objects:
-            # 23.04.14: 删去了不必要的判断语句
+
             if internal_object == 0:
                 continue
             else:
+                self._check_parameters(object_to_check=internal_object)
                 self._grid[
                 internal_object.x: internal_object.x + internal_object.xlength,
                 internal_object.y: internal_object.y + internal_object.ylength,
@@ -193,27 +212,30 @@ class Grid:
             y = int(self._grid_ylength / 2)
         if z == None:
             z = int(self._grid_zlength / 2)
-        x = x - xlength // 2
-        y = y - ylength // 2
-        z = z - zlength // 2
+
         if source_type == "pointsource":
             # 创建一个点光源
-            x = x + xlength // 2
-            y = y + ylength // 2
-            z = z + zlength // 2
-
+            # x = x + xlength // 2
+            # y = y + ylength // 2
+            # z = z + zlength // 2
+            self._check_parameters(x,x,y,y,z,z)
             self._grid[x, y, z] = fdtd.PointSource(period=period, amplitude=amplitude, phase_shift=phase_shift,
                                                    name=name, cycle=cycle, hanning_dt=hanning_dt, pulse_type=pulse_type,
                                                    pulse_length=pulse_length, offset=offset, polarization=polarization)
 
         elif source_type == "linesource":  # 创建一个线光源
+
             if not x_start:
+                x = x - xlength // 2
+                y = y - ylength // 2
+                z = z - zlength // 2
                 x_start = x
                 y_start = y
                 z_start = z
                 x_end = x + xlength
                 y_end = y + ylength
                 z_end = z + zlength
+            self._check_parameters(x_start,x_end,y_start,y_end,z_start,z_end, name=name)
             if self._grid_zlength == 1:
                 self._grid[x_start: x_end, y_start: y_end] = fdtd.LineSource(period=period, amplitude=amplitude,
                                                                              phase_shift=phase_shift, name=name,
@@ -236,16 +258,23 @@ class Grid:
 
 
         elif source_type == "planesource":
+            x = x - xlength // 2
+            y = y - ylength // 2
+            z = z - zlength // 2
             # 创建一个面光源
+
             if axis == "x":
+                self._check_parameters(x, x, y, y + ylength, z, z + zlength, name=name)
                 self._grid[x: x, y: y + ylength, z: z + zlength] = \
                     fdtd.PlaneSource(period=period, amplitude=amplitude, phase_shift=phase_shift, name=name,
                                      polarization=polarization)
             elif axis == "y":
+                self._check_parameters(x, x + xlength, y, y, z, z + zlength, name=name)
                 self._grid[x: x + xlength, y: y, z: z + zlength] = \
                     fdtd.PlaneSource(period=period, amplitude=amplitude, phase_shift=phase_shift, name=name,
                                      polarization=polarization)
             elif axis == "z":
+                self._check_parameters(x, x + xlength, y, y + ylength, z, z, name=name)
                 self._grid[x: x + xlength, y: y + ylength, z: z] = \
                     fdtd.PlaneSource(period=period, amplitude=amplitude, phase_shift=phase_shift, name=name,
                                      polarization=polarization)
@@ -261,9 +290,9 @@ class Grid:
                      x_end: int or float = None,
                      y_end: int or float = None,
                      z_end: int or float = None,
-                     x: int or float = 5,
-                     y: int or float = 5,
-                     z: int or float = 5,
+                     x: int or float = None,
+                     y: int or float = None,
+                     z: int or float = None,
                      xlength: int or float = 5,
                      ylength: int or float = 5,
                      zlength: int or float = 1,
@@ -279,13 +308,22 @@ class Grid:
         @param name:
         @param axis: "x", "y", "z", only for blockdetector
         """
-        xlength, ylength, zlength, x, y, z = self._handle_unit([xlength, ylength, zlength, x, y, z],
+
+        if x == None:
+            # 如果没设置x，自动选仿真区域中心If x not set, choose the center of grid
+            x = int(self._grid_xlength / 2)
+        if y == None:
+            y = int(self._grid_ylength / 2)
+        if z == None:
+            z = int(self._grid_zlength / 2)
+
+        xlength, ylength, zlength, x, y, z, x_start, x_end, y_start, y_end, z_start, z_end = \
+            self._handle_unit([xlength, ylength, zlength, x, y, z, x_start, x_end, y_start, y_end, z_start, z_end],
                                                                grid_spacing=self._grid.grid_spacing)
-        x = x - xlength // 2
-        y = y - ylength // 2
-        z = z - zlength // 2
+
         # 设置监视器
         if detector_type == 'linedetector':
+
             if not x_start:
                 x_start = x
                 y_start = y
@@ -293,23 +331,27 @@ class Grid:
                 x_end = x + xlength
                 y_end = y + ylength
                 z_end = z + zlength
+            self._check_parameters(x_start, x_end, y_start, y_end, z_start, z_end, name=name)
             self._grid[x_start: x_end, y_start: y_end, z_start: z_end] = fdtd.LineDetector(name=name)
 
         elif detector_type == 'blockdetector':
             if axis == "x":
+                self._check_parameters(x, x, y, y + ylength, z, z + zlength, name=name)
                 self._grid[x: x,
                 y: y + ylength,
                 z: z + zlength] = fdtd.BlockDetector(name=name)
             elif axis == "y":
+                self._check_parameters(x, x + xlength, y, y, z, z + zlength, name=name)
                 self._grid[x: x + xlength,
                 y: y,
                 z: z + zlength] = fdtd.BlockDetector(name=name)
             elif axis == "z":
+                self._check_parameters(x, x + xlength, y, y + ylength, z, z, name=name)
                 self._grid[x: x + xlength,
                 y: y + ylength,
                 z: z] = fdtd.BlockDetector(name=name)
         else:
-            raise RuntimeError("Invalid detector type.")
+            raise ValueError("Invalid detector type.")
 
     def save_fig(self,
                  axis="x",
@@ -437,7 +479,7 @@ class Grid:
             if not isinstance(time, int):
                 time = self._grid._handle_time(time)
             print("The total time for FDTD simulation is %i timesteps or %f fs." % (
-            time, time * self._grid.time_step * 1e15))
+                time, time * self._grid.time_step * 1e15))
             self._grid.run(total_time=time)
         # elif animate:
         #     for i in range(self._total_time):

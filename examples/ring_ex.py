@@ -5,20 +5,8 @@ if __name__ == "__main__":
 
     background_index = 1.0
 
-    ring = Ring(
-        outer_radius=100,
-        zlength=20,
-        x=150,
-        y=150,
-        z=13,
-        width=20,
-        length=0,
-        gap=5,
-        name="ring",
-        refractive_index=3.47,
-        direction=1,
-        background_index=background_index
-    )
+    ring = Ring(outer_radius=100, x=150, y=150, z=13, width_s=20, length=0, gap=5, name="ring", refractive_index=3.47,
+                direction=1)
 
     grid = Grid(grid_xlength=300, grid_ylength=300, grid_zlength=25, grid_spacing=20e-9, total_time=1000,
                 pml_width_x=50, pml_width_y=20, pml_width_z=1,

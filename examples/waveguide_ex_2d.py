@@ -15,6 +15,7 @@ if __name__ == "__main__":
 
     # 往 grid 里添加器件
     grid.add_object(waveguide)
+    grid.save_fig(axis="z", axis_number=0)
 
     # 设置光源
     grid.set_source(source_type="linesource", period=1550e-9 / constants.c, name="source", x=100, y=100, z=0, xlength=1,
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     # 运行仿真
     grid.run()
 
-    grid.save_fig(axis="z", axis_number=0, geo=solve.geometry)
+
 
     # 保存仿真结果，并传给data
     data = grid.save_simulation()

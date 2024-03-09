@@ -9,9 +9,7 @@ if __name__ == "__main__":
                 foldername="test_taper", permittivity=background_index ** 2)
 
     # 设置器件参数
-    taper = Taper(xlength=2000e-9, ylength=500e-9, zlength=20, direction=1, width=6,
-                  name="taper",
-                  refractive_index=3.47, grid=grid)
+    taper = Taper(xlength=2000e-9, width=6, ylength=500e-9, zlength=20, name="taper", refractive_index=3.47, grid=grid)
 
     grid.add_object(taper)
     grid.save_fig(axis="x", axis_number=51)

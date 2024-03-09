@@ -55,7 +55,7 @@ if __name__ == "__main__":
     # Draw the modes 接下来即可绘制模式场，我们选择绘制amplitude，即幅值。filepath为保存绘制的图片的路径
     solve.draw_mode(filepath=solve.filepath,
                     data=data,
-                    content="amplitude")
+                    content="real_part")
     #
     # data_from_saved_modes = Solve.read_mode(solve.filepath)
     #

@@ -111,9 +111,9 @@ class Ysplitter(Waveguide):
 
     def __init__(
             self,
-            xlength: int or float = 200,
-            ylength: int or float = 160,
-            zlength: int or float = 20,
+            xlength: int or float = None,
+            ylength: int or float = None,
+            zlength: int or float = None,
             x: int or float = None,
             y: int or float = None,
             z: int or float = None,

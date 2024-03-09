@@ -2,61 +2,49 @@ import utils
 from photfdtd import Ysplitter, Grid, Solve, constants
 
 if __name__ == "__main__":
-
-    background_index=1.0
-
-    # 设置器件参数
-    ysplitter = Ysplitter(xlength=200, ylength=160, zlength=20, x=100, y=100, z=13, direction=1, width=20, name="ysplitter",
-                          refractive_index=3.47, xlength_waveguide=80, xlength_taper=40, ylength_taper=40,
-                          width_sbend=20, background_index=background_index)
+    background_index = 1.4555
 
     # 设置 grid 参数
-    grid = Grid(grid_ylength=200, grid_xlength=200, grid_zlength=25, grid_spacing=20e-9, total_time=1000,
-                pml_width_x=20,
-                pml_width_y=20,
-                pml_width_z=1,
+    grid = Grid(grid_xlength=3e-6, grid_ylength=1.5e-6, grid_zlength=3.5e-6, grid_spacing=20e-9,
                 foldername="test_ysplitter", permittivity=background_index ** 2)
 
-    # 设置光源
-    grid.set_source(source_type="planesource",
-                    period=1550e-9 / constants.c,
-                    name="source",
-                    x=30,
-                    y=100,
-                    z=13,
-                    xlength=1,
-                    ylength=22,
-                    zlength=22
-                    )
+    # 设置器件参数
+    ysplitter = Ysplitter(direction=1, width=0.2e-6,
+                          name="ysplitter",x=1.5e-6, y=0.75e-6, z=1.5e-6,
+                          ylength=0.2e-6,
+                          refractive_index=3.45, zlength_waveguide=0.8e-6, xlength_taper=0.4e-6,
+                          zlength_taper=0.4e-6,
+                          zlength_sbend=1.25e-6,
+                          xlength_sbend=1e-6,
+                          width_sbend=0.2e-6, grid=grid)
 
-    # 设置监视器
-    grid.set_detector(detector_type="blockdetector",
-                      name="detector",
-                      x=175,
-                      y=63,
-                      z=13,
-                      xlength=1,
-                      ylength=25,
-                      zlength=22
-                      )
+    # 设置光源
+    grid.set_source(source_type="linesource", wavelength=850e-9,
+                    x_start=1.35e-6, y_start=0.75e-6, z_start=0.5e-6,
+                    x_end=1.65e-6, y_end=0.75e-6, z_end=0.5e-6,
+                    polarization="x")
+
+    grid.set_detector(detector_type='linedetector',
+                      x_start=0.6e-6, y_start=0.75e-6, z_start=2.9e-6,
+                      x_end=0.8e-6, y_end=0.75e-6, z_end=2.9e-6,
+                      name='detector1')
+    # grid.set_detector(detector_type='linedetector',
+    #                   x_start=2.2e-6, y_start=0.75e-6, z_start=2.9e-6,
+    #                   x_end=2.4e-6, y_end=0.75e-6, z_end=2.9e-6,
+    #                   name='detector2')
 
     grid.add_object(ysplitter)
-
-    # 创建solve对象
-    solve = Solve(grid=grid)
-
-    # 绘制任一截面折射率分布
-    solve.plot()
+    grid.save_fig(axis="y", axis_index=37)
+    grid.save_fig(axis="z", axis_index=50)
+    grid.plot_n(grid=grid, axis="y", axis_index=37)
+    grid.plot_n(grid=grid, axis="z", axis_index=50)
 
     # 运行仿真
     grid.run()
 
+    grid.save_fig(axis="y", axis_number=37)
+    # 绘制仿真结束时刻空间场分布
+    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=37, folder=grid.folder)
+
     # 保存仿真结果
     grid.save_simulation()
-
-    # 绘制任意截面场图
-    grid.visualize(x=100, showEnergy=True, show=True, save=True)
-    grid.visualize(z=13, showEnergy=True, show=True, save=True)
-
-    # 读取仿真结果
-    data = grid.read_simulation(folder=grid.folder)
