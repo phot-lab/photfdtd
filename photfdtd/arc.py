@@ -10,10 +10,10 @@ class Arc(Waveguide):
     width: 波导宽度
     refractive_index:折射率
     name: 名称
-    angle_phi: 与x轴正方向夹角, 单位: 角度
-    angle_psi: 张角
+    angle_phi: 与x轴正方向夹角, 单位: rad
+    angle_psi: 张角/rad
     background_index: 环境折射率
-    angle_to_radian: bool: True表示从角度转弧度
+    angle_to_radian: bool: 如果输入为角度单位为angle，选择True
     """
 
     # FIXME: 在圆弧跨越x=0时存在问题
@@ -29,21 +29,20 @@ class Arc(Waveguide):
             name: str = "arc",
             angle_phi: float = 0,
             angle_psi: float = 0,
-            angle_to_radian: bool = True,
+            angle_unit: bool = False,
             grid=None,
     ) -> None:
-        angle_phi = angle_phi % 360
-        if angle_phi < 0:
-            angle_phi += 360
-
         outer_radius, width = grid._handle_unit([outer_radius, width], grid_spacing=grid._grid.grid_spacing)
         self.outer_radius = outer_radius
-        if angle_to_radian:
-            self.phi = np.radians(angle_phi)
-            self.psi = np.radians(angle_psi)
-        else:
-            self.phi = angle_phi
-            self.psi = angle_psi
+        if angle_unit:
+            angle_phi = np.radians(angle_phi)
+            angle_psi = np.radians(angle_psi)
+
+        angle_phi = angle_phi % (2 * np.pi)
+        if angle_phi < 0:
+            angle_phi += 2 * np.pi
+        self.phi = angle_phi
+        self.psi = angle_psi
 
         super().__init__(xlength=outer_radius, ylength=ylength, zlength=outer_radius, x=x,
                          y=y, z=z, width=width, name=name, refractive_index=refractive_index, reset_xyz=False,

@@ -30,7 +30,7 @@ class Grid:
             total_time (int, optional): 计算时间. Defaults to 1.
             pml_width (int, optional): PML宽度.
             permeability (float, optional): 环境相对磁导率 1.0
-            permittivity (float, optional): 环境相对介电常数，二者共同决定了环境折射率 1.0
+            permittivity (float, optional): 环境相对介电常数 1.0
             (refractive_index ** 2 = permeability * permittivity, 对大部分材料permeability=1.0)
             courant_number: 科朗数 默认为None
             foldername: 文件夹名称, 若其不存在将在目录下创建该文件夹
@@ -52,13 +52,11 @@ class Grid:
         # self._total_time = total_time
         self._grid = grid
 
-        # makedirs(foldername, exist_ok=True)  # Output master folder declaration
-        current_dir = os.getcwd()
-
-        # self.folder: 保存结果的文件夹
-        self.folder = os.path.join(current_dir, foldername)
-        if folder != "" and folder is not None:
+        if folder is not None:
             self.folder = folder
+        else:
+            current_dir = os.getcwd()
+            self.folder = os.path.join(current_dir, foldername)
         makedirs(self.folder, exist_ok=True)
 
         self.background_index = np.sqrt(permittivity * permeability)
@@ -409,11 +407,14 @@ class Grid:
 
         plt.close()  # 清除画布
 
-    @staticmethod
-    def plot_n(grid=None,
+
+    def plot_n(self,
+               grid=None,
                axis: str = 'x',
                axis_index: int = 0,
                filepath: str = None):
+        if self:
+            grid = self
         if not grid:
             raise ValueError("Parameter 'grid' shold not be None!")
         if not filepath:
@@ -840,7 +841,10 @@ class Grid:
                 # vmax = max(abs(field.min().item()), abs(field.max().item()))
                 vmax = field.max().item()
             if not vmin:
-                vmin = field.min().item()
+                if not field_axis:
+                    vmin = 0
+                else:
+                    vmin = field.min().item()
 
         # 创建颜色图
         plt.figure()

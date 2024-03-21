@@ -1,9 +1,7 @@
 # import utils
-from photfdtd import Waveguide, Grid
 import photfdtd.philsol as ps
 import numpy as np
 import matplotlib.pyplot as plt
-from PIL import Image, ImageDraw
 from matplotlib import cm
 from os import path
 import photfdtd.fdtd as fdtd
@@ -18,6 +16,7 @@ class Solve:
     def __init__(self,
                  grid: fdtd.grid,
                  axis: str = 'x',
+                 axis_index: int = None,
                  index: int = 0,
                  filepath: str = None
                  ):
@@ -28,9 +27,11 @@ class Solve:
         但暂时还不能编辑各向异性材料
         :param grid: fdtd.grid
         :param: axis: 哪个轴的截面
-        :param: index: 轴上哪点
+        :param: axis_index/index: index of the axis choosed 轴上哪点
         :param: filepath: 保存图片的文件夹
         '''
+        if axis_index:
+            index = axis_index
         if not filepath:
             filepath=grid.folder
         self.grid = grid._grid

@@ -4,6 +4,7 @@ import numpy as np
 
 class TFF(Waveguide):
     """
+    薄膜
     """
 
     def __init__(
@@ -41,6 +42,13 @@ class TFF(Waveguide):
         """
         xlength, ylength, zlength, dl, dh, x, y, z = grid._handle_unit([xlength, ylength, zlength, dl, dh, x, y, z],
                                                               grid_spacing=grid._grid.grid_spacing)
+        if x == None:
+            # 如果没设置x，自动选仿真区域中心If x not set, choose the center of grid
+            x = int(grid._grid_xlength / 2)
+        if y == None:
+            y = int(grid._grid_ylength / 2)
+        if z == None:
+            z = int(grid._grid_zlength / 2)
 
         x, y, z = np.full(layers, x), np.full(layers, y), np.full(layers, z)
         xlength_l, ylength_l, zlength_l = np.full(layers, xlength), np.full(layers, ylength), np.full(layers, zlength)

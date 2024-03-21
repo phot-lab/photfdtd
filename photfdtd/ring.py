@@ -54,12 +54,12 @@ class Ring(Waveguide):
         #
 
         delta_z = int(np.round(self.length / 2))
-        arc1 = Arc(outer_radius=self.outer_r, ylength=self.ylength, width=self.width_r,
-                   x=self.x, y=self.y,z=self.z + delta_z,refractive_index=self.refractive_index,
-                   name="%s_arc1" % self.name, angle_phi=0, angle_psi=180, grid=self.grid)
-        arc2 = Arc(outer_radius=self.outer_r, ylength=self.ylength, width=self.width_r,
-                   x=self.x, y=self.y, z=self.z - delta_z, refractive_index=self.refractive_index,
-                   name="%s_arc3" % self.name, angle_phi=180, angle_psi=180, grid=self.grid)
+        arc1 = Arc(outer_radius=self.outer_r, ylength=self.ylength, x=self.x, y=self.y, z=self.z + delta_z,
+                   width=self.width_r, refractive_index=self.refractive_index, name="%s_arc1" % self.name, angle_phi=0,
+                   angle_psi=180, angle_unit=True, grid=self.grid)
+        arc2 = Arc(outer_radius=self.outer_r, ylength=self.ylength, x=self.x, y=self.y, z=self.z - delta_z,
+                   width=self.width_r, refractive_index=self.refractive_index, name="%s_arc3" % self.name,
+                   angle_phi=180, angle_psi=180, angle_unit=True, grid=self.grid)
         self._internal_objects = [arc1, arc2]
         if self.length > 0:
             wg3 = Waveguide(

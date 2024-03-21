@@ -6,21 +6,20 @@ if __name__ == "__main__":
 
     background_index = 1.0
 
-    grid = Grid(grid_xlength=300, grid_ylength=300, grid_zlength=1, grid_spacing=grid_spacing,
+    grid = Grid(grid_xlength=300, grid_ylength=1, grid_zlength=300, grid_spacing=grid_spacing,
                 foldername="test_tff",
                 permittivity=background_index ** 2)
 
     # 制作一个11层厚，1550nm波长的增返膜
     tff = TFF(
         xlength=250 * grid_spacing,
-        ylength=220 * grid_spacing,
-        zlength=1 * grid_spacing,
-        x=3e-6,
-        y=40,
-        z=0,
+        ylength=1,
+        x=150,
+        y=0,
+        z=0.8e-6,
         name="TFF",
         layers=11,
-        axis="y",
+        axis="z",
         low_index=1.35,
         high_index=2.35,
         dh=8 * grid_spacing,
@@ -28,8 +27,8 @@ if __name__ == "__main__":
         grid=grid
     )
 
-    grid.set_source(source_type="linesource", period=1550e-9 / 299792458, name="source", x=150, y=220, z=1, xlength=50,
-                    ylength=1, zlength=0, polarization="x")
+    grid.set_source(source_type="linesource", period=1550e-9 / 299792458, name="source", x=150, y=0, z=220, xlength=50,
+                    ylength=0, zlength=0, polarization="x")
     #
     # # 设置监视器
     # grid.set_detector(detector_type="blockdetector",
@@ -52,41 +51,26 @@ if __name__ == "__main__":
     #                   )
 
     grid.add_object(tff)
-    grid.save_fig(axis="z", axis_number=0)
+    grid.plot_n(grid=grid, axis="y", axis_index=0)
+    grid.save_fig(axis="y", axis_number=0)
 
-    # 创建solve对象
-    solve = Solve(grid=grid,
-                  axis="z",
-                  index=0,
-                  filepath=grid.folder
-                  )
-
-    # 绘制任一截面折射率分布
-    solve.plot()
-
-    # # 绘制单模波导截面折射率分布并计算模式
-    # solve._plot_(axis='x',
-    #              index=20,
-    #              filepath=grid.folder)
+    # # 创建solve对象
+    # solve = Solve(grid=grid,
+    #               axis="z",
+    #               index=0,
+    #               filepath=grid.folder
+    #               )
     #
-    # # 计算这个截面处，波长1.55um，折射率3.47附近的10个模式
-    # solve._calculate_mode(lam=1.55, neff=3.47, neigs=10)
+    # # 绘制任一截面折射率分布
+    # solve.plot()
     #
-    # # 绘制计算的10个模式并保存
-    # solve._draw_mode(neigs=10)
-    #
-    # # 计算各个模式的TEfraction，并保存图片
-    # # solve._calculate_TEfraction(n_levels=6)
-    # # 打印这些模式对应的有效折射率
-    # print(solve.effective_index)
-
     # 运行仿真
     grid.run()
-    grid.save_fig(axis="z", axis_number=0, show_energy=True)
+    grid.save_fig(axis="y", axis_number=0, show_energy=True)
     # # 保存仿真结果
     # grid.save_simulation()
     # # 绘制仿真结束时刻空间场分布
-    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="z", axis_index=0, folder=grid.folder)
+    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0, folder=grid.folder)
     # 绘制任意截面场图
     # grid.visualize(z=0, showEnergy=True, show=True, save=True)
     #

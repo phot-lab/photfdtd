@@ -4,14 +4,12 @@ from photfdtd import Hexagonal_PC, Grid, Solve, Fiber
 if __name__ == "__main__":
     background_index = 1.445
 
-    # 设置器件参数
-
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=46000e-9, grid_ylength=40000e-9, grid_zlength=1, grid_spacing=200e-9,
                 foldername="test_Hexagonal_PC",
                 permittivity=background_index ** 2)
     # 设置器件参数
-    pc = Hexagonal_PC(n_side=3, zlength=1, H_number=1, refractive_index=1, name="pc",
+    pc = Hexagonal_PC(n_side=3, zlength=1, number=2, refractive_index=1, name="pc",
                       grid=grid, a=40 * 200e-9, radius=10 * 200e-9)
 
     core = Fiber(length=1, radius=[25 * 200e-9], refractive_index=[1.45],
@@ -19,8 +17,9 @@ if __name__ == "__main__":
 
     # 往 grid 里添加器件
     grid.add_object(pc)
-    grid.add_object(core)
-
+    # grid.add_object(core)
+    grid.plot_n(axis="z", axis_index=0)
+    grid.save_fig(axis="z", axis_index=0)
     solve = Solve(grid=grid,
                   axis='z',
                   index=0,

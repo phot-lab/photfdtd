@@ -5,7 +5,9 @@ if __name__ == "__main__":
     # This example shows a 2D simulation of a basic straight waveguide本示例展示了一个基础矩形波导的二维仿真
     # set background index设置背景折射率
     background_index = 1.0
-    index = Index(material="Si", wavelength=1.55)
+
+    index_Si = Index(material="Si")
+    index_Re_Si, index_Im_Si = index_Si.get_refractive_index(wavelength=1.55)
 
     # create the simulation region, which is a Grid object 新建一个 grid 对象
     grid = Grid(grid_xlength=1, grid_ylength=3e-6, grid_zlength=8e-6,
@@ -15,7 +17,7 @@ if __name__ == "__main__":
 
     # set waveguide设置器件参数
     waveguide = Waveguide(
-        xlength=1, ylength=200e-9, zlength=5e-6, refractive_index=3.47, name="waveguide", grid=grid
+        xlength=1, ylength=200e-9, zlength=5e-6, refractive_index=index_Re_Si, name="waveguide", grid=grid
     )
 
     # add waveguide to grid 往 grid 里添加器件
@@ -36,8 +38,9 @@ if __name__ == "__main__":
     #                   zlength=0
     #                   )
 
-    # We can plot the geometry now 绘制x=0截面结构图
+    # We can plot the geometry and the index map now
     grid.save_fig(axis="x", axis_number=0)
+    grid.plot_n(grid=grid, axis="y", axis_index=37)
 
     # create a Solve object. You can use it to solve the eigenmodes (see eigenmode_solver_ex) 创建solve对象
     solve = Solve(grid=grid,

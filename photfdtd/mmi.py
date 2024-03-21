@@ -1,6 +1,5 @@
 from .waveguide import Waveguide
 from .ysplitter import Taper
-import photfdtd.fdtd as fdtd
 
 
 class Mmi(Waveguide):

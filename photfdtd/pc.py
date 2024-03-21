@@ -5,6 +5,8 @@ from .fiber import Fiber
 class Hexagonal_PC():
     """六边形方格光子晶体(Hexagonal Photonic Crystal)
     n_side: number of crystals on each side of the hexagon
+    number: number of layers. If set, H_number will be no longer required,
+            H_number = n_side - number
     H_number: number of rings missing that form a cavity
     zlength: height of each crystal
     a: lattice constant 晶格常数，在本结构中是光子晶体中心的间距
@@ -14,12 +16,10 @@ class Hexagonal_PC():
     name: 名称
     background_index: 环境折射率
     """
-
-    # TODO：现在只有x-y平面
-
     def __init__(
             self,
             n_side: int = None,
+            number: int = None,
             H_number: int = None,
             zlength: int or float = None,
             a: int or float= None,
@@ -32,6 +32,8 @@ class Hexagonal_PC():
             grid=None
     ) -> None:
         # TODO: FIXME: NOTE: python中赋值后面加逗号代表创建元组
+        if number:
+            H_number = n_side - number
         self.n_side = n_side
         self.H_number = H_number
         self.a, self.zlength, self.radius, x, y, z = grid._handle_unit([a, zlength, radius, x, y, z], grid_spacing=grid._grid.grid_spacing)

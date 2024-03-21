@@ -75,89 +75,37 @@ class Mzi:
 
         outer_radius = int((self.couplelength + 2 * self.width) / 4 + 0.5)
 
-        arc1 = Arc(outer_radius=outer_radius,
-                   zlength=self.zlength,
-                   x=self.x - outer_radius * 2 + self.width,
-                   y=self.y + int(self.gap / 2 + 0.5),
-                   z=self.z - self.zlength // 2,
-                   width=self.width,
-                   refractive_index=self.refractive_index,
-                   name='%s-arc1' % self.name,
-                   direction=3,
-                   background_index=self.background_index)
-        arc2 = Arc(outer_radius=outer_radius,
-                   zlength=self.zlength,
-                   x=self.x - outer_radius * 2 + self.width,
-                   y=self.y - int(self.gap / 2 + 0.5) - outer_radius,
-                   z=self.z - self.zlength // 2,
-                   width=self.width,
-                   refractive_index=self.refractive_index,
-                   name='%s-arc2' % self.name,
-                   direction=2,
-                   background_index=self.background_index)
+        arc1 = Arc(outer_radius=outer_radius, x=self.x - outer_radius * 2 + self.width,
+                   y=self.y + int(self.gap / 2 + 0.5), z=self.z - self.zlength // 2, width=self.width,
+                   refractive_index=self.refractive_index, name='%s-arc1' % self.name)
+        arc2 = Arc(outer_radius=outer_radius, x=self.x - outer_radius * 2 + self.width,
+                   y=self.y - int(self.gap / 2 + 0.5) - outer_radius, z=self.z - self.zlength // 2, width=self.width,
+                   refractive_index=self.refractive_index, name='%s-arc2' % self.name)
 
-        arc3 = Arc(outer_radius=outer_radius,
-                   zlength=self.zlength,
-                   x=self.x - outer_radius,
+        arc3 = Arc(outer_radius=outer_radius, x=self.x - outer_radius,
                    y=self.y + int(self.gap / 2 + 0.5) + outer_radius + self.addlength_arm1,
-                   z=self.z - self.zlength // 2,
-                   width=self.width,
-                   refractive_index=self.refractive_index,
-                   name='%s-arc3' % self.name,
-                   direction=1,
-                   background_index=self.background_index)
-        arc4 = Arc(outer_radius=outer_radius,
-                   zlength=self.zlength,
-                   x=self.x - outer_radius,
+                   z=self.z - self.zlength // 2, width=self.width, refractive_index=self.refractive_index,
+                   name='%s-arc3' % self.name)
+        arc4 = Arc(outer_radius=outer_radius, x=self.x - outer_radius,
                    y=self.y - int(self.gap / 2 + 0.5) - 2 * outer_radius - self.addlength_arm2,
-                   z=self.z - self.zlength // 2,
-                   width=self.width,
-                   refractive_index=self.refractive_index,
-                   name='%s-arc4' % self.name,
-                   direction=4,
-                   background_index=self.background_index)
+                   z=self.z - self.zlength // 2, width=self.width, refractive_index=self.refractive_index,
+                   name='%s-arc4' % self.name)
 
-        arc5 = Arc(outer_radius=outer_radius,
-                   zlength=self.zlength,
-                   x=self.x,
+        arc5 = Arc(outer_radius=outer_radius, x=self.x,
                    y=self.y + int(self.gap / 2 + 0.5) + outer_radius + self.addlength_arm1,
-                   z=self.z - self.zlength // 2,
-                   width=self.width,
-                   refractive_index=self.refractive_index,
-                   name='%s-arc5' % self.name,
-                   direction=2,
-                   background_index=self.background_index)
-        arc6 = Arc(outer_radius=outer_radius,
-                   zlength=self.zlength,
-                   x=self.x,
+                   z=self.z - self.zlength // 2, width=self.width, refractive_index=self.refractive_index,
+                   name='%s-arc5' % self.name)
+        arc6 = Arc(outer_radius=outer_radius, x=self.x,
                    y=self.y - int(self.gap / 2 + 0.5) - 2 * outer_radius - self.addlength_arm2,
-                   z=self.z - self.zlength // 2,
-                   width=self.width,
-                   refractive_index=self.refractive_index,
-                   name='%s-arc6' % self.name,
-                   direction=3,
-                   background_index=self.background_index)
+                   z=self.z - self.zlength // 2, width=self.width, refractive_index=self.refractive_index,
+                   name='%s-arc6' % self.name)
 
-        arc7 = Arc(outer_radius=outer_radius,
-                   zlength=self.zlength,
-                   x=self.x + outer_radius - self.width,
-                   y=self.y + int(self.gap / 2 + 0.5),
-                   z=self.z - self.zlength // 2,
-                   width=self.width,
-                   refractive_index=self.refractive_index,
-                   name='%s-arc7' % self.name,
-                   direction=4,
-                   background_index=self.background_index)
-        arc8 = Arc(outer_radius=outer_radius,
-                   zlength=self.zlength,
-                   x=self.x + outer_radius - width,
-                   y=self.y - int(self.gap / 2 + 0.5) - outer_radius,
-                   z=self.z - self.zlength // 2,
-                   width=self.width,
-                   refractive_index=self.refractive_index,
-                   name='%s-arc8' % self.name,
-                   direction=1,
-                   background_index=self.background_index)
+        arc7 = Arc(outer_radius=outer_radius, x=self.x + outer_radius - self.width, y=self.y + int(self.gap / 2 + 0.5),
+                   z=self.z - self.zlength // 2, width=self.width, refractive_index=self.refractive_index,
+                   name='%s-arc7' % self.name)
+        arc8 = Arc(outer_radius=outer_radius, x=self.x + outer_radius - width,
+                   y=self.y - int(self.gap / 2 + 0.5) - outer_radius, z=self.z - self.zlength // 2, width=self.width,
+                   refractive_index=self.refractive_index, name='%s-arc8' % self.name)
 
         if self.addlength_arm1 != 0:
             wg1 = Waveguide(xlength=self.width,

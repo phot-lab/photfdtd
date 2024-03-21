@@ -15,7 +15,7 @@ class Index:
     def __init__(self,
                  material: str = 'materials/Si.csv',
                  data=None,
-                 wavelength: float = 1.55
+                 wavelength: float = None
                  ):
         self.material = material
         import os
@@ -26,7 +26,6 @@ class Index:
         self.fit_function_Reindex = None
         self.fit_function_Imindex = None
         self.fit()
-
 
     def fit(self):
         # 打开CSV文件并读取数据
@@ -72,9 +71,13 @@ class Index:
         plt.savefig(fname='%s//wl-%s.png' % (filepath, ylabel))
         plt.show()
 
-    def get_refractive_index(self, wave_length):
-        return self.fit_function_Reindex(wave_length), self.fit_function_Imindex(
-                wave_length) if self.fit_function_Imindex is not None else 0
+    def get_refractive_index(self, wavelength):
+        index_Re = float(self.fit_function_Reindex(wavelength))
+        try:
+            index_Im = float(self.fit_function_Imindex(wavelength))
+        except:
+            index_Im = 0
+        return index_Re, index_Im
 
 
 if __name__ == "__main__":
