@@ -130,9 +130,9 @@ class Grid:
             x: int or float = None,
             y: int or float = None,
             z: int or float = None,
-            xlength: int or float = 5,
-            ylength: int or float = 5,
-            zlength: int or float = 5,
+            xlength: int or float = 0,
+            ylength: int or float = 0,
+            zlength: int or float = 0,
             x_start: int or float = None,
             y_start: int or float = None,
             z_start: int or float = None,
@@ -291,8 +291,8 @@ class Grid:
                      x: int or float = None,
                      y: int or float = None,
                      z: int or float = None,
-                     xlength: int or float = 5,
-                     ylength: int or float = 5,
+                     xlength: int or float = 1,
+                     ylength: int or float = 1,
                      zlength: int or float = 1,
                      name: str = 'detector',
                      axis: str = "y",
@@ -333,6 +333,9 @@ class Grid:
             self._grid[x_start: x_end, y_start: y_end, z_start: z_end] = fdtd.LineDetector(name=name)
 
         elif detector_type == 'blockdetector':
+            x -= int(xlength / 2)
+            y -= int(ylength / 2)
+            z -= int(zlength / 2)
             if axis == "x":
                 self._check_parameters(x, x, y, y + ylength, z, z + zlength, name=name)
                 self._grid[x: x,
@@ -954,6 +957,7 @@ class Grid:
         @param axis: 0或1或2分别表示E或H的x，y，z分量
         @param field: ”E"或"H"
         """
+        # TODO: axis参数与其他可视化参数一致
         # TODO: 把fdtd的fourier.py研究明白
         # TODO: 傅里叶变换后的单位？
         if folder is None:

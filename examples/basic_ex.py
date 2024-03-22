@@ -1,4 +1,3 @@
-import utils
 from photfdtd import Waveguide, Grid, Solve, Index
 
 if __name__ == "__main__":
@@ -40,7 +39,7 @@ if __name__ == "__main__":
 
     # We can plot the geometry and the index map now
     grid.save_fig(axis="x", axis_number=0)
-    grid.plot_n(grid=grid, axis="y", axis_index=37)
+    grid.plot_n(grid=grid, axis="x", axis_index=0)
 
     # create a Solve object. You can use it to solve the eigenmodes (see eigenmode_solver_ex) 创建solve对象
     solve = Solve(grid=grid,
@@ -68,6 +67,10 @@ if __name__ == "__main__":
     # # 绘制仿真结束时刻空间场分布
     Grid.plot_field(grid=grid, field="E", field_axis="x", axis="x", axis_index=0, folder=grid.folder)
     #
+    # 如果添加了面监视器，可以绘制监视器范围内电场dB图, as the detector we have added is a linedetector, it's useless
+    # Grid.dB_map(folder=grid.folder, total_time=grid._grid.time_passed, data=data, choose_axis=0,
+    #             field="E", name_det="detector", interpolation="spline16", save=True, index="x-y")
+
     # # 如果添加了监视器，还可以绘制某一点时域场变化曲线，这里选择index=30即监视器中心
     # Grid.plot_fieldtime(folder=grid.folder, data=data, field_axis="z", index=30, name_det="detector")
 
