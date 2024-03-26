@@ -2,6 +2,7 @@ import utils
 from photfdtd import Waveguide, Grid, Solve, constants
 
 if __name__ == "__main__":
+    # This file has been used for an example of dBmap and blockdetector.
     background_index = 1.4447
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=4e-6, grid_ylength=1, grid_zlength=8e-6,
@@ -36,10 +37,9 @@ if __name__ == "__main__":
     data = grid.save_simulation()
 
     # 如果设置了监视器，绘制监视器范围内光场分布
-    grid.save_fig(axis="y", axis_number=0)
+    grid.save_fig(axis="y", axis_number=0, show_energy=True)
     Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0, folder=grid.folder)
-    Grid.plot_fieldtime(folder=grid.folder, data=data, field_axis="x", index_3d=[25, 0,30], name_det="detector")
+    Grid.plot_fieldtime(folder=grid.folder, data=data, field_axis="x", index_3d=[25, 0, 0], name_det="detector")
     Grid.dB_map(folder=grid.folder, total_time=grid._grid.time_passed, data=data, axis="y",
                 field="E", name_det="detector", interpolation="spline16", save=True, field_axis="x")
-    Grid.compute_frequency_domain(grid=grid, wl_start=1000e-9, wl_end=2000e-9, data=data, name_det="detector",
-                                  index_3d=[25, 0,30], axis=0, field="E")
+

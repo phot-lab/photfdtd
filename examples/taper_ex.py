@@ -5,7 +5,7 @@ if __name__ == "__main__":
     background_index = 1.4447
 
     # 设置 grid 参数
-    grid = Grid(grid_ylength=200, grid_xlength=200, grid_zlength=200, grid_spacing=20e-9,
+    grid = Grid(grid_ylength=4e-6, grid_xlength=4e-6, grid_zlength=4e-6, grid_spacing=20e-9,
                 foldername="test_taper", permittivity=background_index ** 2)
 
     # 设置器件参数

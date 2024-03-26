@@ -33,7 +33,7 @@ class Solve:
         if axis_index:
             index = axis_index
         if not filepath:
-            filepath=grid.folder
+            filepath = grid.folder
         self.grid = grid._grid
         self.geometry = np.sqrt(1 / self.grid.inverse_permittivity)
         # for i in range(len(self.grid.objects)):
@@ -153,12 +153,14 @@ class Solve:
         flag_deleted = []
         print("%i modes are found" % neigs)
         print("neff=", self.beta * self.lam / (2 * np.pi))
-        for i in range(len(self.beta)):
-            # Discard dispersion modes丢掉耗散模
-            # print(abs(self.beta[i].imag * self.lam / (2 * np.pi)))
-            if abs(self.beta[i].imag * self.lam / (2 * np.pi)) > 1e-5:
-                flag_deleted.append(i)
-                neigs -= 1
+
+        # Discard dispersion modes丢掉耗散模
+        # for i in range(len(self.beta)):
+        #     # print(abs(self.beta[i].imag * self.lam / (2 * np.pi)))
+        #     if abs(self.beta[i].imag * self.lam / (2 * np.pi)) > 1e-5:
+        #         flag_deleted.append(i)
+        #         neigs -= 1
+
         self.beta, Ex_field, Ey_field = np.delete(self.beta, flag_deleted), \
                                         np.delete(Ex_field, flag_deleted, 0), \
                                         np.delete(Ey_field, flag_deleted, 0)
@@ -214,25 +216,17 @@ class Solve:
         Hy = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Hy]
         Hz = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Hz]
 
-        dic = {}
+        dic = {"number_of_modes": neigs, "axis": self.axis,"grid_spacing": self.grid.grid_spacing, "lam": lam,
+               "effective_index": self.effective_index,  "Ex": Ey, "Ey": Ex, "Ez": Ez, "Hx": Hy, "Hy": Hx,
+               "Hz": Hz}
 
         # 似乎原代码中Ex, Ey和Hx, Hy弄反了，所以我在这里调换了一下
-        dic["Ex"] = Ey
-        dic["Ey"] = Ex
-        dic["Ez"] = Ez
-        dic["Hx"] = Hy
-        dic["Hy"] = Hx
-        dic["Hz"] = Hz
-        dic["number_of_modes"] = neigs
-        dic["effective_index"] = self.effective_index
-        dic["axis"] = self.axis
-        dic["grid_spacing"] = self.grid.grid_spacing
-        dic["lam"] = lam
+
         return dic
 
     @staticmethod
     def draw_mode(filepath,
-                  data: list = None,
+                  data: dict = None,
                   content: str = "amplitude"
                   ) -> None:
         '''
@@ -345,7 +339,7 @@ class Solve:
         # plt.close()
 
         # Draw loss plot
-        loss = -20 * np.log10(np.e ** (-2 * np.pi * effective_index.imag / lam))
+        # loss = -20 * np.log10(np.e ** (-2 * np.pi * effective_index.imag / lam))
         # plt.plot(np.linspace(1, len(effective_index), len(effective_index)), loss, label='Line',
         #          marker="o")
         # plt.title('loss plot')
@@ -356,9 +350,63 @@ class Solve:
         # plt.close()
 
     @staticmethod
-    def save_mode(folder, dic):
+    def save_mode(folder, dic, index: int = None, format: str = "npz"):
+        """
+        Save result
+        @param folder: folder path to save data
+        @param dic: dic from calculate_mode()
+        @param index: mode index to save
+        @param format: "npz" or "txt"
+        """
         # 保存计算的模式
-        np.savez(path.join(folder, "saved_modes"), **dic)
+        if not index:
+            data = dic
+            if format == "npz":
+                np.savez(path.join(folder, "saved_modes"), **data)
+            elif format == "txt":
+                # 打开文件，以写入模式打开，如果文件不存在则创建
+                import os
+                filepath = folder + "/saved_modes.txt"
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                # 将字典的键和值转换为列表
+                keys = list(data.keys())
+                values = list(data.values())
+
+                # 创建一个 NumPy 数组，保存键和值
+                data = np.array([keys, values], dtype=object).T
+                np.set_printoptions(threshold=np.inf)
+                # 保存为文本文件
+                np.savetxt(filepath, data, fmt='%s')
+                np.set_printoptions()
+                print("txt has been saved")
+        elif index:
+            # 字典是可变对象，在函数内部修改dic会同时修改函数外的dic
+            data = {}
+            for i in ("number_of_modes", "axis", "grid_spacing", "lam"):
+                data[i] = dic[i]
+            for i in ("effective_index", "Ex", "Ey", "Ez", "Hx", "Hy", "Hz"):
+                data[i] = dic[i][index]
+
+
+            if format == "npz":
+                np.savez(path.join(folder, "saved_modes"), **data)
+            elif format == "txt":
+                # 打开文件，以写入模式打开，如果文件不存在则创建
+                import os
+                filepath = folder + "/saved_modes.txt"
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                # 将字典的键和值转换为列表
+                keys = list(data.keys())
+                values = list(data.values())
+
+                # 创建一个 NumPy 数组，保存键和值
+                data = np.array([keys, values], dtype=object).T
+                np.set_printoptions(threshold=np.inf)
+                # 保存为文本文件
+                np.savetxt(filepath, data, fmt='%s')
+                np.set_printoptions()
+                print("txt has been saved")
+
 
     @staticmethod
     def read_mode(folder):

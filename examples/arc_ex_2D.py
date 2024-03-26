@@ -2,64 +2,49 @@ import utils
 from photfdtd import Waveguide, Arc, Grid, Solve, constants
 
 if __name__ == "__main__":
-    background_index = 1.4
+    background_index = 1.4447
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=300, grid_ylength=1, grid_zlength=300, grid_spacing=20e-9,
+    grid = Grid(grid_xlength=6e-6, grid_ylength=1, grid_zlength=6e-6, grid_spacing=20e-9,
                 foldername="test_arc_2D",
                 permittivity=background_index ** 2, )
 
     # 设置器件参数
-    # waveguide1 = Waveguide(
-    #     xlength=45, ylength=20, zlength=1, x=80, y=150, z=0, refractive_index=3.47, name="Waveguide1",
-    #     grid=grid
-    # )
     arc = Arc(outer_radius=2e-6, ylength=1, width=0.4e-6, refractive_index=3.47, name="arc", angle_phi=0, angle_psi=90,
-              grid=grid)
-    # waveguide2 = Waveguide(
-    #     xlength=20, ylength=40, zlength=1, x=150, y=80, z=0, refractive_index=3.47, name="Waveguide2",
-    #     grid=grid
-    # )
+              grid=grid, angle_unit=True)
+    waveguide1 = Waveguide(
+        xlength=2.2e-6, ylength=1, zlength=0.4e-6, x=2e-6, y=0, z=4.8e-6, refractive_index=3.47, name="Waveguide1", grid=grid
+    )
+    waveguide2 = Waveguide(
+        xlength=0.4e-6, ylength=1, zlength=2.2e-6, x=4.8e-6, y=0, z=2e-6, refractive_index=3.47, name="Waveguide2", grid=grid
+    )
 
     # 往 grid 里添加器件
     grid.add_object(arc)
-    # grid.add_object(waveguide2)
-    # grid.add_object(waveguide1)
+    grid.add_object(waveguide1)
+    grid.add_object(waveguide2)
+    grid.save_fig(axis="y", axis_number=0)
+    grid.plot_n(axis="y", axis_index=0)
 
     # 设置光源
-    # grid.set_source(source_type="linesource", period=1550e-9 / constants.c, name="source", x=50, y=150, z=0,
-    #                 xlength=1, ylength=waveguide1.ylength + 4, zlength=1, polarization="y")
+    grid.set_source(source_type="pointsource", period=1550e-9 / constants.c, name="source", x=2.5e-6, y=0, z=4.8e-6,
+                    xlength=0, ylength=0, zlength=0.2e-6, polarization="z", amplitude=1)
 
-    # 设置监视器
-    # grid.set_detector(detector_type="blockdetector",
-    #                   name="detector",
-    #                   x=150,
-    #                   y=30,
-    #                   z=11,
-    #                   xlength=waveguide2.xlength + 4,
-    #                   ylength=1,
-    #                   zlength=waveguide1.zlength
-    #                   )
+    grid.set_detector(detector_type='linedetector',
+                      x_start=4.5e-6, y_start=0e-6, z_start=2.8e-6,
+                      x_end=5e-6, y_end=0e-6, z_end=2.8e-6,
+                      name='detector1')
 
-    solve = Solve(grid=grid,
-                  axis='y',
-                  index=0,
-                  filepath=grid.folder
-                  )
+    # 运行仿真
+    grid.run()
+    grid.save_simulation()
 
-    # We can plot the geometry now 绘制x=0截面结构图
-    grid.save_fig(axis="y", axis_number=0)
+    # # 绘制仿真结束时刻空间场分布
+    grid.save_fig(axis="y", axis_number=0, show_energy=True)
+    Grid.plot_field(grid=grid, field="E", field_axis="z", axis="y", axis_index=0, folder=grid.folder, vmax=2)
 
-    # 绘制任一截面
-    solve.plot()
-    #
-    # # 运行仿真
-    # grid.run()
-    #
-    # # # 绘制仿真结束时刻空间场分布
-    # Grid.plot_field(grid=grid, field="E", field_axis="y", axis="z", axis_index=0, folder=grid.folder)
-    #
-    # # # 保存仿真结果
-    # # grid.save_simulation()
-    # #
-    # # 读取仿真结果
-    # data = grid.read_simulation(folder=grid.folder)
+    # 读取仿真结果
+    data = Grid.read_simulation(folder=grid.folder)
+
+    # 由监视器数据绘制Ex场随时间变化的图像
+    Grid.plot_fieldtime(folder=grid.folder, data=data, field="E", field_axis="z",
+                        index=5, name_det="detector1")

@@ -5,7 +5,7 @@ if __name__ == "__main__":
     background_index = 1.4447
 
     # 设置 grid 参数
-    grid = Grid(grid_xlength=200, grid_ylength=1, grid_zlength=400, grid_spacing=20e-9,
+    grid = Grid(grid_xlength=4e-6, grid_ylength=1, grid_zlength=8e-6, grid_spacing=20e-9,
                 foldername="test_taper_2D", permittivity=background_index ** 2)
 
     # 设置器件参数
@@ -13,62 +13,26 @@ if __name__ == "__main__":
                   grid=grid)
 
     grid.add_object(taper)
-    # grid.save_fig(axis="x", axis_number=51)
-    # grid.save_fig(axis="x", axis_number=149)
     grid.save_fig(axis="y", axis_number=0)
-    # 创建solve对象
-    # solve_fiber_side = Solve(grid=grid,
-    #                          axis='x',
-    #                          index=51,
-    #                          filepath=grid.folder)
+    grid.plot_n(axis="y", axis_index=0)
+
     grid.set_source(source_type="linesource", wavelength=1550e-9, name="source", x=2e-6, y=0, z=1e-6,
                     xlength=30, ylength=1, zlength=1, polarization="x")
+    grid.set_detector(detector_type='linedetector',
+                      x_start=1e-6, y_start=0e-6, z_start=7e-6,
+                      x_end=3e-6, y_end=0e-6, z_end=7e-6,
+                      name='detector1')
 
     # run the FDTD simulation 运行仿真
     grid.run()
+    grid.save_simulation()
 
     # 绘制仿真结束时刻空间场分布
     Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0, folder=grid.folder)
-    # Grid.plot_field(grid=grid, field="E", field_axis="y", axis="x", axis_index=51, folder=grid.folder)
-    # Grid.plot_field(grid=grid, field="E", field_axis="y", axis="x", axis_index=149, folder=grid.folder)
-
-    # grid.save_fig(axis="x", axis_number=51, show_energy=True)
-    # grid.save_fig(axis="x", axis_number=149, show_energy=True)
     grid.save_fig(axis="y", axis_number=0, show_energy=True)
 
-    # # 绘制任一截面折射率分布
-    # solve_fiber_side.plot()
-    #
-    # # Now we can calculate modes
-    # data_fiber_side = solve_fiber_side.calculate_mode(lam=1550e-9, neff=2, neigs=20,
-    #                                                   x_boundary_low="pml",
-    #                                                   y_boundary_low="pml",
-    #                                                   x_boundary_high="pml",
-    #                                                   y_boundary_high="pml",
-    #                                                   background_index=background_index)
-    #
-    # # Draw the modes 接下来即可绘制模式场，我们选择绘制amplitude，即幅值。filepath为保存绘制的图片的路径
-    # solve_fiber_side.draw_mode(filepath=solve_fiber_side.filepath,
-    #                            data=data_fiber_side,
-    #                            content="amplitude")
-    #
-    # solve_wg_side = Solve(grid=grid,
-    #                       axis='x',
-    #                       index=148,
-    #                       filepath=grid.folder)
-    #
-    # # 绘制任一截面折射率分布
-    # solve_wg_side.plot()
-    #
-    # # Now we can calculate modes
-    # data_wg_side = solve_wg_side.calculate_mode(lam=1550e-9, neff=3.47, neigs=5,
-    #                                             x_boundary_low="pml",
-    #                                             y_boundary_low="pml",
-    #                                             x_boundary_high="pml",
-    #                                             y_boundary_high="pml",
-    #                                             background_index=background_index)
-    #
-    # # Draw the modes 接下来即可绘制模式场，我们选择绘制amplitude，即幅值。filepath为保存绘制的图片的路径
-    # solve_wg_side.draw_mode(filepath=solve_wg_side.filepath + "\\wg_side",
-    #                         data=data_wg_side,
-    #                         content="amplitude")
+    data = Grid.read_simulation(folder=grid.folder)
+
+    # 由监视器数据绘制Ex场随时间变化的图像
+    Grid.plot_fieldtime(folder=grid.folder, data=data, field="E", field_axis="x",
+                        index=5, name_det="detector1")
