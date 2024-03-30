@@ -1,6 +1,6 @@
 # import utils
 import photfdtd.philsol as ps
-import numpy as np
+import cupy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from os import path

@@ -2,7 +2,7 @@
 
 from math import sin, cos, sqrt, log, exp
 
-import numpy as np
+import cupy as np
 
 # For Hanning window pulses
 def hanning(f, t, n):

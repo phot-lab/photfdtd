@@ -1,4 +1,4 @@
-import numpy as np
+import cupy as np
 from scipy.signal import find_peaks
 from . import conversions
 from matplotlib import pyplot as plt

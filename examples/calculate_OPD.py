@@ -1,4 +1,4 @@
-import numpy as np
+import cupy as np
 
 n = 2.79  # 有效折射率
 grid_spacing = 50e-9  # 请输入空间步长 (m)

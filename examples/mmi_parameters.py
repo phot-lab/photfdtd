@@ -1,4 +1,4 @@
-import numpy as np
+import cupy as np
 # 计算MMI参数
 ns = 1.45  # 包层（限制层）折射率（论文里为nc）
 nf = 3.441  # 折射率（论文里为nr）

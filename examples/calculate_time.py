@@ -1,4 +1,4 @@
-import numpy as np
+import cupy as np
 from photfdtd import constants
 n = 1.4555  # 请输入材料的折射率
 L = 3777  # "请输入光传输的长度（格数）

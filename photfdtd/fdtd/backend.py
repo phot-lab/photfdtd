@@ -27,7 +27,7 @@ The ``cuda`` backends are only available for computers with a GPU.
 ## Imports
 
 # Numpy Backend
-import numpy  # numpy has to be present
+import cupy  # numpy has to be present
 from functools import wraps
 
 # used only by test runner.

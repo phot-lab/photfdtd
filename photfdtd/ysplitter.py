@@ -1,6 +1,6 @@
 from .waveguide import Waveguide
 from . import sbend
-import numpy as np
+import cupy as np
 
 
 class Taper(Waveguide):

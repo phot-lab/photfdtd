@@ -1,5 +1,5 @@
 from .waveguide import Waveguide
-import numpy as np
+import cupy as np
 
 
 class Sbend(Waveguide):

@@ -1,6 +1,6 @@
 from .waveguide import Waveguide
 from .arc import Arc
-import numpy as np
+import cupy as np
 
 
 class Ring(Waveguide):

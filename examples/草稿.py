@@ -1,3 +1,3 @@
-import numpy as np
+import cupy as np
 
 print(np.log(np.e))

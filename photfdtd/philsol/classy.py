@@ -1,5 +1,5 @@
 import photfdtd.philsol as ps
-import numpy as np
+import cupy as np
 
 
 class phil_class:

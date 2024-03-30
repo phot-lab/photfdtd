@@ -1,6 +1,6 @@
 import utils
 from photfdtd import DirectionalCoupler, Grid, Solve, Analyse
-import numpy as np
+import cupy as np
 import matplotlib.pyplot as plt
 if __name__ == "__main__":
 

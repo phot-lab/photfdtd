@@ -1,4 +1,4 @@
-import numpy as np
+import cupy as np
 from .fiber import Fiber
 
 

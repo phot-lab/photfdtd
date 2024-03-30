@@ -1,7 +1,7 @@
 import scipy.constants as cst
 import scipy.sparse.linalg as linalg
 import time
-import numpy as np
+import cupy as np
 
 
 def solve(P, beta_trial, E_trial=None, neigs=1):

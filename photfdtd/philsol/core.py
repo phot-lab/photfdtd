@@ -1,4 +1,4 @@
-import numpy as np
+import cupy as np
 import scipy.sparse as sps
 import time
 import math
