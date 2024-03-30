@@ -6,6 +6,7 @@ from matplotlib import cm
 from os import path
 import photfdtd.fdtd as fdtd
 
+from photfdtd.utils.savez import savez
 
 class Solve:
     """
@@ -87,7 +88,8 @@ class Solve:
         plt.colorbar()
         plt.title("refractive_index_real")
         # 保存图片
-        plt.savefig(fname='%s\\%s_%s=%d.png' % (self.filepath, 'index', self.axis, self.index))
+        plt.savefig(fname='%s\\%s_%s=%d.png' %
+                    (self.filepath, 'index', self.axis, self.index))
 
         # plt.show()
         plt.clf()
@@ -137,8 +139,10 @@ class Solve:
             y_thickness_high = PML_with
         x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high = \
             self.grid._handle_distance(x_thickness_low), self.grid._handle_distance(x_thickness_high), \
-            self.grid._handle_distance(y_thickness_low), self.grid._handle_distance(y_thickness_high),
-        print(x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high)
+            self.grid._handle_distance(
+                y_thickness_low), self.grid._handle_distance(y_thickness_high),
+        print(x_thickness_low, x_thickness_high,
+              y_thickness_low, y_thickness_high)
         # Calculate modes
         # FIXME: 检查pml边界的四个方向是否有问题
         P, matrices = ps.eigen_build(self.k, self.n, self.grid.grid_spacing * 1e6, self.grid.grid_spacing * 1e6,
@@ -162,8 +166,8 @@ class Solve:
         #         neigs -= 1
 
         self.beta, Ex_field, Ey_field = np.delete(self.beta, flag_deleted), \
-                                        np.delete(Ex_field, flag_deleted, 0), \
-                                        np.delete(Ey_field, flag_deleted, 0)
+            np.delete(Ex_field, flag_deleted, 0), \
+            np.delete(Ey_field, flag_deleted, 0)
         print("%i dispersion modes are discarded" % len(flag_deleted))
 
         self.effective_index = self.beta * self.lam / (2 * np.pi)
@@ -185,7 +189,6 @@ class Solve:
             Ey = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ex_field]
             Ez = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ey_field]
 
-
         elif self.axis == 'y':
 
             Ey = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
@@ -198,7 +201,6 @@ class Solve:
             Ey = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ey]
             Ex = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ex_field]
             Ez = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ey_field]
-
 
         elif self.axis == 'z':
 
@@ -216,7 +218,7 @@ class Solve:
         Hy = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Hy]
         Hz = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Hz]
 
-        dic = {"number_of_modes": neigs, "axis": self.axis,"grid_spacing": self.grid.grid_spacing, "lam": lam,
+        dic = {"number_of_modes": neigs, "axis": self.axis, "grid_spacing": self.grid.grid_spacing, "lam": lam,
                "effective_index": self.effective_index,  "Ex": Ey, "Ey": Ex, "Ez": Ez, "Hx": Hy, "Hy": Hx,
                "Hz": Hz}
 
@@ -269,9 +271,11 @@ class Solve:
                     plt.xlabel('x/um')
                     plt.ylabel('y/um')
 
-                plt.title('%s_of_%s, neff=%s' % (content, j, str(effective_index[i])))
+                plt.title('%s_of_%s, neff=%s' %
+                          (content, j, str(effective_index[i])))
                 # 保存图片
-                plt.savefig(fname='%s\\%s%d_%s_%s.png' % (filepath, 'mode', i + 1, content, j))
+                plt.savefig(fname='%s\\%s%d_%s_%s.png' %
+                            (filepath, 'mode', i + 1, content, j))
                 plt.close()
 
         # Draw E/H intensity
@@ -305,7 +309,8 @@ class Solve:
                 plt.ylabel('y/um')
             plt.title('E_intensity, neff=%s' % (str(effective_index[i])))
             # 保存图片
-            plt.savefig(fname='%s\\%s%d_E_intensity.png' % (filepath, 'mode', i + 1))
+            plt.savefig(fname='%s\\%s%d_E_intensity.png' %
+                        (filepath, 'mode', i + 1))
             plt.close()
 
             plt.figure()
@@ -326,7 +331,8 @@ class Solve:
                 plt.ylabel('y/um')
             plt.title('H_intensity, neff=%s' % (str(effective_index[i])))
             # 保存图片
-            plt.savefig(fname='%s\\%s%d_H_intensity.png' % (filepath, 'mode', i + 1))
+            plt.savefig(fname='%s\\%s%d_H_intensity.png' %
+                        (filepath, 'mode', i + 1))
             plt.close()
 
         # Draw neff plot
@@ -362,7 +368,7 @@ class Solve:
         if not index:
             data = dic
             if format == "npz":
-                np.savez(path.join(folder, "saved_modes"), **data)
+                savez(path.join(folder, "saved_modes"), **data)
             elif format == "txt":
                 # 打开文件，以写入模式打开，如果文件不存在则创建
                 import os
@@ -387,9 +393,8 @@ class Solve:
             for i in ("effective_index", "Ex", "Ey", "Ez", "Hx", "Hy", "Hz"):
                 data[i] = dic[i][index]
 
-
             if format == "npz":
-                np.savez(path.join(folder, "saved_modes"), **data)
+                savez(path.join(folder, "saved_modes"), **data)
             elif format == "txt":
                 # 打开文件，以写入模式打开，如果文件不存在则创建
                 import os
@@ -406,7 +411,6 @@ class Solve:
                 np.savetxt(filepath, data, fmt='%s')
                 np.set_printoptions()
                 print("txt has been saved")
-
 
     @staticmethod
     def read_mode(folder):

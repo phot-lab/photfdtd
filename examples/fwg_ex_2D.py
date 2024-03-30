@@ -1,6 +1,6 @@
 import utils
 from photfdtd import FWG, Waveguide, Grid, Solve
-from numpy import pi
+from cupy import pi
 
 if __name__ == "__main__":
     background_index = 1.4447

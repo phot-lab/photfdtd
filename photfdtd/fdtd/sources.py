@@ -13,7 +13,7 @@ from math import pi, sin
 
 # typing
 from .typing_ import Tuple, Number, ListOrSlice, List
-from numpy import ndarray
+from cupy import ndarray
 
 # relatvie
 from .grid import Grid

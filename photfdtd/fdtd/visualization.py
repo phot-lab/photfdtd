@@ -15,8 +15,9 @@ from matplotlib.colors import LogNorm
 
 # 3rd party
 from tqdm import tqdm
-from numpy import log10, where, sqrt, transpose, round
+from cupy import log10, where, sqrt, transpose, round
 from scipy.signal import hilbert  # TODO: Write hilbert function to replace using scipy
+import cupy as cp
 
 # relative
 from .backend import backend as bd
@@ -325,6 +326,9 @@ def visualize(
             n_to_draw = geo[:, :, z]
         # n_to_draw /= n_to_draw.max()
         contour_data = where(n_to_draw != background_index, 1, 0)
+        # contour_data = cp.asnumpy(contour_data)
+        contour_data = contour_data.get()
+        print(contour_data, contour_data.shape, contour_data.dtype)
         plt.contour(contour_data.T, colors='black', linewidths=1)
 
     # for obj in grid.objects:
@@ -367,8 +371,8 @@ def visualize(
     ylabels = yticks * grid.grid_spacing * 1e6
     xlabels.astype(int)
     #
-    plt.xticks(xticks, round(xlabels).astype(int))
-    plt.yticks(yticks, round(ylabels).astype(int))
+    plt.xticks(xticks.get(), round(xlabels).astype(int))
+    plt.yticks(yticks.get(), round(ylabels).astype(int))
     # # finalize the plot
     # plt.ylabel(xlabel)
     # plt.xlabel(ylabel)

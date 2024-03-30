@@ -16,7 +16,7 @@ from datetime import datetime
 
 # 3rd party
 from tqdm import tqdm
-from numpy import savez
+from photfdtd.utils.savez import savez
 
 # typing
 from .typing_ import Tuple, Number, Tensorlike

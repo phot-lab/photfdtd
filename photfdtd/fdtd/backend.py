@@ -27,7 +27,7 @@ The ``cuda`` backends are only available for computers with a GPU.
 ## Imports
 
 # Numpy Backend
-import cupy  # numpy has to be present
+import cupy as numpy  # numpy has to be present
 from functools import wraps
 
 # used only by test runner.
@@ -47,7 +47,6 @@ numpy_float_dtypes = {
     getattr(numpy, "float64", numpy.float64),
     getattr(numpy, "float128", numpy.float64),
 }
-
 
 # Torch Backends (and flags)
 try:
@@ -101,7 +100,7 @@ class NumpyBackend(Backend):
 
     float = numpy.float64
     """ floating type for array """
-    
+
     complex = numpy.complex128
     """ complex type for array """
 
@@ -155,7 +154,21 @@ class NumpyBackend(Backend):
     array = _replace_float(numpy.array)
     """ create an array from an array-like sequence """
 
-    ones = _replace_float(numpy.ones)
+    # ones = _replace_float(numpy.ones)
+    # """ create an array filled with ones """
+    def ones(self, shape, dtype=float):
+        """create an array filled with ones"""
+        print("ones", shape, dtype)
+        s = []
+        for i in range(len(shape)):
+            if isinstance(shape[i], numpy.ndarray):
+                s.append(shape[i].item())
+            else:
+                s.append(shape[i])
+        shape = tuple(s)
+        print("ones", shape, dtype)
+        return numpy.ones(shape, dtype=dtype)
+
     """ create an array filled with ones """
 
     zeros = _replace_float(numpy.zeros)
@@ -188,13 +201,16 @@ class NumpyBackend(Backend):
     #
     # could this (and below) perhaps be changed to "to_numpy()"
     # or maybe "check_numpy" ?
-    numpy = _replace_float(numpy.asarray)
+    # numpy = _replace_float(numpy.asarray)
+    def numpy(self, arr):
+        return arr.get()
     """ convert the array to numpy array """
 
 
 # Torch Backend
 if TORCH_AVAILABLE:
     import torch
+
 
     class TorchBackend(Backend):
         """Torch Backend"""
@@ -296,6 +312,7 @@ if TORCH_AVAILABLE:
         divide = staticmethod(torch.div)
 
         exp = staticmethod(torch.exp)
+
         # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
         # The same warning applies here.
         # <3 <3 <3 <3
@@ -306,6 +323,7 @@ if TORCH_AVAILABLE:
                 return arr.numpy()
             else:
                 return numpy.asarray(arr)
+
 
     # Torch Cuda Backend
     if TORCH_CUDA_AVAILABLE:
@@ -346,7 +364,6 @@ if TORCH_AVAILABLE:
                 return torch.arange(
                     start, stop + 0.5 * float(endpoint) * delta, delta, device="cuda"
                 )
-
 
 ## Default Backend
 # this backend object will be used for all array/tensor operations.

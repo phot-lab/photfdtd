@@ -3,13 +3,13 @@ import matplotlib.pyplot as plt
 from .waveguide import Waveguide
 import cupy as np
 from datetime import datetime
-from numpy import savez
 import os
 from os import path, makedirs, chdir, remove
 from .analyse import Analyse
 from .index import Index
 from photfdtd import constants
 
+from photfdtd.utils.savez import savez
 
 class Grid:
 
@@ -441,7 +441,7 @@ class Grid:
         # It's quite important to transpose n
         from matplotlib import cm
         n = np.transpose(n, [1, 0, 2])
-        plt.imshow(n[:, :, 0], cmap=cm.jet, origin="lower",
+        plt.imshow(n[:, :, 0].get(), cmap=cm.jet, origin="lower",
                    extent=[0, x * grid.grid_spacing * 1e6, 0, y * grid.grid_spacing * 1e6])
         plt.clim([np.amin(n), np.amax(n)])
         if axis == "x":
@@ -722,7 +722,8 @@ class Grid:
         if not folder.endswith(".npz"):
             folder = folder + "/detector_readings.npz"
 
-        readings = np.load(folder, allow_pickle=True)
+        import numpy
+        readings = numpy.load(folder, allow_pickle=True)
         names = readings.files
         data = {}
         i = 0
@@ -852,7 +853,7 @@ class Grid:
         # 创建颜色图
         plt.figure()
 
-        plt.imshow(np.transpose(field), vmin=vmin, vmax=vmax, cmap=cmap,
+        plt.imshow(np.transpose(field).get(), vmin=vmin, vmax=vmax, cmap=cmap,
                    extent=[0, field.shape[0] * grid.grid_spacing * 1e6, 0,
                            field.shape[1] * grid.grid_spacing * 1e6],
                    origin="lower")  # cmap 可以选择不同的颜色映射
@@ -872,9 +873,9 @@ class Grid:
                 n_to_draw = geo[:, :, axis_index]
             # n_to_draw /= n_to_draw.max()
             contour_data = np.where(n_to_draw != background_index, 1, 0)
-            plt.contour(np.linspace(0, field.shape[0] * grid.grid_spacing * 1e6, field.shape[0]),
-                        np.linspace(0, field.shape[1] * grid.grid_spacing * 1e6, field.shape[1]),
-                        contour_data.T, colors='black', linewidths=1)
+            plt.contour(np.linspace(0, field.shape[0] * grid.grid_spacing * 1e6, field.shape[0]).get(),
+                        np.linspace(0, field.shape[1] * grid.grid_spacing * 1e6, field.shape[1]).get(),
+                        contour_data.T.get(), colors='black', linewidths=1)
 
         # plt.ylim(-1, field.shape[1])
         # Make the figure full the canvas让画面铺满整个画布

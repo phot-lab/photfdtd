@@ -5,7 +5,7 @@ from typing import Union, Tuple, List
 from numbers import Number
 
 ## Numpy types
-from numpy import ndarray
+from cupy import ndarray
 
 ## Torch types
 try:
