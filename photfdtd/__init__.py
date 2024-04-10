@@ -11,6 +11,7 @@ from .analyse import Analyse
 from .index import Index
 from .mzi import Mzi
 from .fiber import Fiber
+from .ellipsoid_fiber import Ellipsoid
 from .tff import TFF
 from .fwg import FWG
 from .pc import Hexagonal_PC

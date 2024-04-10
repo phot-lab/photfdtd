@@ -11,14 +11,14 @@ class Fiber(Waveguide):
     name: 名称
     axis: 'x', 'y', "z" 光纤沿哪个轴
     background_index：背景折射率
-    #TODO: 给弯曲结构加上抗锯齿弯曲边界?
     """
 
     # TODO: 渐变折射率光纤
-    def __init__(self, length: int or float= 100, x: int or float = None, y: int or float = None, z: int or float = None,
+    def __init__(self, length: int or float = 100, x: int or float = None, y: int or float = None, z: int or float = None,
                  radius: list = [10, 40],
                  refractive_index: list = [3.47, 1.45],
-                 name: str = "fiber", axis: str = "z", grid=None) -> None:
+                 name: str = "fiber", axis: str = "z",
+                 grid=None) -> None:
         length, x, y, z = grid._handle_unit([length, x, y, z], grid_spacing=grid._grid.grid_spacing)
         radius = grid._handle_unit(radius, grid_spacing=grid._grid.grid_spacing)
         self.radius = radius
