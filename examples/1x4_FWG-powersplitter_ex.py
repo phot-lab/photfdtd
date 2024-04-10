@@ -38,20 +38,15 @@ if __name__ == "__main__":
     waveguide1.rotate_Z(angle=25, center=[-100, 12, 0])
     waveguide2.rotate_Z(angle=-25, center=[-100, 12, 0])
     # x=0 在x=104
-    taper = Taper(xlength=91, ylength=25, zlength=1, x=149, y=150, z=0, direction=-1, width=5, name="taper",
-                  refractive_index=n_Si, grid=grid)
+    taper = Taper(xlength=91, width=5, ylength=25, zlength=1, x=149, y=150, z=0, name="taper", refractive_index=n_Si,
+                  grid=grid)
 
-    taper1 = Taper(xlength=100, ylength=25, zlength=1, x=104 + int(1048 / 20) + 50, y=162, z=0, direction=1, width=5,
-                   name="taper1",
+    taper1 = Taper(xlength=100, width=5, ylength=25, zlength=1, x=104 + int(1048 / 20) + 50, y=162, z=0, name="taper1",
                    refractive_index=n_Si, grid=grid)
-    taper2 = Taper(xlength=100, ylength=25, zlength=1, x=104 + int(1048 / 20) + 50, y=150 - 12, z=0, direction=1,
-                   width=5,
-                   name="taper2",
-                   refractive_index=n_Si, grid=grid)
-    taper3 = Taper(xlength=100, ylength=25, zlength=1, x=260, y=150, z=0, direction=1,
-                   width=5,
-                   name="taper3",
-                   refractive_index=n_Si, grid=grid)
+    taper2 = Taper(xlength=100, width=5, ylength=25, zlength=1, x=104 + int(1048 / 20) + 50, y=150 - 12, z=0,
+                   name="taper2", refractive_index=n_Si, grid=grid)
+    taper3 = Taper(xlength=100, width=5, ylength=25, zlength=1, x=260, y=150, z=0, name="taper3", refractive_index=n_Si,
+                   grid=grid)
     taper1.rotate_Z(angle=25, center=[0, 12, 0])
     taper2.rotate_Z(angle=-25, center=[0, 12, 0])
 

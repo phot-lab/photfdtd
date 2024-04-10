@@ -28,3 +28,7 @@ examples/*.png
 /test_*/
 examples/test_*/
 *.rar
+
+examples/中期测试/
+
+examples/basic_ex/

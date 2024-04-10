@@ -1,5 +1,5 @@
 import utils
-from photfdtd import Ring, Grid, Solve
+from photfdtd import Ring, Grid
 
 if __name__ == "__main__":
     background_index = 1.4447
@@ -13,8 +13,7 @@ if __name__ == "__main__":
 
     grid.set_source(source_type="linesource", period=1550e-9 / 299792458, pulse_type="None", x=1.24e-6, y=0, z=1e-6,
                     xlength=21, ylength=1, zlength=1, polarization="x")
-    # grid.set_source(source_type="pointsource", period=1550e-9 / 299792458, pulse_type="None", x=1.3e-6, y=1.3e-6, z=0,
-    #                 polarization="y")
+
 
     grid.set_detector(detector_type='linedetector',
                       x_start=1.2e-6, y_start=0e-6, z_start=4e-6,
@@ -26,6 +25,7 @@ if __name__ == "__main__":
     grid.plot_n(axis="y", axis_index=0)
 
     grid.run()
+
     grid.save_simulation()
     grid.save_fig(axis="y", axis_number=0, show_energy=True)
     # 绘制仿真结束时刻空间场分布

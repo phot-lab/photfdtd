@@ -19,7 +19,7 @@ class FWG(Arc):
     width: If period and duty_cycle have been set, width and gap will not be needed. 波导宽度
     gap: 缝宽
     """
-
+    # TODO: my thought about the duty cycle not right?
     # TODO：现在只有x-y平面
 
     def __init__(

@@ -15,8 +15,7 @@ if __name__ == "__main__":
         xlength=150, ylength=100, zlength=1, x=100, y=100, z=0, direction=-1, width=10, refractive_index=3.47, name="sbend",
         background_index=background_index
     )
-    taper = Taper(xlength=91, ylength=25, zlength=1, x=100, y=100, z=0, direction=-1, width=5, name="taper",
-                  refractive_index=3.47, background_index=background_index)
+    taper = Taper(xlength=91, width=5, ylength=25, zlength=1, x=100, y=100, z=0, name="taper", refractive_index=3.47)
     waveguide._rotate_Z(angle=-100, center=[-5, 5, 0])
     sbend._rotate_Z(angle=60)
     taper._rotate_Z(angle=25)
@@ -66,9 +65,7 @@ if __name__ == "__main__":
     # data = grid.save_simulation()
 
     # We can plot the field after simulation绘制z=0截面场图
-    grid.save_fig(axis="z",
-                  axis_number=0,
-                  geo=solve.geometry)
+    grid.save_fig(axis="z", axis_number=0, geo=solve.geometry)
 
     # 也可以读取仿真结果
     # data = grid.read_simulation(folder=grid.folder)

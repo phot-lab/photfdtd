@@ -1,18 +1,18 @@
 import numpy as np
 # 计算MMI参数
-ns = 1.45  # 包层（限制层）折射率（论文里为nc）
-nf = 3.441  # 折射率（论文里为nr）
+ns = 1.4447  # 包层（限制层）折射率（论文里为nc）
+nf = 1.4555  # 折射率（论文里为nr）
 lambda0 = 850e-9  # 入射光波长
 pi = np.pi
 k0 = 2 * pi / lambda0
-Wm = 2e-6  # 多模波导宽度 单位m
+Wm = 50*1e-6  # 多模波导宽度 单位m
 grid_spacing = 20e-9
 c0 = 299792458
 
 # TE Mode，对于TE模，sigma = 0 ，对于TM模，sigma = 1
-sigma = 0
+sigma = 1
 We = Wm + (lambda0 / pi) * ((ns / nf) ** (2 * sigma)) * ((nf ** 2 - ns ** 2) ** (-1 / 2))  # 多模波导有效宽度
-print("TE: 多模波导有效宽度We, effective width =  ", We)
+print("多模波导有效宽度We = ", We)
 beta = np.zeros(5)
 neffapx = np.zeros(5)
 for i in range(5):

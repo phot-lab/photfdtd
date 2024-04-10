@@ -193,6 +193,8 @@ class NumpyBackend(Backend):
 
 
 # Torch Backend
+# Edited in 24/3/20, perhaps this would help saving RAM?
+TORCH_AVAILABLE = False
 if TORCH_AVAILABLE:
     import torch
 
