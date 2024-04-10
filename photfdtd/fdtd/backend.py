@@ -50,19 +50,19 @@ numpy_float_dtypes = {
 
 
 # Torch Backends (and flags)
-try:
-    import torch
-
-    torch.set_default_dtype(torch.float64)  # we need more precision for FDTD
-    try:  # we don't need gradients (for now)
-        torch._C.set_grad_enabled(False)  # type: ignore
-    except AttributeError:
-        torch._C._set_grad_enabled(False)
-    TORCH_AVAILABLE = True
-    TORCH_CUDA_AVAILABLE = torch.cuda.is_available()
-except ImportError:
-    TORCH_AVAILABLE = False
-    TORCH_CUDA_AVAILABLE = False
+# try:
+#     import torch
+#
+#     torch.set_default_dtype(torch.float64)  # we need more precision for FDTD
+#     try:  # we don't need gradients (for now)
+#         torch._C.set_grad_enabled(False)  # type: ignore
+#     except AttributeError:
+#         torch._C._set_grad_enabled(False)
+#     TORCH_AVAILABLE = True
+#     TORCH_CUDA_AVAILABLE = torch.cuda.is_available()
+# except ImportError:
+TORCH_AVAILABLE = False
+TORCH_CUDA_AVAILABLE = False
 
 
 # Base Class

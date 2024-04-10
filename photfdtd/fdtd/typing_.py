@@ -8,11 +8,11 @@ from numbers import Number
 from numpy import ndarray
 
 ## Torch types
-try:
-    from torch import Tensor
-except ImportError:
-    Tensor = None
-
+# try:
+#     from torch import Tensor
+# except ImportError:
+#     Tensor = None
+Tensor = None
 ## Backend types
 if Tensor is not None:
     Tensorlike = Union[ndarray, Tensor]
