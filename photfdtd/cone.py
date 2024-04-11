@@ -2,10 +2,10 @@ import numpy as np
 from .waveguide import Waveguide
 
 
-class Ellipsoid(Waveguide):
-    """椭圆形（光纤）
-    a: int or float，long semi-axis
-    b: int or float, short semi-axis
+class Cone(Waveguide):
+    """圆锥形（光纤）
+    radius_lower: radius of lower side
+    radius_upper: radius of upper side
     refractive_index: n
     length: 长度
     x,y,z: 位置坐标（中心）
@@ -14,16 +14,18 @@ class Ellipsoid(Waveguide):
     background_index：背景折射率
     """
 
+    # TODO: not finished yet
     def __init__(self, length: int or float = None, x: int or float = None, y: int or float = None,
                  z: int or float = None,
-                 a: int or float = None, b: int or float = None,
+                 radius_lower: int or float = None, radius_upper: int or float = None,
                  refractive_index: float = None,
                  name: str = "ellipsoid", axis: str = "z",
                  grid=None) -> None:
-        length, x, y, z, a, b = grid._handle_unit([length, x, y, z, a, b], grid_spacing=grid._grid.grid_spacing)
-        self.a = a
-        self.b = b
-        self.radius = max(a, b)
+        length, x, y, z, radius_lower, radius_upper = grid._handle_unit([length, x, y, z, radius_lower, radius_upper],
+                                                                        grid_spacing=grid._grid.grid_spacing)
+        self.radius_lower = radius_lower
+        self.radius_upper = radius_upper
+        self.radius = max(radius_lower, radius_upper)
         self.length = length
         self.axis = axis
         if x == None:
@@ -72,21 +74,23 @@ class Ellipsoid(Waveguide):
         # 这里+2的原因：稍微扩大一点矩阵的大小，可以保证水平和竖直方向最边上的点不被丢出
         # TODO: 给其他带圆弧的波导相同的操作？
         x = y = np.linspace(1, 2 * self.radius + 2, 2 * self.radius + 2)
-        X, Y = np.meshgrid(x, y, indexing="ij")  # indexing = 'ij'很重要
+        z = np.linspace(1, self.length, self.length)
+        X, Y, Z = np.meshgrid(x, y, z, indexing="ij")  # indexing = 'ij'很重要
         # m = (X - len(x) / 2) ** 2 + (Y - len(y) / 2) ** 2 <= self.radius[0] ** 2
-        matrix = np.zeros((len(x), len(y)), dtype=float)
+        matrix = np.zeros((len(x), len(y), len(z)), dtype=float)
         # self.xlength = 2 * self.radius + 2
         # self.ylength = 2 * self.radius + 2
         # self.zlength = self.length
         self.permittivity = np.zeros((2 * self.radius + 2, 2 * self.radius + 2, self.length))
 
-        mask = ((X - self.permittivity.shape[0] // 2) / self.a) ** 2 + ((Y - self.permittivity.shape[1] // 2) / self.b) ** 2 <= 1
+        mask = (X - self.permittivity.shape[0] // 2) ** 2 + (Y - self.permittivity.shape[1] // 2) ** 2 <= \
+               (self.radius_lower + (self.radius_upper - self.radius_lower) * Z / self.length) ** 2
         matrix[mask] = self.refractive_index ** 2
 
         matrix[matrix == 0] = self.background_index ** 2
 
-        for i in range(self.length):
-            self.permittivity[:, :, i] = matrix
+
+        self.permittivity = matrix
 
         if self.axis.lower() == 'x':
             # 波导沿x轴
@@ -132,4 +136,3 @@ class Ellipsoid(Waveguide):
         self.xlength = self.permittivity.shape[0]
         self.ylength = self.permittivity.shape[1]
         self.zlength = self.permittivity.shape[2]
-

@@ -12,6 +12,7 @@ from .index import Index
 from .mzi import Mzi
 from .fiber import Fiber
 from .ellipsoid_fiber import Ellipsoid
+from .cone import Cone
 from .tff import TFF
 from .fwg import FWG
 from .pc import Hexagonal_PC
