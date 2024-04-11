@@ -84,8 +84,8 @@ class Grid:
         # Check if the object exceeds the region
         if object_to_check:
             x_start, x_end, y_start, y_end, z_start, z_end = object_to_check.x, object_to_check.xlength + object_to_check.x, \
-            object_to_check.y, object_to_check.ylength + object_to_check.y,\
-            object_to_check.z, object_to_check.zlength + object_to_check.z
+                                                             object_to_check.y, object_to_check.ylength + object_to_check.y, \
+                                                             object_to_check.z, object_to_check.zlength + object_to_check.z
             name = object_to_check.name
         if max(x_start, x_end) > self._grid_xlength or min(x_start, x_end) < 0:
             raise ValueError("X range of %s (%i, %i) has exceeded the simulation region (0, %i)!"
@@ -110,7 +110,24 @@ class Grid:
                 internal_object.y: internal_object.y + internal_object.ylength,
                 internal_object.z: internal_object.z + internal_object.zlength,
                 ] = fdtd.Object(permittivity=internal_object.permittivity, name=internal_object.name,
+                                background_index=internal_object.background_index, priority=internal_object.priority)
+
+    def del_object(self, object: Waveguide):
+        for internal_object in object._internal_objects:
+
+            if internal_object == 0:
+                continue
+            else:
+
+                self._check_parameters(object_to_check=internal_object)
+                self._grid[
+                internal_object.x: internal_object.x + internal_object.xlength,
+                internal_object.y: internal_object.y + internal_object.ylength,
+                internal_object.z: internal_object.z + internal_object.zlength,
+                ] = fdtd.Object(permittivity=self.background_index ** 2, name="deleted",
                                 background_index=internal_object.background_index)
+                self._grid.objects.pop(internal_object)
+        pass
 
     def set_source(
             self,
@@ -216,7 +233,7 @@ class Grid:
             # x = x + xlength // 2
             # y = y + ylength // 2
             # z = z + zlength // 2
-            self._check_parameters(x,x,y,y,z,z)
+            self._check_parameters(x, x, y, y, z, z)
             self._grid[x, y, z] = fdtd.PointSource(period=period, amplitude=amplitude, phase_shift=phase_shift,
                                                    name=name, cycle=cycle, hanning_dt=hanning_dt, pulse_type=pulse_type,
                                                    pulse_length=pulse_length, offset=offset, polarization=polarization)
@@ -233,7 +250,7 @@ class Grid:
                 x_end = x + xlength
                 y_end = y + ylength
                 z_end = z + zlength
-            self._check_parameters(x_start,x_end,y_start,y_end,z_start,z_end, name=name)
+            self._check_parameters(x_start, x_end, y_start, y_end, z_start, z_end, name=name)
             if self._grid_zlength == 1:
                 self._grid[x_start: x_end, y_start: y_end] = fdtd.LineSource(period=period, amplitude=amplitude,
                                                                              phase_shift=phase_shift, name=name,
@@ -317,7 +334,7 @@ class Grid:
 
         xlength, ylength, zlength, x, y, z, x_start, x_end, y_start, y_end, z_start, z_end = \
             self._handle_unit([xlength, ylength, zlength, x, y, z, x_start, x_end, y_start, y_end, z_start, z_end],
-                                                               grid_spacing=self._grid.grid_spacing)
+                              grid_spacing=self._grid.grid_spacing)
 
         # 设置监视器
         if detector_type == 'linedetector':
@@ -409,7 +426,6 @@ class Grid:
             raise RuntimeError("Unknown axis parameter.")
 
         plt.close()  # 清除画布
-
 
     def plot_n(self,
                grid=None,

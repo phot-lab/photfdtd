@@ -28,12 +28,12 @@ class Cone(Waveguide):
         self.radius = max(radius_lower, radius_upper)
         self.length = length
         self.axis = axis
-        if x == None:
+        if x is None:
             # 如果没设置x，自动选仿真区域中心If x not set, choose the center of grid
             x = int(grid._grid_xlength / 2)
-        if y == None:
+        if y is None:
             y = int(grid._grid_ylength / 2)
-        if z == None:
+        if z is None:
             z = int(grid._grid_zlength / 2)
 
         if self.axis.lower() == 'x':

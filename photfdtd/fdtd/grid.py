@@ -150,6 +150,9 @@ class Grid:
             permeability, dtype=bd.float
         )
 
+        # Priority matrix of the grid, default to be a all-zero matrix, indicates the background of the sim region.
+        self.priority = bd.zeros((self.Nx, self.Ny, self.Nz))
+
         # save current time index
         self.time_steps_passed = 0
 

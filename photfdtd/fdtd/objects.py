@@ -24,17 +24,19 @@ from . import constants as const
 class Object:
     """ An object to place in the grid """
 
-    def __init__(self, permittivity: Tensorlike, name: str = None, background_index: float = None):
+    def __init__(self, permittivity: Tensorlike, name: str = None, background_index: float = None, priority=None):
         """
         Args:
             permittivity: permittivity tensor
             name: name of the object (will become available as attribute to the grid)
             background_index: added by Tao Jia 2023/12/25
+            priority: priority matrix of the waveguide
         """
         self.grid = None
         self.name = name
         self.permittivity = bd.array(permittivity)
         self.background_index = background_index
+        self.priority = priority
 
     def _register_grid(
         self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
@@ -77,26 +79,36 @@ class Object:
 
         # set the permittivity values of the object at its border to be equal
         # to the grid permittivity. This way, the object is made symmetric.
-        if self.Nx > 1:
-            self.inverse_permittivity[-1, :, :, 0] = self.grid.inverse_permittivity[
-                -1, self.y, self.z, 0
-            ]
-        if self.Ny > 1:
-            self.inverse_permittivity[:, -1, :, 1] = self.grid.inverse_permittivity[
-                self.x, -1, self.z, 1
-            ]
-        if self.Nz > 1:
-            self.inverse_permittivity[:, :, -1, 2] = self.grid.inverse_permittivity[
-                self.x, self.y, -1, 2
-            ]
+        ###It seems useless so I annotated -Tao Jia. 2024/4/11
+        # if self.Nx > 1:
+        #     self.inverse_permittivity[-1, :, :, 0] = self.grid.inverse_permittivity[
+        #         -1, self.y, self.z, 0
+        #     ]
+        # if self.Ny > 1:
+        #     self.inverse_permittivity[:, -1, :, 1] = self.grid.inverse_permittivity[
+        #         self.x, -1, self.z, 1
+        #     ]
+        # if self.Nz > 1:
+        #     self.inverse_permittivity[:, :, -1, 2] = self.grid.inverse_permittivity[
+        #         self.x, self.y, -1, 2
+        #     ]
 
-        # Edited in 2023/12/25 by Tao Jia. Now the inverse permittivity of objects is added into the grid.
-        mask = self.grid.inverse_permittivity[self.x, self.y, self.z]
+        # Edited in 2023/12/25. Now the inverse permittivity of objects is added into the grid.
+        # mask = self.grid.inverse_permittivity[self.x, self.y, self.z]
+        #
+        # inverse_permittivity = 1.0 / (self.background_index ** 2)
+        # mask[mask == inverse_permittivity] = self.inverse_permittivity[mask == inverse_permittivity]
+        # self.grid.inverse_permittivity[self.x, self.y, self.z] = mask
 
-        inverse_background_index = 1.0 / (self.background_index ** 2)
-        mask[mask == inverse_background_index] = self.inverse_permittivity[mask == inverse_background_index]
-        self.grid.inverse_permittivity[self.x, self.y, self.z] = mask
+        # Compare the object's priority matrix with the grid's, if the object's priority is higher, the permittivity of
+        # the grid will be overidden.
+        # It should be noticed that the "grid.priority" is not same with the "priority", which could be confused.
+        self.grid.inverse_permittivity[self.x, self.y, self.z][self.priority > self.grid.priority[self.x, self.y, self.z]] = \
+            self.inverse_permittivity[self.priority > self.grid.priority[self.x, self.y, self.z]]
+        # Update the "grid.priority" matrix.
+        self.grid.priority[self.x, self.y, self.z] = self.priority > self.grid.priority[self.x, self.y, self.z]
 
+        pass
 
     def _handle_slice(self, s: ListOrSlice, max_index: int = None) -> slice:
         if isinstance(s, list):

@@ -33,7 +33,8 @@ class Waveguide:
             refractive_index: float = None,
             material: str = "",
             reset_xyz: bool = True,
-            grid=None
+            grid=None,
+            priority: int = 1
     ) -> None:
         if x == None:
             # 如果没设置x，自动选仿真区域中心If x not set, choose the center of grid
@@ -70,8 +71,11 @@ class Waveguide:
 
         self.grid = grid
 
+        self.priority = priority
+
         self._compute_permittivity()
         self._set_objects()
+        self._compute_priority()
 
     def _compute_permittivity(self):
         """计算介电常数矩阵"""
@@ -79,6 +83,10 @@ class Waveguide:
         permittivity += self.refractive_index ** 2
 
         self.permittivity = permittivity
+
+    def _compute_priority(self):
+        # Compute the priority matrix of the waveguide
+        self.priority = (self.permittivity == self.refractive_index ** 2) * self.priority
 
     def _set_objects(self):
         self._internal_objects = [self]
@@ -205,13 +213,16 @@ class Waveguide:
                         #     rotated_matrix[i, j, k] += (rotated_matrix[i - 1, j, k] + rotated_matrix[i + 1, j, k] +
                         #                                 rotated_matrix[i, j - 1, k]
                         #                                 + rotated_matrix[i, j + 1, k]) / 4
-                        if i + 1 < rotated_matrix.shape[0] and all([rotated_matrix[i - 1, j, k] != 0, rotated_matrix[i + 1, j, k] != 0]):
+                        if i + 1 < rotated_matrix.shape[0] and all(
+                                [rotated_matrix[i - 1, j, k] != 0, rotated_matrix[i + 1, j, k] != 0]):
                             rotated_matrix[i, j, k] += (rotated_matrix[i - 1, j, k] + rotated_matrix[
                                 i + 1, j, k]) / 2
-                        elif j + 1 < rotated_matrix.shape[1] and all([rotated_matrix[i, j - 1, k] != 0, rotated_matrix[i, j + 1, k] != 0]):
+                        elif j + 1 < rotated_matrix.shape[1] and all(
+                                [rotated_matrix[i, j - 1, k] != 0, rotated_matrix[i, j + 1, k] != 0]):
                             rotated_matrix[i, j, k] += (rotated_matrix[i, j - 1, k] + rotated_matrix[
                                 i, j + 1, k]) / 2
-                        elif k + 1 < rotated_matrix.shape[2] and all([rotated_matrix[i, j, k - 1] != 0, rotated_matrix[i, j, k + 1] != 0]):
+                        elif k + 1 < rotated_matrix.shape[2] and all(
+                                [rotated_matrix[i, j, k - 1] != 0, rotated_matrix[i, j, k + 1] != 0]):
                             rotated_matrix[i, j, k] += (rotated_matrix[i, j, k - 1] + rotated_matrix[
                                 i, j, k + 1]) / 2
         # remove all-zero slices to reduce matrix's size

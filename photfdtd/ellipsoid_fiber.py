@@ -11,7 +11,6 @@ class Ellipsoid(Waveguide):
     x,y,z: 位置坐标（中心）
     name: 名称
     axis: 'x', 'y', "z" 光纤沿哪个轴
-    background_index：背景折射率
     """
 
     def __init__(self, length: int or float = None, x: int or float = None, y: int or float = None,
