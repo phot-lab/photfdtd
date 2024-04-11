@@ -112,7 +112,16 @@ class Waveguide:
 
         return matrix, xx_position, yy_position, zz_position
 
-    def rotate_Z(self, angle, center: list = None, angle_unit: bool = True):
+    def rotate_X(self, angle: float = None, center: list = None, angle_unit: bool = True):
+        self._rotate_(angle, center, angle_unit, "x")
+
+    def rotate_Y(self, angle: float = None, center: list = None, angle_unit: bool = True):
+        self._rotate_(angle, center, angle_unit, "y")
+
+    def rotate_Z(self, angle: float = None, center: list = None, angle_unit: bool = True):
+        self._rotate_(angle, center, angle_unit, "z")
+
+    def _rotate_(self, angle: float = None, center: list = None, angle_unit: bool = True, axis: str = None):
         """
         # TODO: 这个函数的效果没有想象的那么好。也许还是应该在矩阵中描点连线更方便？
         Rotate a waveguide around the z-axis on x-y plane
@@ -121,7 +130,7 @@ class Waveguide:
         @param center: Center position of rotation (on simulation region coordinate), if not given, it will be the center of waveguide.
         """
         # 分清楚以仿真区域坐标系、center坐标系和波导原点坐标系
-        if angle == 0:
+        if not angle:
             pass
         matrix = self.permittivity
         shape = matrix.shape
@@ -137,10 +146,20 @@ class Waveguide:
             angle = np.radians(angle)
 
         # Rotation matrix 创建绕 z 轴的旋转矩阵
-        rotation_z = np.array([[np.cos(angle), -np.sin(angle), 0],
-                               [np.sin(angle), np.cos(angle), 0],
-                               [0, 0, 1]])
-
+        if axis == "z":
+            rotation_matrix = np.array([[np.cos(angle), -np.sin(angle), 0],
+                                        [np.sin(angle), np.cos(angle), 0],
+                                        [0, 0, 1]])
+        elif axis == "y":
+            rotation_matrix = np.array([[np.cos(angle), 0, -np.sin(angle)],
+                                        [0, 1, 0],
+                                        [np.sin(angle), 0, np.cos(angle)]])
+        elif axis == "x":
+            rotation_matrix = np.array([[1, 0, 0],
+                                        [0, np.cos(angle), -np.sin(angle)],
+                                        [0, np.sin(angle), np.cos(angle)]])
+        else:
+            raise ValueError("Parameter 'axis' need to be set")
         # Coordinates relative to center相对坐标 center坐标系
         relative_coords = np.array(np.meshgrid(range(shape[0]), range(shape[1]), range(shape[2]))).T.reshape(-1, 3)
         relative_coords -= center
@@ -148,12 +167,12 @@ class Waveguide:
         # Rotate  rotated_coords也是center坐标系
         rotated_coords = np.empty_like(relative_coords)
         for i in range(relative_coords.shape[0]):
-            rotated_coords[i] = rotation_z @ relative_coords[i]
+            rotated_coords[i] = rotation_matrix @ relative_coords[i]
         #
         # []内应该是center坐标系下center的坐标, 这一步代码完成后center_changed是
         # center 旋转之后在center坐标系下的新坐标
-        center_changed = rotation_z @ [self.x_center - self.x - center[0], self.y_center - self.y - center[1],
-                                       self.z_center - self.z - center[2]]
+        center_changed = rotation_matrix @ [self.x_center - self.x - center[0], self.y_center - self.y - center[1],
+                                            self.z_center - self.z - center[2]]
         #  center_changed现在成为了center的变化量，与center无关,
         center_changed -= [self.x_center - self.x - center[0], self.y_center - self.y - center[1],
                            self.z_center - self.z - center[2]]
@@ -180,13 +199,22 @@ class Waveguide:
         for i in range(rotated_matrix.shape[0]):
             for j in range(rotated_matrix.shape[1]):
                 for k in range(rotated_matrix.shape[2]):
-                    if i + 1 < rotated_matrix.shape[0] and j + 1 < rotated_matrix.shape[1]:
-                        if rotated_matrix[i, j, k] == 0 and all(
-                                [rotated_matrix[i - 1, j, k] != 0, rotated_matrix[i + 1, j, k] != 0,
-                                 rotated_matrix[i, j - 1, k] != 0, rotated_matrix[i, j + 1, k] != 0]):
-                            rotated_matrix[i, j, k] += (rotated_matrix[i - 1, j, k] + rotated_matrix[i + 1, j, k] +
-                                                        rotated_matrix[i, j - 1, k]
-                                                        + rotated_matrix[i, j + 1, k]) / 4
+                    if rotated_matrix[i, j, k] == 0:
+                        # if all([rotated_matrix[i - 1, j, k] != 0, rotated_matrix[i + 1, j, k] != 0,
+                        #         rotated_matrix[i, j - 1, k] != 0, rotated_matrix[i, j + 1, k] != 0]):
+                        #     rotated_matrix[i, j, k] += (rotated_matrix[i - 1, j, k] + rotated_matrix[i + 1, j, k] +
+                        #                                 rotated_matrix[i, j - 1, k]
+                        #                                 + rotated_matrix[i, j + 1, k]) / 4
+                        if i + 1 < rotated_matrix.shape[0] and all([rotated_matrix[i - 1, j, k] != 0, rotated_matrix[i + 1, j, k] != 0]):
+                            rotated_matrix[i, j, k] += (rotated_matrix[i - 1, j, k] + rotated_matrix[
+                                i + 1, j, k]) / 2
+                        elif j + 1 < rotated_matrix.shape[1] and all([rotated_matrix[i, j - 1, k] != 0, rotated_matrix[i, j + 1, k] != 0]):
+                            rotated_matrix[i, j, k] += (rotated_matrix[i, j - 1, k] + rotated_matrix[
+                                i, j + 1, k]) / 2
+                        elif k + 1 < rotated_matrix.shape[2] and all([rotated_matrix[i, j, k - 1] != 0, rotated_matrix[i, j, k + 1] != 0]):
+                            rotated_matrix[i, j, k] += (rotated_matrix[i, j, k - 1] + rotated_matrix[
+                                i, j, k + 1]) / 2
+        # remove all-zero slices to reduce matrix's size
         rotated_matrix = self.remove_zero_slices(rotated_matrix)
         rotated_matrix = rotated_matrix[0]
         rotated_matrix[rotated_matrix == 0] += self.background_index ** 2
@@ -204,67 +232,3 @@ class Waveguide:
         self.x = self.x_center - int(self.xlength / 2)
         self.y = self.y_center - int(self.ylength / 2)
         self.z = self.z_center - int(self.zlength / 2)
-
-    def _rotate(self, angle_x, angle_y, angle_z, center=None):
-        pass
-        # 创建一个立方体，所有元素初始化为0
-        matrix_size = int(np.sqrt((self.xlength / 2) ** 2 + (self.ylength / 2) ** 2 + (self.zlength / 2) ** 2) * 2) + 2
-
-        # 计算在每个维度上需要填充的数量
-        # np.ceil(0.1) = 1.0（向上取整）
-        pad_m = int(np.ceil((matrix_size - self.permittivity.shape[0]) // 2))
-        pad_n = int(np.ceil((matrix_size - self.permittivity.shape[1]) // 2))
-        pad_l = int(np.ceil((matrix_size - self.permittivity.shape[2]) // 2))
-
-        # 使用 np.pad 在矩阵周围添加0
-        matrix = np.pad(self.permittivity, ((pad_m, pad_m), (pad_n, pad_n), (pad_l, pad_l)), mode='constant',
-                        constant_values=0)
-
-        if center is None:
-            center = np.array([matrix_size // 2, matrix_size // 2, matrix_size // 2])
-
-        def rotate_3d_matrix(matrix, center, angles):
-            # 获取矩阵形状
-            shape = matrix.shape
-
-            # 将矩阵坐标转换为相对于中心的坐标
-            relative_coords = np.array(np.meshgrid(range(shape[0]), range(shape[1]), range(shape[2]))).T.reshape(-1, 3)
-            relative_coords -= center
-
-            # 创建旋转矩阵
-            rotation_matrix = np.array([[np.cos(np.radians(angles[0])), -np.sin(np.radians(angles[0])), 0],
-                                        [np.sin(np.radians(angles[0])), np.cos(np.radians(angles[0])), 0],
-                                        [0, 0, 1]])
-
-            # 应用旋转矩阵
-            rotated_coords = np.dot(relative_coords, rotation_matrix.T)
-
-            # 将坐标还原为绝对坐标
-            rotated_coords += center
-
-            # 四舍五入到整数坐标
-            rotated_coords = np.round(rotated_coords).astype(int)
-
-            # 创建新的矩阵
-            rotated_matrix = np.zeros(shape, dtype=matrix.dtype)
-
-            # 将旋转后的坐标映射回原矩阵
-            for i in range(len(rotated_coords)):
-                x, y, z = rotated_coords[i]
-                if 0 <= x < shape[0] and 0 <= y < shape[1] and 0 <= z < shape[2]:
-                    rotated_matrix[x, y, z] = matrix[
-                        relative_coords[i, 0], relative_coords[i, 1], relative_coords[i, 2]]
-
-            return rotated_matrix
-
-        # 设置中心点和旋转角度
-
-        # 执行旋转操作
-        rotated_matrix = rotate_3d_matrix(matrix, center, [angle_x, angle_y, angle_z])
-        rotated_matrix, xx, yy, zz = self.remove_zero_slices(rotated_matrix)
-        rotated_matrix *= self.refractive_index ** 2
-        rotated_matrix[rotated_matrix == 0] += self.background_index ** 2
-        self.permittivity = rotated_matrix
-        self.xlength = rotated_matrix.shape[0]
-        self.ylength = rotated_matrix.shape[0]
-        self.zlength = rotated_matrix.shape[0]
