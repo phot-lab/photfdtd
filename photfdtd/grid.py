@@ -110,7 +110,8 @@ class Grid:
                 internal_object.y: internal_object.y + internal_object.ylength,
                 internal_object.z: internal_object.z + internal_object.zlength,
                 ] = fdtd.Object(permittivity=internal_object.permittivity, name=internal_object.name,
-                                background_index=internal_object.background_index, priority=internal_object.priority)
+                                background_index=internal_object.background_index,
+                                priority_matrix=internal_object.priority_matrix)
 
     def del_object(self, object: Waveguide):
         for internal_object in object._internal_objects:

@@ -22,7 +22,8 @@ class TFF(Waveguide):
             layers: int = None,
             axis: str = "z",
             name: str = "tf",
-            grid=None
+            grid=None,
+            priority: int = 1
     ) -> None:
         """
         # TODO:不需要xlength, ylength, zlength这几个参数？
@@ -87,11 +88,13 @@ class TFF(Waveguide):
         for i in range(layers):
             if i % 2 == 0:
                 layer[i] = Waveguide(xlength_l[i], ylength_l[i], zlength_l[i], int(x[i]), int(y[i]),
-                                     int(z[i]), ylength, name + "_layer_" + str(i), high_index, grid=grid, reset_xyz=True)
+                                     int(z[i]), ylength, name + "_layer_" + str(i), high_index, grid=grid, reset_xyz=True,
+                                     priority=self.priority)
 
             else:
                 layer[i] = Waveguide(xlength_l[i], ylength_l[i], zlength_l[i], int(x[i]), int(y[i]),
-                                     int(z[i]), ylength, name + "_layer_" + str(i), low_index, grid=grid, reset_xyz=True)
+                                     int(z[i]), ylength, name + "_layer_" + str(i), low_index, grid=grid, reset_xyz=True,
+                                     priority=self.priority)
 
         self._internal_objects.extend(layer)
 

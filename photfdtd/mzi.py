@@ -24,7 +24,8 @@ class Mzi:
     # TODO: Arc被大改之后Mzi也需要更改
     def __init__(self, gap: int = 50, xlength_dc: int = 150, zlength: int = 1, x: int = 350, y: int = 125,
                  z: int = 0, width: int = 20, refractive_index: float = 3.47, name: str = 'mzi', couplelength: int = 100,
-                 addlength_arm1: int = 0, addlength_arm2: int = 0, couplelength_dc: int = 10, gap_dc: int = 10, background_index: float = 1.0) -> None:
+                 addlength_arm1: int = 0, addlength_arm2: int = 0, couplelength_dc: int = 10, gap_dc: int = 10,
+                 background_index: float = 1.0) -> None:
 
         self.gap = gap
         self.zlength = zlength

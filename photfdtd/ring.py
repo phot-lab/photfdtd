@@ -30,7 +30,8 @@ class Ring(Waveguide):
             name: str = "ring",
             refractive_index: float = 3.47,
             direction: int = 1,
-            grid=None
+            grid=None,
+            priority: int = 1
     ) -> None:
         outer_radius, ylength, width_s, width_r,  length, gap = grid._handle_unit([outer_radius, ylength, width_s, width_r, length, gap],
                                                                         grid_spacing=grid._grid.grid_spacing)
@@ -44,7 +45,8 @@ class Ring(Waveguide):
             self.width_r = width_s
         else:
             self.width_r = width_r
-        super().__init__(xlength, ylength, zlength, x, y, z, width_s, name, refractive_index, grid=grid, reset_xyz=False)
+        super().__init__(xlength, ylength, zlength, x, y, z, width_s, name, refractive_index, grid=grid, reset_xyz=False,
+                         priority=priority)
 
     def _compute_permittivity(self):
         # y = np.linspace(1, 2 * self.outer_r, 2 * self.outer_r)
@@ -56,10 +58,10 @@ class Ring(Waveguide):
         delta_z = int(np.round(self.length / 2))
         arc1 = Arc(outer_radius=self.outer_r, ylength=self.ylength, x=self.x, y=self.y, z=self.z + delta_z,
                    width=self.width_r, refractive_index=self.refractive_index, name="%s_arc1" % self.name, angle_phi=0,
-                   angle_psi=180, angle_unit=True, grid=self.grid)
+                   angle_psi=180, angle_unit=True, grid=self.grid, priority=self.priority)
         arc2 = Arc(outer_radius=self.outer_r, ylength=self.ylength, x=self.x, y=self.y, z=self.z - delta_z,
                    width=self.width_r, refractive_index=self.refractive_index, name="%s_arc3" % self.name,
-                   angle_phi=180, angle_psi=180, angle_unit=True, grid=self.grid)
+                   angle_phi=180, angle_psi=180, angle_unit=True, grid=self.grid, priority=self.priority)
         self._internal_objects = [arc1, arc2]
         if self.length > 0:
             wg3 = Waveguide(
@@ -72,7 +74,8 @@ class Ring(Waveguide):
                 width=self.width_r,
                 name="%s_waveguide3" % self.name,
                 refractive_index=self.refractive_index,
-                grid=self.grid
+                grid=self.grid,
+                priority=self.priority
             )
 
             wg4 = Waveguide(
@@ -85,7 +88,8 @@ class Ring(Waveguide):
                 width=self.width_r,
                 name="%s_waveguide4" % self.name,
                 refractive_index=self.refractive_index,
-                grid=self.grid
+                grid=self.grid,
+                priority=self.priority
             )
             self._internal_objects += [wg3, wg4]
 
@@ -140,7 +144,8 @@ class Ring(Waveguide):
             width=self.width,
             name="%s_waveguide1" % self.name,
             refractive_index=self.refractive_index,
-            grid=self.grid
+            grid=self.grid,
+            priority=self.priority
         )
 
         wg_top = Waveguide(
@@ -153,7 +158,8 @@ class Ring(Waveguide):
             width=self.width,
             name="%s_waveguide2" % self.name,
             refractive_index=self.refractive_index,
-            grid=self.grid
+            grid=self.grid,
+            priority=self.priority
         )
 
         # self.x = self.x - int(self.xlength / 2)

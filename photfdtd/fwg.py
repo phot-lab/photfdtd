@@ -38,7 +38,8 @@ class FWG(Arc):
             number: int = None,
             width: int or float = None,
             gap: int or float = None,
-            grid=None
+            grid=None,
+            priority: int = 1
     ) -> None:
 
         # if not period or not duty_cycle:
@@ -64,7 +65,7 @@ class FWG(Arc):
 
         super().__init__(outer_radius=outer_radius, ylength=ylength, x=x, y=y, z=z, width=width,
                          refractive_index=refractive_index, name=name, angle_phi=angle_phi, angle_psi=angle_psi,
-                         grid=grid)
+                         grid=grid, priority=priority)
 
     def _set_objects(self):
         self._internal_objects = []
@@ -72,7 +73,7 @@ class FWG(Arc):
             arc = Arc(outer_radius=self.outer_radius - (self.gap + self.width) * i, ylength=self.ylength,
                       x=self.x_center, y=self.y_center, z=self.z_center, width=self.width,
                       refractive_index=self.refractive_index, name="%s_arc%d" % (self.name, i + 1), angle_phi=self.phi,
-                      angle_psi=self.psi, grid=self.grid)
+                      angle_psi=self.psi, grid=self.grid, priority=self.priority)
             self._internal_objects.append(arc)
 
     def _compute_permittivity(self):

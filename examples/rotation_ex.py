@@ -1,7 +1,6 @@
 from photfdtd import Waveguide, Grid, Solve, Index, Sbend, Taper
 
 if __name__ == "__main__":
-    # This example shows a 2D simulation of a basic straight waveguide本示例展示了一个基础矩形波导的二维仿真
     # set background index设置背景折射率
     background_index = 1.0
     index = Index(material="Si", wavelength=1.55)

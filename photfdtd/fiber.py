@@ -18,7 +18,8 @@ class Fiber(Waveguide):
                  radius: list = [10, 40],
                  refractive_index: list = [3.47, 1.45],
                  name: str = "fiber", axis: str = "z",
-                 grid=None) -> None:
+                 grid=None,
+                 priority: int = 1) -> None:
         length, x, y, z = grid._handle_unit([length, x, y, z], grid_spacing=grid._grid.grid_spacing)
         radius = grid._handle_unit(radius, grid_spacing=grid._grid.grid_spacing)
         self.radius = radius
@@ -61,6 +62,9 @@ class Fiber(Waveguide):
 
         self._compute_permittivity()
         self._set_objects()
+
+        self.priority=priority
+        super()._compute_priority()
 
     def _compute_permittivity(self):
 

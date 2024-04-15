@@ -38,7 +38,8 @@ class Mmi(Waveguide):
             l_port: int or float= 0,
             name: str = "mmi",
             refractive_index: float = 3.47,
-            grid=None
+            grid=None,
+            priority: int = 1
     ) -> None:
         # TODO: 落实We，如果没有给定We，则算出We
         # TODO: 光路沿ｙ方向？
@@ -57,7 +58,7 @@ class Mmi(Waveguide):
             self.We = We
 
         super().__init__(xlength, ylength, zlength, x, y, z,
-                         ylength, name, refractive_index, grid=grid, reset_xyz=False)
+                         ylength, name, refractive_index, grid=grid, reset_xyz=False, priority=priority)
 
     def _set_objects(self):
         self._set_box()
@@ -144,7 +145,7 @@ class Mmi(Waveguide):
                 print(1)
                 port = Taper(xlength=self.width_port, width=self.width_wg, ylength=self.ylength, zlength=self.l_port,
                              x=x_port_in[i], y=self.y, z=z_port_in[i], name="%s_port_input%d" % (self.name, i),
-                             refractive_index=self.refractive_index, grid=self.grid)
+                             refractive_index=self.refractive_index, grid=self.grid, priority=self.priority)
                 ports_in[i] = port
             wg = Waveguide(
                 xlength=self.width_wg,
@@ -156,7 +157,8 @@ class Mmi(Waveguide):
                 width=self.width_wg,
                 name="%s_waveguide_input%d" % (self.name, i),
                 refractive_index=self.refractive_index,
-                grid=self.grid
+                grid=self.grid,
+                priority=self.priority
             )
 
             waveguides_in[i] = wg
@@ -166,7 +168,7 @@ class Mmi(Waveguide):
                 port = Taper(xlength_upper=self.width_wg, xlength_lower=self.width_port, width=self.width_wg,
                              ylength=self.ylength, zlength=self.l_port, x=x_port_out[i], y=self.y, z=z_port_out[i],
                              name="%s_port_output%d" % (self.name, i), refractive_index=self.refractive_index,
-                             grid=self.grid)
+                             grid=self.grid, priority=self.priority)
                 ports_out[i] = port
             wg = Waveguide(
                 xlength=self.width_wg,
@@ -178,7 +180,8 @@ class Mmi(Waveguide):
                 width=self.width_wg,
                 name="%s_waveguide_output%d" % (self.name, i),
                 refractive_index=self.refractive_index,
-                grid=self.grid
+                grid=self.grid,
+                priority=self.priority
             )
 
             waveguides_out[i] = wg

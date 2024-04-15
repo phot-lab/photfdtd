@@ -11,7 +11,7 @@ if __name__ == "__main__":
                 foldername="test_waveguide_2D")
     # 设置器件参数
     waveguide = Waveguide(
-        xlength=0.5e-6, ylength=1, zlength=6e-6, refractive_index=3.47, name="Waveguide", grid=grid
+        xlength=0.5e-6, ylength=1, zlength=6e-6, refractive_index=3.47, name="Waveguide", grid=grid, priority=1
     )
 
     # 往 grid 里添加器件

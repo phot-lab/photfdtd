@@ -35,7 +35,8 @@ class DirectionalCoupler(Waveguide):
             zlength_sbend: int or float = None,
             xlength_sbend: int or float = None,
             gap: int or float = 10,
-            grid=None
+            grid=None,
+            priority: int = 1
     ) -> None:
         if not width_2:
             width_2 = width_1
@@ -56,7 +57,7 @@ class DirectionalCoupler(Waveguide):
         self.gap = gap
         self.width_2 = width_2
         super().__init__(xlength=xlength, ylength=ylength, zlength=zlength, x=x, y=y, z=z, width=width_1,
-                         name=name, refractive_index=refractive_index, grid=grid)
+                         name=name, refractive_index=refractive_index, grid=grid, priority=priority)
 
     def _set_objects(self):
         sbend1 = sbend.Sbend(
@@ -71,7 +72,8 @@ class DirectionalCoupler(Waveguide):
             refractive_index=self.refractive_index,
             name="%s_sbend1" % self.name,
             grid=self.grid,
-            center_postion=True
+            center_postion=True,
+            priority=self.priority
         )
 
         sbend2 = sbend.Sbend(
@@ -86,7 +88,8 @@ class DirectionalCoupler(Waveguide):
             refractive_index=self.refractive_index,
             name="%s_sbend2" % self.name,
             grid=self.grid,
-            center_postion=True
+            center_postion=True,
+            priority=self.priority
         )
 
         sbend3 = sbend.Sbend(
@@ -101,7 +104,8 @@ class DirectionalCoupler(Waveguide):
             refractive_index=self.refractive_index,
             name="%s_sbend3" % self.name,
             grid=self.grid,
-            center_postion=True
+            center_postion=True,
+            priority=self.priority
         )
 
         sbend4 = sbend.Sbend(
@@ -116,7 +120,8 @@ class DirectionalCoupler(Waveguide):
             refractive_index=self.refractive_index,
             name="%s_sbend4" % self.name,
             grid=self.grid,
-            center_postion=True
+            center_postion=True,
+            priority=self.priority
         )
         self.zlength_rectangle += 2  # +4防止出现空隙
         wg1 = Waveguide(
@@ -128,7 +133,8 @@ class DirectionalCoupler(Waveguide):
             z=self.z_center,
             refractive_index=self.refractive_index,
             name="%s_wg1" % self.name,
-            grid=self.grid
+            grid=self.grid,
+            priority=self.priority
         )
 
         wg2 = Waveguide(
@@ -140,7 +146,8 @@ class DirectionalCoupler(Waveguide):
             z=self.z_center,
             refractive_index=self.refractive_index,
             name="%s_wg2" % self.name,
-            grid=self.grid
+            grid=self.grid,
+            priority=self.priority
         )
 
         self._internal_objects = [sbend1, sbend2, sbend3, sbend4, wg1, wg2]

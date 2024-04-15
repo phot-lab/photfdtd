@@ -20,7 +20,8 @@ class Cone(Waveguide):
                  radius_lower: int or float = None, radius_upper: int or float = None,
                  refractive_index: float = None,
                  name: str = "ellipsoid", axis: str = "z",
-                 grid=None) -> None:
+                 grid=None,
+                 priority: int = 1) -> None:
         length, x, y, z, radius_lower, radius_upper = grid._handle_unit([length, x, y, z, radius_lower, radius_upper],
                                                                         grid_spacing=grid._grid.grid_spacing)
         self.radius_lower = radius_lower
@@ -65,6 +66,9 @@ class Cone(Waveguide):
 
         self._compute_permittivity()
         self._set_objects()
+
+        self.priority=priority
+        super()._compute_priority()
 
     def _plot_(self):
         pass

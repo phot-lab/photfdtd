@@ -18,7 +18,8 @@ class Ellipsoid(Waveguide):
                  a: int or float = None, b: int or float = None,
                  refractive_index: float = None,
                  name: str = "ellipsoid", axis: str = "z",
-                 grid=None) -> None:
+                 grid=None,
+                 priority: int = 1) -> None:
         length, x, y, z, a, b = grid._handle_unit([length, x, y, z, a, b], grid_spacing=grid._grid.grid_spacing)
         self.a = a
         self.b = b
@@ -63,6 +64,8 @@ class Ellipsoid(Waveguide):
         self._compute_permittivity()
         self._set_objects()
 
+        self.priority=priority
+        super()._compute_priority()
     def _plot_(self):
         pass
 

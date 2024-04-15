@@ -31,6 +31,7 @@ class Arc(Waveguide):
             angle_psi: float = 0,
             angle_unit: bool = False,
             grid=None,
+            priority: int = 1
     ) -> None:
         outer_radius, width = grid._handle_unit([outer_radius, width], grid_spacing=grid._grid.grid_spacing)
         self.outer_radius = outer_radius
@@ -46,7 +47,7 @@ class Arc(Waveguide):
 
         super().__init__(xlength=outer_radius, ylength=ylength, zlength=outer_radius, x=x,
                          y=y, z=z, width=width, name=name, refractive_index=refractive_index, reset_xyz=False,
-                         grid=grid)
+                         grid=grid, priority=priority)
 
 
     def _compute_permittivity(self):

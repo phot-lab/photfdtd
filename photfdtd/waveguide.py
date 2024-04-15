@@ -85,8 +85,8 @@ class Waveguide:
         self.permittivity = permittivity
 
     def _compute_priority(self):
-        # Compute the priority matrix of the waveguide
-        self.priority = (self.permittivity == self.refractive_index ** 2) * self.priority
+        # the priority matrix of the waveguide
+        self.priority_matrix = (self.permittivity == self.refractive_index ** 2) * self.priority
 
     def _set_objects(self):
         self._internal_objects = [self]
@@ -122,16 +122,19 @@ class Waveguide:
 
     def rotate_X(self, angle: float = None, center: list = None, angle_unit: bool = True):
         self._rotate_(angle, center, angle_unit, "x")
+        self._compute_priority()
 
     def rotate_Y(self, angle: float = None, center: list = None, angle_unit: bool = True):
         self._rotate_(angle, center, angle_unit, "y")
+        self._compute_priority()
 
     def rotate_Z(self, angle: float = None, center: list = None, angle_unit: bool = True):
         self._rotate_(angle, center, angle_unit, "z")
+        self._compute_priority()
 
     def _rotate_(self, angle: float = None, center: list = None, angle_unit: bool = True, axis: str = None):
         """
-        # TODO: 这个函数的效果没有想象的那么好。也许还是应该在矩阵中描点连线更方便？
+        # TODO: 这个函数可以用。但也许在矩阵中描点连线也可以？
         Rotate a waveguide around the z-axis on x-y plane
         @param angle_unit: bool, default to True. False if using radian unit
         @param angle: Angle of rotation with respect to the positive direction of the x-axis

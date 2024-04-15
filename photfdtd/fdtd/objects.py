@@ -24,7 +24,7 @@ from . import constants as const
 class Object:
     """ An object to place in the grid """
 
-    def __init__(self, permittivity: Tensorlike, name: str = None, background_index: float = None, priority=None):
+    def __init__(self, permittivity: Tensorlike, name: str = None, background_index: float = None, priority_matrix=None):
         """
         Args:
             permittivity: permittivity tensor
@@ -36,7 +36,7 @@ class Object:
         self.name = name
         self.permittivity = bd.array(permittivity)
         self.background_index = background_index
-        self.priority = priority
+        self.priority = priority_matrix
 
     def _register_grid(
         self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
@@ -101,7 +101,7 @@ class Object:
         # self.grid.inverse_permittivity[self.x, self.y, self.z] = mask
 
         # Compare the object's priority matrix with the grid's, if the object's priority is higher, the permittivity of
-        # the grid will be overidden.
+        # the grid will be overridden.
         # It should be noticed that the "grid.priority" is not same with the "priority", which could be confused.
         self.grid.inverse_permittivity[self.x, self.y, self.z][self.priority > self.grid.priority[self.x, self.y, self.z]] = \
             self.inverse_permittivity[self.priority > self.grid.priority[self.x, self.y, self.z]]
