@@ -76,7 +76,7 @@ class Grid:
         # return: total time in timesteps
         n = np.sqrt(1 / self._grid.inverse_permittivity.min())
         L = max(self._grid_xlength, self._grid_ylength, self._grid_zlength) * self._grid.grid_spacing
-        time = int(L * n / constants.c / self._grid.time_step)
+        time = int(L * 1.5 * n / constants.c / self._grid.time_step) # Multiply 1.5 to make sure stabilization
         return time
 
     def _check_parameters(self, x_start=None, x_end=None, y_start=None, y_end=None, z_start=None, z_end=None,
@@ -160,19 +160,19 @@ class Grid:
             axis: str = "y"
     ):
         """
-        :param source_type: 光源种类：点或线或面 "pointsource", "linesource", "planesource"
-        :param wavelength: 波长(m)
-        :param period:周期
-        :param amplitude: 振幅(V/m)
-        :param phase_shift: 相移
-        :param name: 名称
-        :param waveform: 波形 "plane":平面波 "gaussian": 高斯波
-        :param cycle: 汉宁窗脉冲的周期（仅使用汉宁hanning脉冲时有用）
-        :param hanning_dt: 汉宁窗宽度（仅使用汉宁hanning脉冲时有用）
-        :param polarization: 偏振
-        :param pulse_type: 脉冲类型 "gaussian" 或 "hanning" 或 "CW"
-        :param pulse_length: 脉宽(s)（仅用于高斯脉冲）
-        :param offset: 脉冲中心(s)（仅用于高斯脉冲）
+        @param source_type: 光源种类：点或线或面 "pointsource", "linesource", "planesource"
+        @param wavelength: 波长(m)
+        @param period:周期
+        @param amplitude: 振幅(V/m)
+        @param phase_shift: 相移
+        @param name: 名称
+        @param waveform: 波形 "plane":平面波 "gaussian": 高斯波
+        @param cycle: 汉宁窗脉冲的周期（仅使用汉宁hanning脉冲时有用）
+        @param hanning_dt: 汉宁窗宽度（仅使用汉宁hanning脉冲时有用）
+        @param polarization: 偏振
+        @param pulse_type: 脉冲类型 "gaussian" 或 "hanning" 或 "CW"
+        @param pulse_length: 脉宽(s)（仅用于高斯脉冲）
+        @param offset: 脉冲中心(s)（仅用于高斯脉冲）
         @param x_start, y_start, z_start, x_end, y_end, z_end: parameters for 'linesource'
         @param x, y, z: center position, parameters for 'linesource' & pointsource
         @param xlength, ylength, zlength: cross length, parameters for '"planesource"
@@ -621,10 +621,10 @@ class Grid:
         """
         #TODO: 这个函数需要重写
         频率扫描
-        :param material: 材料
-        :param wl_start: 起始波长
-        :param wl_end: 结束波长
-        :param points: 计算点数
+        @param material: 材料
+        @param wl_start: 起始波长
+        @param wl_end: 结束波长
+        @param points: 计算点数
         """
         # 读取折射率数据。把文件路径替换为保存折射率数据的路径
         # TODO: 改为自动识别object的材料并修改折射率
@@ -723,7 +723,7 @@ class Grid:
         dic["detectors"] = self._grid.detectors
         dic["sources"] = self._grid.sources
         dic["time_passed"] = self._grid.time_passed
-        dic["grid"] = self._grid
+        dic["grid"] = self
 
         # 保存detector_readings_sweep.npz文件
         savez(path.join(self.folder, "detector_readings"), **dic)
@@ -737,7 +737,7 @@ class Grid:
         folder: 保存监视器数据的文件路径
         """
         if not folder.endswith(".npz"):
-            folder = folder + "/detector_readings.npz"
+            folder = folder + "\detector_readings.npz"
 
         readings = np.load(folder, allow_pickle=True)
         names = readings.files

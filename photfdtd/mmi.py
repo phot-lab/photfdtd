@@ -19,23 +19,24 @@ class Mmi(Waveguide):
     refractive_index:折射率
     background_index: 环境折射率
     """
+
     # FIXME: 矩形波导与MMI之间有缝隙
     def __init__(
             self,
-            xlength: int or float= 71,
-            ylength: int or float= 56,
-            zlength: int or float= 20,
+            xlength: int or float = 71,
+            ylength: int or float = 56,
+            zlength: int or float = 20,
             x: int or float = None,
             y: int or float = None,
             z: int or float = None,
-            width_wg: int or float= 20,
-            width_port: int or float= 25,
+            width_wg: int or float = None,
+            width_port: int or float = None,
             n: int = 1,
             m: int = 2,
-            We: int or float= None,
-            ln: int or float= 20,
-            lm: int or float= 20,
-            l_port: int or float= 0,
+            We: int or float = None,
+            ln: int or float = 20,
+            lm: int or float = 20,
+            l_port: int or float = 0,
             name: str = "mmi",
             refractive_index: float = 3.47,
             grid=None,
@@ -47,7 +48,10 @@ class Mmi(Waveguide):
             [xlength, ylength, zlength, width_wg, width_port, We, ln, lm, l_port], grid_spacing=grid._grid.grid_spacing)
         self.n = n
         self.m = m
-        self.width_port = width_port
+        if not width_port:
+            self.width_port = width_wg
+        else:
+            self.width_port = width_port
         self.width_wg = width_wg
         self.ln = ln
         self.lm = lm
@@ -76,7 +80,7 @@ class Mmi(Waveguide):
         """设置多模波导"""
 
         waveguide = Waveguide(
-            xlength=self.xlength, #防止空隙
+            xlength=self.xlength,  # 防止空隙
             ylength=self.ylength,
             zlength=self.zlength + 2,
             x=self.x,
@@ -102,38 +106,53 @@ class Mmi(Waveguide):
 
             x_port_in[0] = self.x + int(self.xlength / 2 - self.width_port / 2)
 
-            for i in range(self.m):
-                i += 1
-                x_port_out[i - 1] = (
-                        self.x
-                        + int(self.xlength / 2 - self.width_port / 2)
-                        + int(((2 * i - (self.m + 1)) / (2 * self.m)) * self.We)
-                )
+            # for i in range(self.m):
+            #     i += 1
+            #     x_port_out[i - 1] = (
+            #             self.x
+            #             + int(self.xlength / 2 - self.width_port / 2)
+            #             + int(((2 * i - (self.m + 1)) / (2 * self.m)) * self.We)
+            #     )
 
         if self.n == 2:
             """2*m"""
             x_port_in[0] = self.x + int(self.xlength / 2 - self.We / 6 - self.width_port / 2)
             x_port_in[1] = self.x + int(self.xlength / 2 + self.We / 6 - self.width_port / 2)
 
-            for i in range(self.m):
-                i += 1
-                x_port_out[i - 1] = (
-                        self.x
-                        + int(self.xlength / 2 - self.width_port / 2)
-                        + int(((2 * i - (self.m + 1)) / (2 * self.m)) * self.We)
-                )
+            # for i in range(self.m):
+            #     i += 1
+            #     x_port_out[i - 1] = (
+            #             self.x
+            #             + int(self.xlength / 2 - self.width_port / 2)
+            #             + int(((2 * i - (self.m + 1)) / (2 * self.m)) * self.We)
+            #     )
 
         x_port_in = [x - int(self.xlength / 2 - self.width_port / 2) for x in x_port_in]
-        x_port_out = [x - int(self.xlength / 2 - self.width_port / 2) for x in x_port_out]
+
 
         if self.n > 2:
             """n*m"""
             for i in range(self.n):
                 x_port_in[i] = self.x - int(self.xlength / 2) + int(self.xlength / 2 / self.n) + int(
                     self.xlength / self.n) * i
-            for i in range(self.m):
-                x_port_out[i] = self.x - int(self.xlength / 2) + int(self.xlength / 2 / self.m) + int(
-                    self.xlength / self.m) * i
+            # for i in range(self.m):
+            #     x_port_out[i] = self.x - int(self.xlength / 2) + int(self.xlength / 2 / self.m) + int(
+            #         self.xlength / self.m) * i
+            # for i in range(self.n):
+            #     i += 1
+            #     x_port_in[i - 1] = (
+            #             self.x
+            #             + int(self.xlength / 2 - self.width_port / 2)
+            #             + int(((2 * i - (self.n + 1)) / (2 * self.n)) * self.We)
+            #     )
+        for i in range(self.m):
+            i += 1
+            x_port_out[i - 1] = (
+                    self.x
+                    + int(self.xlength / 2 - self.width_port / 2)
+                    + int(((2 * i - (self.m + 1)) / (2 * self.m)) * self.We)
+            )
+        x_port_out = [x - int(self.xlength / 2 - self.width_port / 2) for x in x_port_out]
 
         ports_in = [0] * self.n
         ports_out = [0] * self.m
@@ -142,7 +161,6 @@ class Mmi(Waveguide):
 
         for i in range(self.n):
             if self.l_port:
-                print(1)
                 port = Taper(xlength=self.width_port, width=self.width_wg, ylength=self.ylength, zlength=self.l_port,
                              x=x_port_in[i], y=self.y, z=z_port_in[i], name="%s_port_input%d" % (self.name, i),
                              refractive_index=self.refractive_index, grid=self.grid, priority=self.priority)

@@ -15,7 +15,6 @@ class Index:
     def __init__(self,
                  material: str = 'materials/Si.csv',
                  data=None,
-                 wavelength: float = None
                  ):
         self.material = material
         import os
@@ -72,6 +71,7 @@ class Index:
         plt.show()
 
     def get_refractive_index(self, wavelength):
+        wavelength *= 1e6 # From m unit to um unit
         index_Re = float(self.fit_function_Reindex(wavelength))
         try:
             index_Im = float(self.fit_function_Imindex(wavelength))

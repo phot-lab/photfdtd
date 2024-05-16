@@ -6,7 +6,7 @@ if __name__ == "__main__":
     background_index = 1.0
 
     index_Si = Index(material="Si")
-    index_Re_Si, index_Im_Si = index_Si.get_refractive_index(wavelength=1.55)
+    index_Re_Si, index_Im_Si = index_Si.get_refractive_index(wavelength=1.55e-6)
 
     # create the simulation region, which is a Grid object 新建一个 grid 对象
     grid = Grid(grid_xlength=1, grid_ylength=3e-6, grid_zlength=8e-6,
