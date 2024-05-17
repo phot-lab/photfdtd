@@ -65,5 +65,4 @@ if __name__ == "__main__":
     data = Grid.read_simulation(folder=grid.folder)
 
     # 由监视器数据绘制Ex场随时间变化的图像
-    Grid.plot_fieldtime(folder=grid.folder, data=data, field="E", field_axis="z",
-                        index=5, name_det="detector1")
+    Grid.plot_fieldtime(grid=grid, field_axis="z", field="E", index=5, name_det="detector1")

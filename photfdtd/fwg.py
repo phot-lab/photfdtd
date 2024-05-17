@@ -18,6 +18,7 @@ class FWG(Arc):
     background_index: 环境折射率
     width: If period and duty_cycle have been set, width and gap will not be needed. 波导宽度
     gap: 缝宽
+    priority: the priority of the waveguide( high index indicates high priority).
     """
     # TODO: my thought about the duty cycle not right?
     # TODO：现在只有x-y平面

@@ -24,7 +24,8 @@ from . import constants as const
 class Object:
     """ An object to place in the grid """
 
-    def __init__(self, permittivity: Tensorlike, name: str = None, background_index: float = None, priority_matrix=None):
+    def __init__(self, permittivity: Tensorlike, name: str = None, background_index: float = None,
+                 priority_matrix=None):
         """
         Args:
             permittivity: permittivity tensor
@@ -39,7 +40,7 @@ class Object:
         self.priority = priority_matrix
 
     def _register_grid(
-        self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+            self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
         """Register the object to the grid
 
@@ -74,12 +75,12 @@ class Object:
         if bd.is_array(self.permittivity) and len(self.permittivity.shape) == 3:
             self.permittivity = self.permittivity[:, :, :, None]
         self.inverse_permittivity = (
-            bd.ones((self.Nx, self.Ny, self.Nz, 3),dtype=self.permittivity.dtype) / self.permittivity
+                bd.ones((self.Nx, self.Ny, self.Nz, 3), dtype=self.permittivity.dtype) / self.permittivity
         )
 
         # set the permittivity values of the object at its border to be equal
         # to the grid permittivity. This way, the object is made symmetric.
-        ###It seems useless so I annotated -Tao Jia. 2024/4/11
+        ### It seems useless so I annotated it - Tao Jia. 2024/4/11
         # if self.Nx > 1:
         #     self.inverse_permittivity[-1, :, :, 0] = self.grid.inverse_permittivity[
         #         -1, self.y, self.z, 0
@@ -102,13 +103,13 @@ class Object:
 
         # Compare the object's priority matrix with the grid's, if the object's priority is higher, the permittivity of
         # the grid will be overridden.
-        # It should be noticed that the "grid.priority" is not same with the "priority", which could be confused.
-        self.grid.inverse_permittivity[self.x, self.y, self.z][self.priority > self.grid.priority[self.x, self.y, self.z]] = \
+        # It should be noticed that the "grid.priority" is not same with the "priority", which could be confused,
+        # self.priority indicates the object's priority matrix, while self.grid.priority indicating the grid's priority matrix
+        self.grid.inverse_permittivity[self.x, self.y, self.z][
+            self.priority > self.grid.priority[self.x, self.y, self.z]] = \
             self.inverse_permittivity[self.priority > self.grid.priority[self.x, self.y, self.z]]
         # Update the "grid.priority" matrix.
         self.grid.priority[self.x, self.y, self.z] = self.priority > self.grid.priority[self.x, self.y, self.z]
-
-        pass
 
     def _handle_slice(self, s: ListOrSlice, max_index: int = None) -> slice:
         if isinstance(s, list):
@@ -143,9 +144,9 @@ class Object:
         """
         loc = (self.x, self.y, self.z)
 
-        self.grid.E[loc] = self.grid.E[loc] +(
-            self.grid.courant_number * self.inverse_permittivity * curl_H[loc]
-            )
+        self.grid.E[loc] = self.grid.E[loc] + (
+                self.grid.courant_number * self.inverse_permittivity * curl_H[loc]
+        )
 
     def update_H(self, curl_E):
         """custom update equations for inside the object
@@ -154,6 +155,7 @@ class Object:
             curl_E: the curl of electric field in the grid.
 
         """
+
     # def promote_dtypes_to_complex(self):
     #     self.E = self.E.astype(bd.complex)
     #     self.H = self.H.astype(bd.complex)
@@ -167,10 +169,10 @@ class Object:
         def _handle_slice(s):
             return (
                 str(s)
-                .replace("slice(", "")
-                .replace(")", "")
-                .replace(", ", ":")
-                .replace("None", "")
+                    .replace("slice(", "")
+                    .replace(")", "")
+                    .replace(", ", ":")
+                    .replace("None", "")
             )
 
         x = _handle_slice(self.x)
@@ -186,7 +188,7 @@ class AbsorbingObject(Object):
     """ An absorbing object takes conductivity into account """
 
     def __init__(
-        self, permittivity: Tensorlike, conductivity: Tensorlike, name: str = None
+            self, permittivity: Tensorlike, conductivity: Tensorlike, name: str = None
     ):
         """
         Args:
@@ -198,7 +200,7 @@ class AbsorbingObject(Object):
         self.conductivity = bd.array(conductivity)
 
     def _register_grid(
-        self, grid: Grid, x: slice = None, y: slice = None, z: slice = None
+            self, grid: Grid, x: slice = None, y: slice = None, z: slice = None
     ):
         """Register a grid to the object
 
@@ -218,12 +220,12 @@ class AbsorbingObject(Object):
         )
 
         self.absorption_factor = (
-            0.5
-            * self.grid.courant_number
-            * self.inverse_permittivity
-            * self.conductivity
-            * self.grid.grid_spacing
-            * const.eta0
+                0.5
+                * self.grid.courant_number
+                * self.inverse_permittivity
+                * self.conductivity
+                * self.grid.grid_spacing
+                * const.eta0
         )
 
     def update_E(self, curl_H):
@@ -236,10 +238,10 @@ class AbsorbingObject(Object):
         loc = (self.x, self.y, self.z)
         self.grid.E[loc] *= (1 - self.absorption_factor) / (1 + self.absorption_factor)
         self.grid.E[loc] += (
-            self.grid.courant_number
-            * self.inverse_permittivity
-            * curl_H[loc]
-            / (1 + self.absorption_factor)
+                self.grid.courant_number
+                * self.inverse_permittivity
+                * curl_H[loc]
+                / (1 + self.absorption_factor)
         )
 
     def update_H(self, curl_E):
@@ -255,7 +257,7 @@ class AnisotropicObject(Object):
     """ An object with anisotropic permittivity tensor """
 
     def _register_grid(
-        self, grid: Grid, x: slice = None, y: slice = None, z: slice = None
+            self, grid: Grid, x: slice = None, y: slice = None, z: slice = None
     ):
         """Register a grid to the object
 

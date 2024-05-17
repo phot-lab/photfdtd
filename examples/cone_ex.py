@@ -15,7 +15,7 @@ if __name__ == "__main__":
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=40e-6, grid_ylength=40e-6, grid_zlength=40e-6, grid_spacing=200e-9,
                 foldername="test_cone", permittivity=background_index ** 2)
-    fiber = Cone(length=40e-6, radius_upper=10e-6, radius_lower=5e-6, refractive_index=1.4555,
+    fiber = Cone(length=40e-6, radius_upper=10e-6, radius_lower=0e-6, refractive_index=1.4555,
                   name='cone', axis='y', grid=grid)
 
     # 往 grid 里添加fiber

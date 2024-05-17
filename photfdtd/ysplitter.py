@@ -12,6 +12,7 @@ class Taper(Waveguide):
     zlength: 长度
     x,y,z: 中心坐标
     refractive_index:折射率
+    priority: the priority of the waveguide( high index indicates high priority)
     """
 
     def __init__(
@@ -108,6 +109,7 @@ class Ysplitter(Waveguide):
     zlength_taper：taper z方向长度,
     zlength_sbend：Sbend z方向长度,
     width_sbend: sbend的波导宽度,
+    priority: the priority of the waveguide( high index indicates high priority)
     """
 
     def __init__(

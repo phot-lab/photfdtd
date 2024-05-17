@@ -76,7 +76,7 @@ class Grid:
         # return: total time in timesteps
         n = np.sqrt(1 / self._grid.inverse_permittivity.min())
         L = max(self._grid_xlength, self._grid_ylength, self._grid_zlength) * self._grid.grid_spacing
-        time = int(L * 1.5 * n / constants.c / self._grid.time_step) # Multiply 1.5 to make sure stabilization
+        time = int(L * 1.5 * n / constants.c / self._grid.time_step)  # Multiply 1.5 to make sure stabilization
         return time
 
     def _check_parameters(self, x_start=None, x_end=None, y_start=None, y_end=None, z_start=None, z_end=None,
@@ -440,7 +440,7 @@ class Grid:
         if not filepath:
             filepath = grid.folder
         grid = grid._grid
-        geometry = np.sqrt(1 / grid.inverse_permittivity)
+        geometry = np.sqrt(1 / np.float16(grid.inverse_permittivity))
         axis = axis.lower()
 
         # 去掉作为轴的那一维
@@ -712,23 +712,26 @@ class Grid:
         plt.show()
 
     # 保存数据
+
     def save_simulation(self):
-        # TODO: 保存和读取整个grid
-        dic = {}
-        for detector in self._grid.detectors:
-            dic[detector.name + " (E)"] = np.array([x for x in detector.detector_values()["E"]])
-            dic[detector.name + " (H)"] = np.array([x for x in detector.detector_values()["H"]])
-        dic["grid_spacing"] = self._grid.grid_spacing
-        dic["time_step"] = self._grid.time_step
-        dic["detectors"] = self._grid.detectors
-        dic["sources"] = self._grid.sources
-        dic["time_passed"] = self._grid.time_passed
-        dic["grid"] = self
-
-        # 保存detector_readings_sweep.npz文件
-        savez(path.join(self.folder, "detector_readings"), **dic)
-
-        return dic
+        """ Save the Grid class instance into a .npz file"""
+        import pickle
+        # Serialize the class instance
+        saved_grid = pickle.dumps(self)
+        savez(path.join(self.folder, "detector_readings"), serialized_instance=saved_grid)
+        # dic = {}
+        # for detector in self._grid.detectors:
+        #     dic[detector.name + " (E)"] = np.array([x for x in detector.detector_values()["E"]])
+        #     dic[detector.name + " (H)"] = np.array([x for x in detector.detector_values()["H"]])
+        # dic["grid_spacing"] = self._grid.grid_spacing
+        # dic["time_step"] = self._grid.time_step
+        # dic["detectors"] = self._grid.detectors
+        # dic["sources"] = self._grid.sources
+        # dic["time_passed"] = self._grid.time_passed
+        # dic["grid"] = self
+        #
+        # # 保存detector_readings_sweep.npz文件
+        # savez(path.join(self.folder, "detector_readings"), **dic)
 
     @staticmethod
     def read_simulation(folder: str = ''):
@@ -736,63 +739,64 @@ class Grid:
         静态方法，调用时应使用 data = Grid.read_simulation(folder="...")
         folder: 保存监视器数据的文件路径
         """
+        import pickle
         if not folder.endswith(".npz"):
             folder = folder + "\detector_readings.npz"
 
         readings = np.load(folder, allow_pickle=True)
-        names = readings.files
-        data = {}
-        i = 0
-        for name in names:
-            data[name] = readings[name]
-            i += 1
 
-        return data
+        return pickle.loads(readings['serialized_instance'])
 
     @staticmethod
-    def dB_map(folder=None, total_time=None, block_det=None, data=None, axis="x", field="E", field_axis="z",
-               name_det=None,
-               interpolation="spline16", save=True, ):
+    def dB_map(grid=None, folder=None, axis="x", field="E", field_axis="z",
+               interpolation="spline16", total_time=None, save: bool = True):
         """
-        绘制场分贝图 需要面监视器数据
-        @param folder: 保存图片的地址
-        @param total_time: 模拟经历的时间，可选，仅命名用
-        @param block_det: 面监视器数据 此变量与data二选一即可
-        @param data: reading_simulation()方法读取的data数据
-        @param field_axis: {x,y,z} of E or H
-        @param field: “E”或“H”
-        @param name_det: 监视器的名称
-        @param interpolation: 绘图方式 'matplotlib.pyplot.imshow' interpolation
-        @param save: bool 是否保存
+        Draw a field dB_map. At least 1 block detector is required. 绘制场分贝图 需要面监视器数据
+        @param grid: Photfdtd.Grid
+        @param folder: Optional. The folder path to save the dB map. Default to grid.folder. 保存图片的地址，默认为grid.folder
         @param axis: "x" or "y" or "z" 选择绘制dB图的截面
+        @param field_axis: {x,y,z} of "E" or "H" field
+        @param field: “E”或“H”
+        @param interpolation: Optional. 'matplotlib.pyplot.imshow' interpolation 绘图方式
+        @param save: bool, to save or not. 是否保存
+        @param total_time: Optional, only used for title 模拟经历的时间，可选，仅命名用
+
 
         """
-        if block_det != None:
-            data = block_det
-            name_det = block_det.name
-        else:
-            data = data[name_det + " (%s)" % field]
+        if not folder:
+            folder = grid.folder
+        if not total_time:
+            total_time = grid._grid.time_passed
+        for detector in grid._grid.detectors:
+            if isinstance(detector, grid._grid.fdtd.detectors.BlockDetector):
+                fdtd.dB_map_2D(block_det=np.array([x for x in detector.detector_values()["%s" % field]]),
+                               interpolation=interpolation, axis=axis, field=field, field_axis=field_axis,
+                               save=save, folder=folder, name_det=detector.name, total_time=total_time)
 
-        fdtd.dB_map_2D(block_det=data, interpolation=interpolation, axis=axis, field=field, field_axis=field_axis,
-                       save=save,
-                       folder=folder, name_det=name_det, total_time=total_time)
+            # dic[detector.name + " (E)"] = np.array([x for x in detector.detector_values()["E"]])
+            # dic[detector.name + " (H)"] = np.array([x for x in detector.detector_values()["H"]])
+        # if block_det != None:
+        #     data = block_det
+        #     name_det = block_det.name
+        # else:
+        #     data = data[name_det + " (%s)" % field]
 
     @staticmethod
     def plot_field(grid=None, axis="z", axis_index=0, field="E", field_axis=None, folder=None, cmap="jet",
                    show_geometry=True, show_field=True, vmax=None, vmin=None):
         """
-        绘制当前时刻场分布（不需要监视器）
+        Plot a field map at current state. No need for detectors. 绘制当前时刻场分布（不需要监视器）
         @param show_geometry: bool 是否绘制波导结构
         @param show_field: bool 是否绘制场
-        @param grid: grid
+        @param grid: Photfdtd.Grid
         @param field: "E"或"H"
         @param field_axis: {x,y,z,None} of E or H, if None, the energy intensity of E or H will be plotted
         @param axis: "x"或"y"或"z"表示绘制哪个截面
         @param axis_index: 例如绘制z=0截面 ，则axis设为"z"而axis_index为0
-        @param folder: 保存图片的地址
-        @param cmap: matplotlib.pyplot.imshow(cmap)
-        @param vmax: 颜色条的最大、最小值
-        @param vmin:
+        @param folder: Optional. The folder path to save the dB map. Default to grid.folder. 保存图片的地址，默认为grid.folder
+        @param cmap: Optional. matplotlib.pyplot.imshow(cmap)
+        @param vmax: Optional. Max value of the color bar. 颜色条的最大、最小值
+        @param vmin: Optional. Min value of the color bar.
 
         """
         if not show_field:
@@ -877,7 +881,7 @@ class Grid:
             cbar = plt.colorbar()
         if show_geometry:
 
-            geo = np.sqrt(1 / grid.inverse_permittivity)
+            geo = np.sqrt(1 / np.float16(grid.inverse_permittivity))
 
             # geo是四维矩阵
             geo = geo[:, :, :, -1]
@@ -920,18 +924,22 @@ class Grid:
         plt.close()
 
     @staticmethod
-    def plot_fieldtime(folder=None, data=None, field_axis="z", field="E", index=None, index_3d=None, name_det=None):
+    def plot_fieldtime(grid=None, folder=None, field_axis="z", field="E", index=None, index_3d=None, name_det=None):
         """
-        绘制监视器某一点的时域场图
-        @param index_3d: 三维数组：用于面监视器，选择读取数据的点
-        @param folder: 保存图片的文件夹
+        Draw and save the field vs time of a point. 绘制监视器某一点的时域场图
+        @param grid: Photfdtd.Grid
+        @param folder: Optional. The folder path to save the dB map. Default to grid.folder. 保存图片的地址，默认为grid.folder
         @param data: read_simulation()读到的数据
         @param field_axis: x, y, z of E or H
         @param field: “E“或”H“
         @param index: 用于线监视器，选择读取数据的点
+        @param index_3d: 三维数组：用于面监视器，选择读取数据的点
         @param name_det: 监视器的名称
         """
-        data = data[name_det + " (%s)" % field]
+        for detector in grid._grid.detectors:
+            if detector.name == name_det:
+                data = np.array([x for x in detector.detector_values()["%s" % field]])
+
         plt.figure()
         if data.ndim == 3:
             if index == None:

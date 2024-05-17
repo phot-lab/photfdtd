@@ -12,6 +12,7 @@ class Cone(Waveguide):
     name: 名称
     axis: 'x', 'y', "z" 光纤沿哪个轴
     background_index：背景折射率
+    priority: the priority of the waveguide( high index indicates high priority).
     """
 
     # TODO: not finished yet

@@ -14,6 +14,7 @@ class Arc(Waveguide):
     angle_psi: 张角/rad
     background_index: 环境折射率
     angle_unit: bool: True if using angle unit.如果输入为角度单位为angle，选择True
+    priority: the priority of the waveguide( high index indicates high priority).
     """
 
     # FIXME: 在圆弧跨越x=0时存在问题

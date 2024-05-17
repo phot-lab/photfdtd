@@ -15,6 +15,7 @@ class Hexagonal_PC(Fiber):
     refractive_index: 折射率
     name: 名称
     background_index: 环境折射率
+    priority: the priority of the waveguide( high index indicates high priority).
     """
     def __init__(
             self,

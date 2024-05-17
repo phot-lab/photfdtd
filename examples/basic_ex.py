@@ -14,7 +14,7 @@ if __name__ == "__main__":
                 permittivity=background_index ** 2,
                 foldername="basic_ex")
 
-    # set waveguide设置器件参数
+    # set waveguide 设置器件参数
     waveguide = Waveguide(
         xlength=1, ylength=200e-9, zlength=5e-6, refractive_index=index_Re_Si, name="waveguide", grid=grid
     )
@@ -55,17 +55,16 @@ if __name__ == "__main__":
     grid.run()
 
     # Save the result of simulation, It will be saved in the file that you created when CREATING A GRID Object保存仿真结果，并传给data
-    # data = grid.save_simulation()
+    grid.save_simulation()
 
     # 也可以读取仿真结果
     # data = grid.read_simulation(folder=grid.folder)
 
     # 如果添加了面监视器，可以绘制监视器范围内电场dB图, as the detector we have added is a linedetector, it's useless
-    # Grid.dB_map(folder=grid.folder, total_time=grid._grid.time_passed, data=data, choose_axis=0,
-    #             field="E", name_det="detector", interpolation="spline16", save=True, index="x-y")
+    Grid.dB_map(grid=grid, axis="x", field="E", field_axis="x")
 
     # # 绘制仿真结束时刻空间场分布
-    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="x", axis_index=0, folder=grid.folder)
+    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="x", axis_index=0)
     #
     # 如果添加了面监视器，可以绘制监视器范围内电场dB图, as the detector we have added is a linedetector, it's useless
     # Grid.dB_map(folder=grid.folder, total_time=grid._grid.time_passed, data=data, choose_axis=0,

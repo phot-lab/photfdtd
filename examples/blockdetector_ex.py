@@ -2,24 +2,19 @@ import utils
 from photfdtd import Waveguide, Grid, Solve, constants
 
 if __name__ == "__main__":
+    ### This example is outdated. 需要更新
     # 设置背景折射率
     background_index = 1.0
-
-    # 设置器件参数
-    waveguide = Waveguide(
-        xlength=400, ylength=20, zlength=1, x=200, y=75, z=0, refractive_index=3.47, name="waveguide",
-        background_index=background_index
-    )
-
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=400, grid_ylength=150, grid_zlength=1,
                 grid_spacing=20e-9,
-                total_time=600,
-                pml_width_x=40,
-                pml_width_y=40,
-                pml_width_z=0,
                 permittivity=background_index ** 2,
                 foldername="blockdetector_ex")
+    # 设置器件参数
+    waveguide = Waveguide(
+        grid=grid,
+        xlength=400, ylength=20, zlength=1, x=200, y=75, z=0, refractive_index=3.47, name="waveguide",
+    )
 
     # 往 grid 里添加器件
     grid.add_object(waveguide)
@@ -64,11 +59,10 @@ if __name__ == "__main__":
     # 监视器结果可视化
     # 如果添加了面监视器，可以绘制监视器范围内电场dB图, choose_axis参数选择场值的方向0,1,2分别表示"x“,”y“,”z“, field为"E", 或"H",
     # inddex表示绘制的截面
-    Grid.dB_map(folder=folder, total_time=800, data=data, choose_axis=2,
-                field="E", name_det="detector", interpolation="spline16", save=True, index="x-y")
+    Grid.dB_map(grid=grid, axis="x", field="E", field_axis="x")
 
     # 绘制仿真结束时刻空间场分布
     Grid.plot_field(grid=grid, field="E", axis=2, cross_section="z", axis_number=0, folder=folder)
 
     # 绘制某一点时域场变化曲线，这里选择index_3d=[50,5,0]即监视器中心
-    Grid.plot_fieldtime(folder=folder,data=data,axis=2,index_3d=[50,5,0], name_det="detector")
+    Grid.plot_fieldtime(grid=grid, index_3d=[50, 5, 0], name_det="detector")

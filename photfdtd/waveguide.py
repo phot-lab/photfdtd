@@ -14,6 +14,7 @@ class Waveguide:
     refractive_index: 折射率
     background_index: 环境折射率
     name:名称
+    priority: the priority of the waveguide( high index indicates high priority)
     """
 
     # TODO: fdtd包绘制场的代码很有问题，在3d仿真时不能正确显示

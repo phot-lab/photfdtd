@@ -35,7 +35,7 @@ class Solve:
         if not filepath:
             filepath = grid.folder
         self.grid = grid._grid
-        self.geometry = np.sqrt(1 / self.grid.inverse_permittivity)
+        self.geometry = np.sqrt(1 / np.float16(self.grid.inverse_permittivity))
         # for i in range(len(self.grid.objects)):
         #     self.geometry[self.grid.objects[i].x.start:self.grid.objects[i].x.stop,
         #     self.grid.objects[i].y.start:self.grid.objects[i].y.stop,

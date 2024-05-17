@@ -40,6 +40,7 @@ class TFF(Waveguide):
         @param axis:
         @param name:
         @param grid:
+        @param priority: the priority of the waveguide( high index indicates high priority).
         """
         xlength, ylength, zlength, dl, dh, x, y, z = grid._handle_unit([xlength, ylength, zlength, dl, dh, x, y, z],
                                                               grid_spacing=grid._grid.grid_spacing)

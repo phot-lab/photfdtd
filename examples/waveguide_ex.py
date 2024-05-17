@@ -15,7 +15,6 @@ if __name__ == "__main__":
         grid=grid
     )
 
-
     # 往 grid 里添加器件
     grid.add_object(waveguide)
 
@@ -54,10 +53,7 @@ if __name__ == "__main__":
     # 保存仿真结果
     grid.save_simulation()
 
-
-
     # 读取仿真结果
     data = grid.read_simulation(folder=grid.folder)
     # 绘制监视器范围内光场分布
-    Grid.dB_map(folder="D:/Github_Clone/photfdtd/examples/test_waveguide", total_time=1600, data=data, axis="x-y",
-                field_axis=0, field="E", name_det="detector", interpolation="spline16", save=True)
+    Grid.dB_map(grid=grid, axis="x", field="E", field_axis="x")

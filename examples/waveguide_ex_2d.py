@@ -11,7 +11,9 @@ if __name__ == "__main__":
                 foldername="test_waveguide_2D")
     # 设置器件参数
     waveguide = Waveguide(
-        xlength=0.5e-6, ylength=1, zlength=6e-6, refractive_index=3.47, name="Waveguide", grid=grid, priority=1
+        xlength=0.5e-6, ylength=1, zlength=6e-6,
+        refractive_index=3.47, name="Waveguide",
+        grid=grid, priority=1
     )
 
     # 往 grid 里添加器件
@@ -34,12 +36,11 @@ if __name__ == "__main__":
     grid.run()
 
     # 保存仿真结果，并传给data
-    data = grid.save_simulation()
+    grid.save_simulation()
 
     # 如果设置了监视器，绘制监视器范围内光场分布
     grid.save_fig(axis="y", axis_number=0, show_energy=True)
-    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0, folder=grid.folder)
-    Grid.plot_fieldtime(folder=grid.folder, data=data, field_axis="x", index_3d=[25, 0, 0], name_det="detector")
-    Grid.dB_map(folder=grid.folder, total_time=grid._grid.time_passed, data=data, axis="y",
-                field="E", name_det="detector", interpolation="spline16", save=True, field_axis="x")
+    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0)
+    Grid.plot_fieldtime(grid=grid, field_axis="x", index_3d=[25, 0, 0], name_det="detector")
+    Grid.dB_map(grid=grid, axis="x", field="E", field_axis="x")
 

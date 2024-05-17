@@ -17,6 +17,7 @@ class DirectionalCoupler(Waveguide):
     在设置以上参数后，以下参数可以不设置：
         xlength: 波导区域x方向宽度
         zlength: 波导区域厚度
+    priority: the priority of the waveguide( high index indicates high priority).
     """
 
     def __init__(

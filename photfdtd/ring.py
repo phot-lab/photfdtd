@@ -14,6 +14,7 @@ class Ring(Waveguide):
     refractive_index:折射率
     name: 名称
     direction: 方向
+    priority: the priority of the waveguide( high index indicates high priority).
     """
 
     def __init__(

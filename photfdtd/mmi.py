@@ -16,8 +16,9 @@ class Mmi(Waveguide):
     ln：输入波导z长度
     lm：输出波导z长度
     l_port: 端口长度
-    refractive_index:折射率
+    refractive_index: 折射率
     background_index: 环境折射率
+    priority: the priority of the waveguide( high index indicates high priority).
     """
 
     # FIXME: 矩形波导与MMI之间有缝隙

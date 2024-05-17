@@ -12,6 +12,7 @@ class Sbend(Waveguide):
     width：波导宽度
     refractive_index: 折射率
     grid: grid
+    priority: the priority of the waveguide( high index indicates high priority).
     """
     # TODO: 像Rsoft里那样设置sbend。The settings of Sbend should be like that in Rsoft.
     def __init__(
@@ -28,6 +29,7 @@ class Sbend(Waveguide):
             grid=None,
             center_postion: bool = True,
             direction: int = None,
+            priority: int = 1
     ) -> None:
         xlength, ylength, zlength, width, x, y, z = grid._handle_unit([xlength, ylength, zlength, width, x, y, z],
                                                                       grid_spacing=grid._grid.grid_spacing)
@@ -39,7 +41,7 @@ class Sbend(Waveguide):
             else:
                 direction = 1
         self.direction = direction
-        super().__init__(abs(xlength), ylength, zlength, x, y, z, width, name, refractive_index, grid=grid)
+        super().__init__(abs(xlength), ylength, zlength, x, y, z, width, name, refractive_index, grid=grid, priority=self.priority)
 
     def _compute_permittivity(self):
         """
