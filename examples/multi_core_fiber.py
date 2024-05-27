@@ -1,5 +1,5 @@
 import utils
-from photfdtd import Fiber, Grid, Solve, constants
+from photfdtd import Fiber, Grid, Solve
 
 if __name__ == "__main__":
     # 多芯光纤模式分析

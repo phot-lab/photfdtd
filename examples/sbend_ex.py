@@ -1,4 +1,5 @@
-from photfdtd import Sbend, Grid, Solve, constants
+from photfdtd import Sbend, Grid, Solve
+import photfdtd.fdtd.constants as constants
 
 
 if __name__ == "__main__":

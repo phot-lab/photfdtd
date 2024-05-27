@@ -1,5 +1,5 @@
 from scipy import integrate
-from photfdtd import constants
+import photfdtd.fdtd.constants as constants
 import math
 # 为pml边界计算sigmaE_max
 epsilon0 = constants.eps0

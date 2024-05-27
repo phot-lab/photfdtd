@@ -2,8 +2,7 @@ import numpy as np
 import scipy.sparse as sps
 import time
 import math
-from photfdtd import constants
-
+from photfdtd.fdtd import constants
 
 def calculate_s(vect, k0=None, n=1, sigmaE_max=None):
     # 计算参数s

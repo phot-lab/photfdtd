@@ -1,5 +1,5 @@
 import utils
-from photfdtd import Waveguide, Grid, Solve, constants
+from photfdtd import Waveguide, Grid, Solve
 
 if __name__ == "__main__":
     # This file has been used for an example of dBmap and blockdetector.

@@ -9,8 +9,7 @@ if __name__ == "__main__":
 
     n = 5  # 输入端口数
     m = 16  # 输出端口数
-    grid_spacing = 50e-9  # 空间步长
-
+    grid_spacing = 100e-9  # 空间步长
 
     grid = Grid(grid_xlength=15e-6, grid_ylength=2.5e-6, grid_zlength=25e-6, grid_spacing=grid_spacing,
                 foldername="test_star",
@@ -53,17 +52,16 @@ if __name__ == "__main__":
     #                   name='detector1')
 
     grid.add_object(star)
-    grid.save_fig(axis="y", axis_number=25)
-    grid.plot_n(axis="y", axis_index=25)
+    grid.save_fig(axis="y", axis_number=13)
+    grid.plot_n(axis="y", axis_index=13)
 
-    # grid.run(time=3000)
-    # grid.save_simulation()
+    grid.run(time=5000)
+    grid.save_simulation()
     #
     # # # 绘制仿真结束时刻空间场分布
-    # Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=13, folder=grid.folder)
-    # grid.save_fig(axis="y",
-    #               axis_number=13,
-    #               show_energy=True)
+    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=13, folder=grid.folder)
+    grid.save_fig(axis="y",
+                  axis_number=13,
+                  show_energy=True)
     # # 读取仿真结果
     # data = Grid.read_simulation(folder=grid.folder)
-

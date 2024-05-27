@@ -1,4 +1,4 @@
-from photfdtd import Waveguide, Grid, Solve, constants
+from photfdtd import Waveguide, Grid, Solve
 
 if __name__ == "__main__":
     background_index = 1.0

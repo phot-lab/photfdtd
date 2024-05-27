@@ -1,5 +1,6 @@
 import utils
-from photfdtd import Mzi, Grid, Solve, Ysplitter, constants
+from photfdtd import Mzi, Grid, Solve, Ysplitter
+import photfdtd.fdtd.constants as constants
 
 if __name__ == "__main__":
     background_index = 1.0

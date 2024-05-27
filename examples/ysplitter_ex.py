@@ -1,5 +1,5 @@
 import utils
-from photfdtd import Ysplitter, Grid, Solve, constants
+from photfdtd import Ysplitter, Grid
 
 if __name__ == "__main__":
     # 背景空间折射率

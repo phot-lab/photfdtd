@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # add waveguide to grid 往 grid 里添加器件
     grid.add_object(waveguide)
 
-    # set a point source 设置一个点光源，波长为1550nm，波形为连续正弦
+    # set a point source with center wl at 1550nm 设置一个点光源，波长为1550nm，波形为连续正弦
     grid.set_source(source_type="linesource", wavelength=1550e-9, name="source", x=0, y=75, z=60,
                     xlength=0, ylength=400e-9, zlength=0, polarization="x")
 
@@ -38,18 +38,9 @@ if __name__ == "__main__":
     #                   )
 
     # We can plot the geometry and the index map now
-    grid.save_fig(axis="x", axis_number=0)
-    grid.plot_n(grid=grid, axis="x", axis_index=0)
-
-    # create a Solve object. You can use it to solve the eigenmodes (see eigenmode_solver_ex) 创建solve对象
-    solve = Solve(grid=grid,
-                  axis='x',
-                  index=0,
-                  filepath=grid.folder
-                  )
-
+    grid.save_fig()
     # plot the refractive index map on z=0绘制z=0截面折射率分布
-    solve.plot()
+    grid.plot_n()
 
     # run the FDTD simulation 运行仿真
     grid.run()
@@ -61,14 +52,10 @@ if __name__ == "__main__":
     # data = grid.read_simulation(folder=grid.folder)
 
     # 如果添加了面监视器，可以绘制监视器范围内电场dB图, as the detector we have added is a linedetector, it's useless
-    Grid.dB_map(grid=grid, axis="x", field="E", field_axis="x")
+    Grid.dB_map(grid=grid, field="E", field_axis="x")
 
     # # 绘制仿真结束时刻空间场分布
     Grid.plot_field(grid=grid, field="E", field_axis="x", axis="x", axis_index=0)
-    #
-    # 如果添加了面监视器，可以绘制监视器范围内电场dB图, as the detector we have added is a linedetector, it's useless
-    # Grid.dB_map(folder=grid.folder, total_time=grid._grid.time_passed, data=data, choose_axis=0,
-    #             field="E", name_det="detector", interpolation="spline16", save=True, index="x-y")
 
     # # 如果添加了监视器，还可以绘制某一点时域场变化曲线，这里选择index=30即监视器中心
     # Grid.plot_fieldtime(folder=grid.folder, data=data, field_axis="z", index=30, name_det="detector")

@@ -1,5 +1,6 @@
 import utils
-from photfdtd import Waveguide, Arc, Grid, Solve, constants
+from photfdtd import Waveguide, Arc, Grid, Solve
+from photfdtd.fdtd import constants
 
 if __name__ == "__main__":
     background_index = 1.4447

@@ -3,6 +3,7 @@ from math import sqrt
 from . import constants as const
 
 """
+模拟量与真实量换算
 Optional reduced unit conversion functions for user use.
 Mainly to make it explicit where conversions happen.
 
@@ -19,6 +20,7 @@ of simulation units equals 1 per definition".
 FIXME: DC: find and add md notes on scaling
 
 """
+
 
 # Might perhaps be worth putting a note in the readme about default units / suggested unit systems?
 # (done, see next PR)
@@ -43,3 +45,12 @@ def simH_to_worldH(input):
 
 def worldH_to_simH(input):
     return sqrt(const.mu0) * input
+
+
+def letter_to_number(input):
+    ### x -> 0, y -> 1, z -> 2
+    return ord(input) - 120
+
+
+def number_to_letter(input):
+    return chr(input + 120)

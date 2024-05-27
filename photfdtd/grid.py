@@ -8,7 +8,8 @@ import os
 from os import path, makedirs, chdir, remove
 from .analyse import Analyse
 from .index import Index
-from photfdtd import constants
+import photfdtd.fdtd.constants as constants
+import photfdtd.fdtd.conversions as conversions
 
 
 class Grid:
@@ -313,7 +314,7 @@ class Grid:
                      ylength: int or float = 1,
                      zlength: int or float = 1,
                      name: str = 'detector',
-                     axis: str = "y",
+                     axis: str = None,
                      ):
         """
         Adding detectors
@@ -324,6 +325,12 @@ class Grid:
         @param name:
         @param axis: "x", "y", "z", only for blockdetector
         """
+        if not axis:
+            # Tell which dimension to draw automatically
+            dims_with_size_one = [i for i, size in enumerate(self._grid.inverse_permittivity.shape) if size == 1]
+            if not dims_with_size_one:
+                raise ValueError("Parameter 'axis' should not be None for 3D simulation")
+            axis = conversions.number_to_letter(dims_with_size_one[0])
 
         if x == None:
             # 如果没设置x，自动选仿真区域中心If x not set, choose the center of grid
@@ -373,8 +380,8 @@ class Grid:
             raise ValueError("Invalid detector type.")
 
     def save_fig(self,
-                 axis="x",
-                 axis_index=None,
+                 axis=None,
+                 axis_index=0,
                  axis_number=None,
                  animate=False,
                  time=None,
@@ -383,17 +390,25 @@ class Grid:
                  show_energy=False):
         """
         Saving the geometry figure. This function can also show energy while show_energy = True.
-        @param geo: Solve.geometry，也可以为None，程序会自己计算
+        @param geo: Optional: Solve.geometry, will be calculated automatically if None. 也可以为None，程序会自己计算
         @param axis: 轴(若为二维XY模拟，则axis只能='z')
-        @param axis_number, axis_index: 索引（better use axis_index), 最好用axis_index
-        @param time: 绘制哪个时刻的场图（用户用不到，仅供run()使用
+        @param axis_index: index of axis
+        @param axis_number: an outdated version of axis_index
+        @param time: only for method run() 绘制哪个时刻的场图（用户用不到，仅供run()使用
         @param animate: 是否播放动画 #TODO: 这个参数的作用？
         :
         """
         # TODO: grid.visualize函数还有animate等功能，尚待加入
-        if axis_index == None:
-            if axis_number == None:
-                raise ValueError("Please set parameter axis_index!")
+        if not axis:
+            # Tell which dimension to draw automatically
+            dims_with_size_one = [i for i, size in enumerate(self._grid.inverse_permittivity.shape) if size == 1]
+            if not dims_with_size_one:
+                raise ValueError("Parameter 'axis' should not be None for 3D simulation")
+            axis = conversions.number_to_letter(dims_with_size_one[0])
+
+        if axis_index is None:
+            if axis_number is None:
+                raise ValueError("Parameter 'axis_index' should not be None")
             else:
                 axis_index = axis_number
 
@@ -404,7 +419,7 @@ class Grid:
             time = self._grid.time_steps_passed
         index = "_%s=%d, total_time=%d" % (axis, axis_index, time)
         if self._grid is None:
-            raise RuntimeError("The grid should be set before saving figure.")
+            raise RuntimeError("The grid should have been set before saving figure.")
 
         axis = axis.lower()  # 识别大写的 "X"
         folder = self.folder
@@ -424,15 +439,28 @@ class Grid:
                                  background_index=self.background_index, show_structure=show_structure,
                                  show_energy=show_energy)
         else:
-            raise RuntimeError("Unknown axis parameter.")
+            raise ValueError("Unknown axis parameter.")
 
         plt.close()  # 清除画布
 
     def plot_n(self,
                grid=None,
-               axis: str = 'x',
+               axis: str = None,
                axis_index: int = 0,
                filepath: str = None):
+        """
+        Draw a refractive index plot. It is basically same with solve.plot().
+        @param grid: Optional: photfdtd.grid
+        @param axis:
+        @param axis_index:
+        @param filepath:
+        """
+        if not axis:
+            # Tell which dimension to draw automatically
+            dims_with_size_one = [i for i, size in enumerate(self._grid.inverse_permittivity.shape) if size == 1]
+            if not dims_with_size_one:
+                raise ValueError("Parameter 'axis' should not be None for 3D simulation")
+            axis = conversions.number_to_letter(dims_with_size_one[0])
         if self:
             grid = self
         if not grid:
@@ -496,7 +524,7 @@ class Grid:
         axis = axis.lower()
         if time is None:
             time = self._calculate_time()
-        if animate == False:
+        if not animate:
             if not isinstance(time, int):
                 time = self._grid._handle_time(time)
             print("The total time for FDTD simulation is %i timesteps or %f fs." % (
@@ -711,10 +739,8 @@ class Grid:
         plt.savefig(fname='%s//wl-%s.png' % (self.folder, "T"))
         plt.show()
 
-    # 保存数据
-
     def save_simulation(self):
-        """ Save the Grid class instance into a .npz file"""
+        """ Save the Grid class instance into a ".npz" file"""
         import pickle
         # Serialize the class instance
         saved_grid = pickle.dumps(self)
@@ -734,11 +760,13 @@ class Grid:
         # savez(path.join(self.folder, "detector_readings"), **dic)
 
     @staticmethod
-    def read_simulation(folder: str = ''):
+    def read_simulation(folder: str = None):
         """读取保存的监视器数据
         静态方法，调用时应使用 data = Grid.read_simulation(folder="...")
         folder: 保存监视器数据的文件路径
         """
+        if not folder:
+            raise Exception("Please indicate the folder where your grid has been saved")
         import pickle
         if not folder.endswith(".npz"):
             folder = folder + "\detector_readings.npz"
@@ -748,7 +776,7 @@ class Grid:
         return pickle.loads(readings['serialized_instance'])
 
     @staticmethod
-    def dB_map(grid=None, folder=None, axis="x", field="E", field_axis="z",
+    def dB_map(grid=None, folder=None, axis=None, field="E", field_axis="z",
                interpolation="spline16", total_time=None, save: bool = True):
         """
         Draw a field dB_map. At least 1 block detector is required. 绘制场分贝图 需要面监视器数据
@@ -763,12 +791,18 @@ class Grid:
 
 
         """
+        if not axis:
+            # Tell which dimension to draw automatically
+            dims_with_size_one = [i for i, size in enumerate(grid._grid.inverse_permittivity.shape) if size == 1]
+            if not dims_with_size_one:
+                raise ValueError("Parameter 'axis' should not be None for 3D simulation")
+            axis = conversions.number_to_letter(dims_with_size_one[0])
         if not folder:
             folder = grid.folder
         if not total_time:
             total_time = grid._grid.time_passed
         for detector in grid._grid.detectors:
-            if isinstance(detector, grid._grid.fdtd.detectors.BlockDetector):
+            if isinstance(detector, fdtd.detectors.BlockDetector):
                 fdtd.dB_map_2D(block_det=np.array([x for x in detector.detector_values()["%s" % field]]),
                                interpolation=interpolation, axis=axis, field=field, field_axis=field_axis,
                                save=save, folder=folder, name_det=detector.name, total_time=total_time)
@@ -782,7 +816,7 @@ class Grid:
         #     data = data[name_det + " (%s)" % field]
 
     @staticmethod
-    def plot_field(grid=None, axis="z", axis_index=0, field="E", field_axis=None, folder=None, cmap="jet",
+    def plot_field(grid=None, axis=None, axis_index=0, field="E", field_axis=None, folder=None, cmap="jet",
                    show_geometry=True, show_field=True, vmax=None, vmin=None):
         """
         Plot a field map at current state. No need for detectors. 绘制当前时刻场分布（不需要监视器）
@@ -799,6 +833,12 @@ class Grid:
         @param vmin: Optional. Min value of the color bar.
 
         """
+        if not axis:
+            # Tell which dimension to draw automatically
+            dims_with_size_one = [i for i, size in enumerate(grid._grid.inverse_permittivity.shape) if size == 1]
+            if not dims_with_size_one:
+                raise ValueError("Parameter 'axis' should not be None for 3D simulation")
+            axis = conversions.number_to_letter(dims_with_size_one[0])
         if not show_field:
             title = "%s=%i" % (axis, axis_index)
         elif not field_axis:
@@ -936,11 +976,15 @@ class Grid:
         @param index_3d: 三维数组：用于面监视器，选择读取数据的点
         @param name_det: 监视器的名称
         """
+        data = None
         for detector in grid._grid.detectors:
             if detector.name == name_det:
                 data = np.array([x for x in detector.detector_values()["%s" % field]])
-
+        if not data:
+            print("ValueError when using plot_fieldtime: No detector named '%s'" % name_det)
+            return
         plt.figure()
+
         if data.ndim == 3:
             if index == None:
                 raise ValueError("Parameter 'index' must be set for linedetector!")
@@ -965,35 +1009,39 @@ class Grid:
             plt.close()
 
     @staticmethod
-    def compute_frequency_domain(grid, wl_start, wl_end, data, name_det, input_data=None,
-                                 index=0, index_3d=[0, 0, 0], axis=0, field="E", folder=None):
+    def compute_frequency_domain(grid, wl_start, wl_end, name_det, input_data=None,
+                                 index=0, index_3d=[0, 0, 0], field_axis=0, field="E", folder=None):
         """
         傅里叶变换绘制频谱
-        @param folder: 保存图片的地址，若为None则为grid.folder
         @param grid: photfdtd.grid
         @param wl_start: 起始波长(m)
         @param wl_end: 结束波长(m)
-        @param data: save_simulation()方法保存的监视器数据
         @param name_det: 监视器名称
-        @param input_data: 如果输入了这个数据，则data、name_det、index、index_3d可以不输入。input_data必须是一个一维数组，
+        @param input_data: Optional: 如果输入了这个数据，则data、name_det、index、index_3d可以不输入。input_data必须是一个一维数组，
         其长度表示时间步长，每一个元素表示在该时间场的幅值。
         @param index: 用于线监视器，选择读取数据的点
         @param index_3d: 用于面监视器，选择读取数据的点
-        @param axis: 0或1或2分别表示E或H的x，y，z分量
+        @param field_axis: 0或1或2分别表示E或H的x，y，z分量
         @param field: ”E"或"H"
+        @param folder: Optional: default: grid.folder 保存图片的地址，若为None则为grid.folder
         """
         # TODO: axis参数与其他可视化参数一致
         # TODO: 把fdtd的fourier.py研究明白
         # TODO: 傅里叶变换后的单位？
         if folder is None:
             folder = grid.folder
-        if input_data is None:
-            input_data = data[name_det + " (%s)" % field]
-            del data
-            if input_data.ndim == 3:
-                input_data = input_data[:, index, axis]
-            elif input_data.ndim == 5:
-                input_data = input_data[:, index_3d[0], index_3d[1], index_3d[2], axis]
+        if not input_data:
+            for detector in grid._grid.detectors:
+                if detector.name == name_det or name_det is None:
+                    input_data = np.array([x for x in detector.detector_values()["%s" % field]])
+        if input_data.ndim == 3:
+            if not index:
+                index = int(input_data.shape[1] / 2)
+            input_data = input_data[:, index, field_axis]
+        elif input_data.ndim == 5:
+            if not index_3d:
+                index_3d = [int(input_data.shape[0] / 2), int(input_data.shape[1] / 2), int(input_data.shape[2] / 2)]
+            input_data = input_data[:, index_3d[0], index_3d[1], index_3d[2], field_axis]
 
         fr = fdtd.FrequencyRoutines(grid._grid, objs=input_data)
         spectrum_freqs, spectrum = fr.FFT(
@@ -1003,7 +1051,7 @@ class Grid:
         plt.plot(spectrum_freqs, spectrum)
         plt.xlabel('frequency (Hz)')
         plt.ylabel("spectrum")
-        file_name = "spectrum_%s%s" % (field, chr(axis + 120))
+        file_name = "spectrum_%s%s" % (field, chr(field_axis + 120))
         plt.savefig(os.path.join(folder, f"{file_name}.png"))
         plt.close()
 
@@ -1011,7 +1059,7 @@ class Grid:
         plt.plot(spectrum_freqs, np.abs(spectrum))
         plt.xlabel('frequency (Hz)')
         plt.ylabel("amplitude")
-        file_name = "f-amplitude_%s%s" % (field, chr(axis + 120))
+        file_name = "f-amplitude_%s%s" % (field, chr(field_axis + 120))
         plt.savefig(os.path.join(folder, f"{file_name}.png"))
         plt.close()
 
@@ -1019,7 +1067,7 @@ class Grid:
         plt.plot(constants.c / (spectrum_freqs * (10e-6)), np.abs(spectrum))
         plt.xlabel('wavelength (um)')
         plt.ylabel("amplitude")
-        file_name = "wl-amplitude_%s%s" % (field, chr(axis + 120))
+        file_name = "wl-amplitude_%s%s" % (field, chr(field_axis + 120))
         plt.savefig(os.path.join(folder, f"{file_name}.png"))
         plt.close()
 
@@ -1037,8 +1085,7 @@ class Grid:
 
         grid_sliced = Grid(grid_xlength=x_slice[1] - x_slice[0], grid_ylength=y_slice[1] - y_slice[0],
                            grid_zlength=z_slice[1] - z_slice[0],
-                           grid_spacing=grid._grid.grid_spacing, total_time=grid._total_time,
-                           foldername="%s_sliced_grid" % grid.folder,
+                           grid_spacing=grid._grid.grid_spacing, foldername="%s_sliced_grid" % grid.folder,
                            permittivity=self.background_index ** 2)
         grid_sliced._grid.inverse_permittivity = grid._grid.inverse_permittivity[x_slice[0]:x_slice[1],
                                                  y_slice[0]:y_slice[1], z_slice[0]:z_slice[1]]

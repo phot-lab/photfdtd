@@ -1,6 +1,7 @@
 import time
 
-from photfdtd import Waveguide, Arc, Grid, Solve, constants
+from photfdtd import Waveguide, Arc, Grid, Solve
+import photfdtd.fdtd.constants as constants
 
 if __name__ == "__main__":
     background_index = 1.0

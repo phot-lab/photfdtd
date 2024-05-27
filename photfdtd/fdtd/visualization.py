@@ -20,6 +20,7 @@ from scipy.signal import hilbert  # TODO: Write hilbert function to replace usin
 
 # relative
 from .backend import backend as bd
+from . import conversions
 
 
 # 2D visualization function
@@ -411,13 +412,20 @@ def dB_map_2D(block_det=None, interpolation="spline16", axis="z", field="E", fie
     #     )
 
     # TODO: convert all 2D slices (y-z, x-z plots) into x-y plot data structure
-
     plt.ioff()
     plt.close()
     a = []  # array to store wave intensities
     # 首先计算仿真空间上每一点在所有时间上的最大值与最小值之差
 
-    choose_axis = ord(field_axis) - 120
+    if not axis:
+        # Tell which dimension to draw automatically
+        shape = block_det.shape
+        dims_with_size_one = [i for i, size in enumerate(shape[1:], start=1) if size == 1]
+        axis_number = dims_with_size_one[0]
+        axis = conversions.number_to_letter(axis_number)
+
+    choose_axis = conversions.letter_to_number(field_axis)
+
     if axis == "z":
         for i in tqdm(range(len(block_det[0]))):
             a.append([])

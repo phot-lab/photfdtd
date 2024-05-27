@@ -1,5 +1,6 @@
-import utils
-from photfdtd import Sbend, Grid, Solve, constants, Waveguide
+import photfdtd.fdtd.constants as constants
+
+from photfdtd import Sbend, Grid, Solve, Waveguide
 
 if __name__ == "__main__":
     background_index = 1.4447

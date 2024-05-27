@@ -1,5 +1,5 @@
 import numpy as np
-from photfdtd import constants
+import photfdtd.fdtd.constants as constants
 n = 1.4555  # 请输入材料的折射率
 L = 3777  # "请输入光传输的长度（格数）
 grid_spacing = 1000  # "请输入空间步长（nm）
