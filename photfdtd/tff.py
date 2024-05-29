@@ -90,12 +90,12 @@ class TFF(Waveguide):
             if i % 2 == 0:
                 layer[i] = Waveguide(xlength_l[i], ylength_l[i], zlength_l[i], int(x[i]), int(y[i]),
                                      int(z[i]), ylength, name + "_layer_" + str(i), high_index, grid=grid, reset_xyz=True,
-                                     priority=self.priority)
+                                     priority=priority)
 
             else:
                 layer[i] = Waveguide(xlength_l[i], ylength_l[i], zlength_l[i], int(x[i]), int(y[i]),
                                      int(z[i]), ylength, name + "_layer_" + str(i), low_index, grid=grid, reset_xyz=True,
-                                     priority=self.priority)
+                                     priority=priority)
 
         self._internal_objects.extend(layer)
 

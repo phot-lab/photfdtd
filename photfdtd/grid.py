@@ -139,7 +139,7 @@ class Grid:
             amplitude: float = 1.0,
             phase_shift: float = 0.0,
             name: str = "source",
-            waveform: str = "plane",
+            waveform: str = "gaussian",
             pulse_type: str = "none",
             cycle: int = 5,
             hanning_dt: float = 10.0,
@@ -167,7 +167,7 @@ class Grid:
         @param amplitude: 振幅(V/m)
         @param phase_shift: 相移
         @param name: 名称
-        @param waveform: 波形 "plane":平面波 "gaussian": 高斯波
+        @param waveform: default to "gaussian" 波形 "plane":平面波 "gaussian": 高斯波
         @param cycle: 汉宁窗脉冲的周期（仅使用汉宁hanning脉冲时有用）
         @param hanning_dt: 汉宁窗宽度（仅使用汉宁hanning脉冲时有用）
         @param polarization: 偏振
@@ -204,9 +204,9 @@ class Grid:
             if self._grid_xlength != 1:
                 self._grid[0:pml_width, :, :] = fdtd.PML(name="pml_xlow")
                 self._grid[-pml_width:, :, :] = fdtd.PML(name="pml_xhigh")
-            if self._grid_ylength != 1:
-                self._grid[:, 0:pml_width, :] = fdtd.PML(name="pml_ylow")
-                self._grid[:, -pml_width:, :] = fdtd.PML(name="pml_yhigh")
+            # if self._grid_ylength != 1:
+            #     self._grid[:, 0:pml_width, :] = fdtd.PML(name="pml_ylow")
+            #     self._grid[:, -pml_width:, :] = fdtd.PML(name="pml_yhigh")
             if self._grid_zlength != 1:
                 self._grid[:, :, 0:pml_width] = fdtd.PML(name="pml_zlow")
                 self._grid[:, :, -pml_width:] = fdtd.PML(name="pml_zhigh")
@@ -328,12 +328,7 @@ class Grid:
         @param name:
         @param axis: "x", "y", "z", only for blockdetector
         """
-        if not axis:
-            # Tell which dimension to draw automatically
-            dims_with_size_one = [i for i, size in enumerate(self._grid.inverse_permittivity.shape) if size == 1]
-            if not dims_with_size_one:
-                raise ValueError("Parameter 'axis' should not be None for 3D simulation")
-            axis = conversions.number_to_letter(dims_with_size_one[0])
+
 
         if x == None:
             # 如果没设置x，自动选仿真区域中心If x not set, choose the center of grid
@@ -367,6 +362,14 @@ class Grid:
             self._grid[x_start: x_end, y_start: y_end, z_start: z_end] = fdtd.LineDetector(name=name)
 
         elif detector_type == 'blockdetector':
+
+            if not axis:
+                # Tell which dimension to draw automatically
+                dims_with_size_one = [i for i, size in enumerate(self._grid.inverse_permittivity.shape) if size == 1]
+                if not dims_with_size_one:
+                    raise ValueError("Parameter 'axis' shouldn't be None for blockdetector in 3D simulation")
+                axis = conversions.number_to_letter(dims_with_size_one[0])
+
             x -= int(xlength / 2)
             y -= int(ylength / 2)
             z -= int(zlength / 2)
@@ -992,6 +995,8 @@ class Grid:
         if data is None:
             print("ValueError when using plot_fieldtime: No detector named '%s'" % name_det)
             return
+        if folder is None:
+            folder = grid.folder
         plt.figure()
 
         if data.ndim == 3:

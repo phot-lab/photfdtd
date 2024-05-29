@@ -52,6 +52,11 @@ class Waveguide:
         self.ylength = ylength
         self.zlength = zlength
 
+        # save the center position保存中心
+        self.x_center = x
+        self.y_center = y
+        self.z_center = z
+
         if reset_xyz:
             self.x = x - int(xlength / 2)
             self.y = y - int(ylength / 2)
@@ -65,10 +70,7 @@ class Waveguide:
         self.refractive_index = refractive_index
         self.background_index = grid.background_index
 
-        # save the center position保存中心
-        self.x_center = x
-        self.y_center = y
-        self.z_center = z
+
 
         self.grid = grid
 

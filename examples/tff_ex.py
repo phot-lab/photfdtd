@@ -6,7 +6,7 @@ if __name__ == "__main__":
 
     background_index = 1.0
 
-    grid = Grid(grid_xlength=6e-6, grid_ylength=1, grid_zlength=6e-6, grid_spacing=grid_spacing,
+    grid = Grid(grid_xlength=6e-6, grid_ylength=1, grid_zlength=10e-6, grid_spacing=grid_spacing,
                 foldername="test_tff",
                 permittivity=background_index ** 2)
 
@@ -16,7 +16,7 @@ if __name__ == "__main__":
         ylength=1,
         x=150,
         y=0,
-        z=0.8e-6,
+        z=4.8e-6,
         name="TFF",
         layers=11,
         axis="z",
@@ -35,18 +35,18 @@ if __name__ == "__main__":
                       name='detector1')
 
     grid.add_object(tff)
-    grid.plot_n(grid=grid, axis="y", axis_index=0)
-    grid.save_fig(axis="y", axis_number=0)
+    grid.plot_n()
+    grid.save_fig()
 
     # 运行仿真
-    grid.run()
-    grid.save_fig(axis="y", axis_number=0, show_energy=True)
-    # # 保存仿真结果
-    grid.save_simulation()
-    # # 绘制仿真结束时刻空间场分布
-    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0)
-    # # 读取仿真结果
-    data = Grid.read_simulation(folder=grid.folder)
-
-    # 由监视器数据绘制Ex场随时间变化的图像
-    Grid.plot_fieldtime(grid=grid, field_axis="x", field="E", index=5, name_det="detector1")
+    # grid.run()
+    # grid.save_fig(show_energy=True)
+    # # # 保存仿真结果
+    # grid.save_simulation()
+    # # # 绘制仿真结束时刻空间场分布
+    # Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0)
+    # # # 读取仿真结果
+    # data = Grid.read_simulation(folder=grid.folder)
+    #
+    # # 由监视器数据绘制Ex场随时间变化的图像
+    # Grid.plot_fieldtime(grid=grid, field_axis="x", field="E", index=5, name_det="detector1")

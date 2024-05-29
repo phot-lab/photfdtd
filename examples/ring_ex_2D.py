@@ -8,7 +8,7 @@ if __name__ == "__main__":
     index_Re_SiO2, index_Im_SiO2 = index_SiO2.get_refractive_index(wavelength=1.55e-6)
 
     grid = Grid(grid_xlength=11e-6, grid_ylength=1, grid_zlength=10e-6, grid_spacing=50e-9,
-                permittivity=index_Re_SiO2 ** 2, foldername="test_ring_2D")
+                permittivity=1 ** 2, foldername="test_ring_2D")
 
     ring = Ring(outer_radius=3.3e-6, ylength=1, width_s=400e-9, width_r=400e-9, length=0,
                 gap=100e-9, name="ring", refractive_index=index_Re_Si, grid=grid)

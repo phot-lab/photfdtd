@@ -34,8 +34,9 @@ class Ring(Waveguide):
             grid=None,
             priority: int = 1
     ) -> None:
-        outer_radius, ylength, width_s, width_r,  length, gap = grid._handle_unit([outer_radius, ylength, width_s, width_r, length, gap],
-                                                                        grid_spacing=grid._grid.grid_spacing)
+        outer_radius, ylength, width_s, width_r, length, gap = grid._handle_unit(
+            [outer_radius, ylength, width_s, width_r, length, gap],
+            grid_spacing=grid._grid.grid_spacing)
         self.outer_r = outer_radius
         self.length = length
         self.gap = gap
@@ -46,7 +47,8 @@ class Ring(Waveguide):
             self.width_r = width_s
         else:
             self.width_r = width_r
-        super().__init__(xlength, ylength, zlength, x, y, z, width_s, name, refractive_index, grid=grid, reset_xyz=False,
+        super().__init__(xlength, ylength, zlength, x, y, z, width_s, name, refractive_index, grid=grid,
+                         reset_xyz=False,
                          priority=priority)
 
     def _compute_permittivity(self):
@@ -92,7 +94,40 @@ class Ring(Waveguide):
                 grid=self.grid,
                 priority=self.priority
             )
-            self._internal_objects += [wg3, wg4]
+
+            wg_bottom = Waveguide(
+                xlength=self.width,
+                ylength=self.ylength,
+                zlength=self.outer_r * 2 + self.length,
+                x=self.x - self.outer_r - self.gap - int(self.width / 2),
+                y=self.y,
+                z=self.z,
+                width=self.width,
+                name="%s_waveguide1" % self.name,
+                refractive_index=self.refractive_index,
+                grid=self.grid,
+                priority=self.priority
+            )
+
+            wg_top = Waveguide(
+                xlength=self.width,
+                ylength=self.ylength,
+                zlength=self.outer_r * 2 + self.length,
+                x=self.x + self.outer_r + self.gap + int(self.width / 2),
+                y=self.y,
+                z=self.z,
+                width=self.width,
+                name="%s_waveguide2" % self.name,
+                refractive_index=self.refractive_index,
+                grid=self.grid,
+                priority=self.priority
+            )
+
+            # self.x = self.x - int(self.xlength / 2)
+            # self.y = self.y - int(self.ylength / 2)
+            # self.z = self.z - int(self.zlength / 2)
+
+            self._internal_objects += [wg3, wg4, wg_top, wg_bottom]
 
         #     m1 = (self.outer_r - self.width) ** 2 <= (Z - self.outer_r) ** 2 + (Y - self.outer_r) ** 2
         #     m = (Z - self.outer_r) ** 2 + (Y - self.outer_r) ** 2 <= self.outer_r ** 2
@@ -131,40 +166,3 @@ class Ring(Waveguide):
         #             m[i + self.outer_r, 2 * self.outer_r - j - 1] = m1[i + self.outer_r, 2 * self.outer_r - j - 1] = 1
         #
 
-
-
-    def _set_objects(self):
-
-        wg_bottom = Waveguide(
-            xlength=self.width,
-            ylength=self.ylength,
-            zlength=self.outer_r * 2 + self.length,
-            x=self.x - self.outer_r - self.gap - int(self.width / 2),
-            y=self.y,
-            z=self.z,
-            width=self.width,
-            name="%s_waveguide1" % self.name,
-            refractive_index=self.refractive_index,
-            grid=self.grid,
-            priority=self.priority
-        )
-
-        wg_top = Waveguide(
-            xlength=self.width,
-            ylength=self.ylength,
-            zlength=self.outer_r * 2 + self.length,
-            x=self.x + self.outer_r + self.gap + int(self.width / 2),
-            y=self.y,
-            z=self.z,
-            width=self.width,
-            name="%s_waveguide2" % self.name,
-            refractive_index=self.refractive_index,
-            grid=self.grid,
-            priority=self.priority
-        )
-
-        # self.x = self.x - int(self.xlength / 2)
-        # self.y = self.y - int(self.ylength / 2)
-        # self.z = self.z - int(self.zlength / 2)
-
-        self._internal_objects += [wg_top, wg_bottom]
