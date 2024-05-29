@@ -87,7 +87,10 @@ class Waveguide:
 
     def _compute_priority(self):
         # the priority matrix of the waveguide
-        self.priority_matrix = (self.permittivity == self.refractive_index ** 2) * self.priority
+        if hasattr(self, "permittivity"):
+            self.priority_matrix = (self.permittivity == self.refractive_index ** 2) * self.priority
+        for obj in self._internal_objects:
+            obj.priority_matrix = (obj.permittivity == obj.refractive_index ** 2) * obj.priority
 
     def _set_objects(self):
         self._internal_objects = [self]

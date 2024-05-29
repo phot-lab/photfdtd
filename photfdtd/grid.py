@@ -244,14 +244,17 @@ class Grid:
 
             if not x_start:
                 x = x - xlength // 2
-                y = y - ylength // 2
-                z = z - zlength // 2
                 x_start = x
-                y_start = y
-                z_start = z
                 x_end = x + xlength
+            if not y_start:
+                y = y - ylength // 2
+                y_start = y
                 y_end = y + ylength
+            if not z_start:
+                z = z - zlength // 2
+                z_start = z
                 z_end = z + zlength
+
             self._check_parameters(x_start, x_end, y_start, y_end, z_start, z_end, name=name)
             if self._grid_zlength == 1:
                 self._grid[x_start: x_end, y_start: y_end] = fdtd.LineSource(period=period, amplitude=amplitude,
@@ -348,12 +351,18 @@ class Grid:
         if detector_type == 'linedetector':
 
             if not x_start:
+                x = x - xlength // 2
                 x_start = x
-                y_start = y
-                z_start = z
                 x_end = x + xlength
+            if not y_start:
+                y = y - ylength // 2
+                y_start = y
                 y_end = y + ylength
+            if not z_start:
+                z = z - zlength // 2
+                z_start = z
                 z_end = z + zlength
+
             self._check_parameters(x_start, x_end, y_start, y_end, z_start, z_end, name=name)
             self._grid[x_start: x_end, y_start: y_end, z_start: z_end] = fdtd.LineDetector(name=name)
 
@@ -980,7 +989,7 @@ class Grid:
         for detector in grid._grid.detectors:
             if detector.name == name_det:
                 data = np.array([x for x in detector.detector_values()["%s" % field]])
-        if not data:
+        if data is None:
             print("ValueError when using plot_fieldtime: No detector named '%s'" % name_det)
             return
         plt.figure()

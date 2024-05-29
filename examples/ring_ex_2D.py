@@ -1,30 +1,32 @@
 import utils
-from photfdtd import Ring, Grid
+from photfdtd import Ring, Grid, Index
 
 if __name__ == "__main__":
-    background_index = 1.4447
+    index_Si = Index(material="Si")
+    index_Re_Si, index_Im_Si = index_Si.get_refractive_index(wavelength=1.55e-6)
+    index_SiO2 = Index(material="SiO2")
+    index_Re_SiO2, index_Im_SiO2 = index_SiO2.get_refractive_index(wavelength=1.55e-6)
 
-    grid = Grid(grid_xlength=7e-6, grid_ylength=1, grid_zlength=7e-6, grid_spacing=20e-9,
-                permittivity=background_index ** 2, foldername="test_ring_2D")
+    grid = Grid(grid_xlength=11e-6, grid_ylength=1, grid_zlength=10e-6, grid_spacing=50e-9,
+                permittivity=index_Re_SiO2 ** 2, foldername="test_ring_2D")
 
-    ring = Ring(outer_radius=100 * 20e-9, ylength=1 * 20e-9, width_s=300e-9, width_r=400e-9, length=50 * 20e-9,
-                gap=5 * 20e-9,
-                name="ring", refractive_index=3.47, direction=1, grid=grid)
+    ring = Ring(outer_radius=3.3e-6, ylength=1, width_s=400e-9, width_r=400e-9, length=0,
+                gap=100e-9, name="ring", refractive_index=index_Re_Si, grid=grid)
 
-    grid.set_source(source_type="linesource", period=1550e-9 / 299792458, pulse_type="None", x=1.24e-6, y=0, z=1e-6,
-                    xlength=21, ylength=1, zlength=1, polarization="x")
-
+    grid.set_source(source_type="linesource", wavelength=1550e-9, pulse_type="None",
+                    x_start=1.5e-6, x_end=2.3e-6, y=0, z=1.5e-6,
+                    ylength=1, zlength=1, polarization="x")
 
     grid.set_detector(detector_type='linedetector',
-                      x_start=1.2e-6, y_start=0e-6, z_start=4e-6,
-                      x_end=1.4e-6, y_end=0e-6, z_end=4e-6,
+                      x_start=1.5e-6, x_end=2.3e-6, y=0, z=8e-6,
+                      ylength=1, zlength=1,
                       name='detector1')
 
     grid.add_object(ring)
-    grid.save_fig(axis="y", axis_number=0)
-    grid.plot_n(axis="y", axis_index=0)
+    grid.save_fig()
+    grid.plot_n()
 
-    grid.run()
+    grid.run(time=5000e-15)
 
     grid.save_simulation()
     grid.save_fig(axis="y", axis_number=0, show_energy=True)
