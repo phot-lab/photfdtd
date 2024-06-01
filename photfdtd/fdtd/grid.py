@@ -339,7 +339,9 @@ class Grid:
         """add a source to the grid"""
         source._register_grid(self)
         self.sources[name] = source
-
+        # if not hasattr(self, "source_profile"):
+        #     self.source_profile = {}
+        # self.source_profile += {name: bd.empty((3))}
     def add_boundary(self, name, boundary):
         """add a boundary to the grid"""
         boundary._register_grid(self)

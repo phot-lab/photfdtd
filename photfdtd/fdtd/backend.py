@@ -106,6 +106,8 @@ class NumpyBackend(Backend):
     """ complex type for array """
 
     # methods
+    empty = staticmethod(numpy.empty)
+
     asarray = _replace_float(numpy.asarray)
 
     exp = staticmethod(numpy.exp)

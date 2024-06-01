@@ -1,7 +1,7 @@
 from photfdtd import Waveguide, Grid, Solve, Index
 
 if __name__ == "__main__":
-    # This example shows a 2D simulation of a basic straight waveguide本示例展示了一个基础矩形波导的二维仿真
+    # This example shows a 2D simulation of a basic straight waveguide 本示例展示了一个基础矩形波导的二维仿真
     # set background index设置背景折射率
     background_index = 1.0
 
@@ -45,11 +45,11 @@ if __name__ == "__main__":
     # run the FDTD simulation 运行仿真
     grid.run()
 
-    # Save the result of simulation, It will be saved in the file that you created when CREATING A GRID Object保存仿真结果，并传给data
+    # Save result of simulation 保存仿真结果
     grid.save_simulation()
 
-    # 也可以读取仿真结果
-    # data = grid.read_simulation(folder=grid.folder)
+    # Or you can read from a folder 也可以读取仿真结果
+    # grid = grid.read_simulation(folder=grid.folder)
 
     # 如果添加了面监视器，可以绘制监视器范围内电场dB图, as the detector we have added is a linedetector, it's useless
     Grid.dB_map(grid=grid, field="E", field_axis="x")

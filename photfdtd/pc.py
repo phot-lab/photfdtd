@@ -1,8 +1,8 @@
 import numpy as np
-from .fiber import Fiber
+from .fiber import Circle
 
 
-class Hexagonal_PC(Fiber):
+class Hexagonal_PC(Circle):
     """六边形方格光子晶体(Hexagonal Photonic Crystal)
     n_side: number of crystals on each side of the hexagon
     number: number of layers. If set, H_number will be no longer required,
@@ -52,10 +52,9 @@ class Hexagonal_PC(Fiber):
         self.refractive_index = refractive_index
         self.name = name
         self.grid = grid
+        self.priority = priority
 
         self._set_objects()
-
-        self.priority = priority
         super()._compute_priority()
 
     def _set_objects(self):
@@ -68,8 +67,8 @@ class Hexagonal_PC(Fiber):
         # draw center row
         # for j in range(-n_y, n_y, 1):
         #     if j >= self.H_number | j < -self.H_number:
-        #         circle = Fiber(radius=[self.radius], length=self.zlength,x=self.x + j * self.a,y=self.y,z=self.z,
-        #                        refractive_index=[self.refractive_index], name="%s_circle%d" % (self.name, flag),
+        #         circle = Fiber(radius=self.radius, length=self.zlength,x=self.x + j * self.a,y=self.y,z=self.z,
+        #                        refractive_index=self.refractive_index, name="%s_circle%d" % (self.name, flag),
         #                        axis="z", background_index=self.background_index)
         #         flag+=1
         #         self._internal_objects.append(circle)
@@ -84,28 +83,28 @@ class Hexagonal_PC(Fiber):
             for j in np.arange(-n_x / 2 + 1 / 2, n_x / 2 + 1 / 2, 1):
                 if i < self.H_number:
                     if j >= (self.H_number - i / 2) or j <= -(self.H_number - i / 2):
-                        circle = Fiber(radius=[self.radius], length=self.zlength, x=int(np.round(self.x + j * self.a)),
+                        circle = Circle(radius=self.radius, length=self.zlength, x=int(np.round(self.x + j * self.a)),
                                        y=int(np.round(self.y + i * self.a * np.sqrt(3) / 2)), z=self.z,
-                                       refractive_index=[self.refractive_index], name="%s_circle_%d" % (self.name, flag),
+                                       refractive_index=self.refractive_index, name="%s_circle_%d" % (self.name, flag),
                                        axis="z", grid=self.grid, priority=self.priority)
                         flag+=1
                         self._internal_objects.append(circle)
-                        circle = Fiber(radius=[self.radius], length=self.zlength, x=int(np.round(self.x + j * self.a)),
+                        circle = Circle(radius=self.radius, length=self.zlength, x=int(np.round(self.x + j * self.a)),
                                        y=int(np.round(self.y - i * self.a * np.sqrt(3) / 2)), z=self.z,
-                                       refractive_index=[self.refractive_index], name="%s_circle_%d" % (self.name, flag),
+                                       refractive_index=self.refractive_index, name="%s_circle_%d" % (self.name, flag),
                                        axis="z", grid=self.grid, priority=self.priority)
                         flag += 1
                         self._internal_objects.append(circle)
                 else:
-                    circle = Fiber(radius=[self.radius], length=self.zlength, x=int(np.round(self.x + j * self.a)),
+                    circle = Circle(radius=self.radius, length=self.zlength, x=int(np.round(self.x + j * self.a)),
                                    y=int(np.round(self.y + i * self.a * np.sqrt(3) / 2)), z=self.z,
-                                   refractive_index=[self.refractive_index], name="%s_circle_%d" % (self.name, flag),
+                                   refractive_index=self.refractive_index, name="%s_circle_%d" % (self.name, flag),
                                    axis="z", grid=self.grid, priority=self.priority)
                     flag += 1
                     self._internal_objects.append(circle)
-                    circle = Fiber(radius=[self.radius], length=self.zlength, x=int(np.round(self.x + j * self.a)),
+                    circle = Circle(radius=self.radius, length=self.zlength, x=int(np.round(self.x + j * self.a)),
                                    y=int(np.round(self.y - i * self.a * np.sqrt(3) / 2)), z=self.z,
-                                   refractive_index=[self.refractive_index], name="%s_circle_%d" % (self.name, flag),
+                                   refractive_index=self.refractive_index, name="%s_circle_%d" % (self.name, flag),
                                    axis="z", grid=self.grid, priority=self.priority)
                     flag += 1
                     self._internal_objects.append(circle)

@@ -159,7 +159,7 @@ class LineSource:
             pulse_length: float = 39e-15,
             offset: float = 112e-15,
             waveform: str = "plane",
-            polarization: str = "z"
+            polarization: str = "z",
     ):
         """Create a LineSource with a gaussian profile
         Args:
@@ -327,6 +327,7 @@ class LineSource:
             # str.index(a)方法给出str中a的所在位置
             # self.grid.E[x, y, z, 0] += 3.7494e-33 * value
             self.grid.E[x, y, z, self._Epol] += value
+            # self.grid.source_profile[self._Epol] += value
             # self.grid.E[x, y, z, 2] += value
 
     def update_H(self):

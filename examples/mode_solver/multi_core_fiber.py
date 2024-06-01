@@ -1,4 +1,3 @@
-import utils
 from photfdtd import Fiber, Grid, Solve
 
 if __name__ == "__main__":

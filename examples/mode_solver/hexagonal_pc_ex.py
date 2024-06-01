@@ -1,4 +1,3 @@
-import utils
 from photfdtd import Hexagonal_PC, Grid, Solve, Fiber
 
 if __name__ == "__main__":
@@ -6,7 +5,7 @@ if __name__ == "__main__":
 
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=46000e-9, grid_ylength=40000e-9, grid_zlength=1, grid_spacing=200e-9,
-                foldername="test_Hexagonal_PC",
+                foldername="Hexagonal_PC_result",
                 permittivity=background_index ** 2)
     # 设置器件参数
     pc = Hexagonal_PC(n_side=3, zlength=1, number=2, refractive_index=1, name="pc",

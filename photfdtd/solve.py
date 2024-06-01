@@ -154,7 +154,7 @@ class Solve:
         print("%i modes are found" % neigs)
         print("neff=", self.beta * self.lam / (2 * np.pi))
 
-        # Discard dispersion modes丢掉耗散模
+        # Discard dispersion modes 丢掉耗散模
         # for i in range(len(self.beta)):
         #     # print(abs(self.beta[i].imag * self.lam / (2 * np.pi)))
         #     if abs(self.beta[i].imag * self.lam / (2 * np.pi)) > 1e-5:
@@ -164,7 +164,7 @@ class Solve:
         self.beta, Ex_field, Ey_field = np.delete(self.beta, flag_deleted), \
                                         np.delete(Ex_field, flag_deleted, 0), \
                                         np.delete(Ey_field, flag_deleted, 0)
-        print("%i dispersion modes are discarded" % len(flag_deleted))
+        print("%i dispersion modes have been discarded" % len(flag_deleted))
 
         self.effective_index = self.beta * self.lam / (2 * np.pi)
         print("neff=", self.effective_index)

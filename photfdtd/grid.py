@@ -2,10 +2,9 @@ import photfdtd.fdtd as fdtd
 import matplotlib.pyplot as plt
 from .waveguide import Waveguide
 import numpy as np
-from datetime import datetime
 from numpy import savez
 import os
-from os import path, makedirs, chdir, remove
+from os import path, makedirs
 from .analyse import Analyse
 from .index import Index
 import photfdtd.fdtd.constants as constants
@@ -301,6 +300,68 @@ class Grid:
 
         else:
             raise ValueError("Invalid source type.")
+
+    def calculate_source_profile(self, time: int or float = None, source_name: str = None):
+        if time is None:
+            time = 100e-15
+        time = self._grid._handle_time(time)
+        def _try_to_find_source(self):
+            try:
+                found_source = self._grid.sources[0]
+                print("Found source successfully without name")
+                return found_source
+            except:
+                raise Exception("No source found in Grid.")
+        if source_name is not None:
+            found_source = None
+            for source in self._grid.sources:
+                if source.name == source_name:
+                    print("Found source successfully")
+                    found_source = source
+                    flag_found_source = True
+                    break
+            if found_source is None:
+                print("There is no source named %s in the Grid, trying to find a source automatically." % source_name)
+                found_source = _try_to_find_source(self)
+        else:
+            found_source = _try_to_find_source(self)
+
+        if isinstance(found_source, fdtd.LineSource):
+            print("This is a Linesource")
+            size = len(found_source.profile)
+            source_field = np.zeros((time, size, 3))
+            _Epol = 'xyz'.index(found_source.polarization)
+            for q in range(time):
+                if found_source.pulse_type == "hanning":
+                    t1 = int(2 * np.pi / (found_source.frequency * found_source.pulse_length / found_source.cycle))
+                    if q < t1:
+                        vect = found_source.profile * fdtd.waveforms.hanning(
+                            found_source.frequency, q * found_source.pulse_length, found_source.cycle
+                        )
+                    else:
+                        # src = - self.grid.E[self.x, self.y, self.z, 2]
+                        vect = found_source.profile * 0
+                elif found_source.pulse_type == "gaussian":
+                    vect = found_source.profile * fdtd.waveforms.pulse_oscillation(frequency=found_source.frequency,
+                                                            t=q * found_source.grid.time_step,
+                                                            pulselength=found_source.pulse_length,
+                                                            offset=found_source.offset)
+                else:
+                    vect = found_source.profile * np.sin(2 * np.pi * q / found_source.period + found_source.phase_shift)
+                source_field[q, :, _Epol] = vect
+        x_sticks = np.linspace(0, len(source_field), len(source_field)) * self._grid.time_step *1e15
+        plt.plot(x_sticks, source_field[:, int(size / 2), 0], label="Ex")
+        plt.plot(x_sticks, source_field[:, int(size / 2), 1], label="Ey")
+        plt.plot(x_sticks, source_field[:, int(size / 2), 2], label="Ez")
+        plt.xticks()
+        plt.xlabel('fs')
+        plt.ylabel("amplitude")
+        plt.legend()
+        file_name = "E_source"
+        plt.savefig(os.path.join(self.folder, f"{file_name}.png"))
+        plt.close()
+
+        return source_field
 
     def set_detector(self,
                      detector_type: str = 'linedetector',
@@ -602,56 +663,61 @@ class Grid:
 
         print(f'动画已保存为 {output_file}')
 
-    def calculate_T(self,
-                    full_path: str = "") -> None:
+    def calculate_Transmission(self, detector_name: str = None, field_axis: str = "x",
+                               wl_start: float = 1400e-9, wl_end: float = 1700e-9,
+                               detector_data: np.array = None, source_data: np.array = None,
+                               detector_index: int = None,
+                               source_name: str = None,
+                               save_to_txt: bool = True,
+                               grid=None) -> None:
         """
-        读取detector_readings_sweep.npz文件，计算透过率T
-        full_path: npz文件的完整地址
+        Calculate transmission spectrum, detector required.
+
+        @param detector_name: The name of detector whose data will be calculated, can be None if there is only 1 detector in grid.
+        @param field_axis: Default to "x"
+        @param wl_start: Start wavelength
+        @param wl_end: End wavelength
+        @param detector_data: Optional: must be a 1 dimension array
+        @param source_data: Optional: must be a 1 dimension array with same size as detector_data
+        @param detector_index: Default to center of the detector
+        @param source_name: The name of source whose data will be calculated, can be None if there is only 1 source in grid.
+        @param save_to_txt: Default to True
+        @param grid: Optinal: photfdtd.Grid instance
         """
-        # 只能设置一个除光源
-        pass
-        # TODO: 这个函数需要大改
-        p = np.load(full_path, allow_pickle=True)
-        # 遍历.npz文件中的所有数据，若为监视器数据（即带有(E)或(H)), 则读取之
-        source_power = []
+        field_axis = fdtd.conversions.letter_to_number(field_axis)
+        if grid is None:
+            grid = self
+        if detector_data is None:
+            for detector in grid._grid.detectors:
+                if detector.name == detector_name or detector_name is None:
+                    detector_data = np.array([x for x in detector.detector_values()["E"]])
+            if detector_index is None:
+                detector_index = int(len(detector_data[0, :, 0]) / 2)
+            detector_data = detector_data[:, detector_index ,field_axis]
 
-        for f in p.files:
-            # 遍历detector_readings_sweep.npz中的所有数据
-            # 这样写只能设置一个光源，也只能设置一个除光源外的监视器，并且光源处的监视器名称必须含有"source"
-            if "source" in f:
-                # 筛选出光源监视器
-                # print(p[f])
-                if "(E)" in f:
-                    d_E = p[f]
-                    continue
-                elif "(H)" in f:
-                    d_H = p[f]
-                calculate = Analyse(d_E, d_H)
-                calculate.caculate_P()
-                calculate.calculate_Power()
-                source_power.append(calculate.Power)
-                print("source_power = %f" % calculate.Power)
+        if source_data is None:
+            source_data = grid.calculate_source_profile(time=grid._grid.time_steps_passed, source_name=source_name)
+            source_data = source_data[:, int(len(source_data[0, :, 0]) / 2), field_axis]
 
-        detector_power = []
-        for f in p.files:
-            if "source" in f:
-                continue
-            elif "(E)" in f:
-                d_E = p['%s' % f]
-                continue
-            elif "(H)" in f:
-                # 能这样写是因为E保存在H之前
-                d_H = p['%s' % f]
-                # d_E_split = np.split(d_E, self.points, axis=0)  # 沿着第0个轴分割为points个小矩阵
-                # d_H_split = np.split(d_H, self.points, axis=0)  # 沿着第0个轴分割为points个小矩阵
-            calculate = Analyse(d_E, d_H)
-            calculate.caculate_P()
-            calculate.calculate_Power()
-            detector_power.append(calculate.Power)
-            print("detector_power = %f" % calculate.Power)
+        fr_s = fdtd.FrequencyRoutines(grid._grid, objs=source_data)
+        spectrum_freqs_s, spectrum_s = fr_s.FFT(
+            freq_window_tuple=[constants.c / (wl_end), constants.c / (wl_start)], )
 
-        # 在self.T中保存透过率, 即监视器与光源功率相除
-        self.T = np.divide(detector_power, source_power)
+        fr_d = fdtd.FrequencyRoutines(grid._grid, objs=detector_data)
+        spectrum_freqs_d, spectrum_d = fr_d.FFT(
+            freq_window_tuple=[constants.c / (wl_end), constants.c / (wl_start)], )
+
+        spectrum_wl = constants.c / (spectrum_freqs_s * (1e-6))
+        Transmission = np.abs(spectrum_d / spectrum_s)
+        plt.plot(spectrum_wl, Transmission)
+        plt.xlabel('Wavelength (um)')
+        plt.ylabel("T")
+        plt.savefig(os.path.join(grid.folder, f"{'Transmission'}.png"))
+        plt.close()
+
+        if save_to_txt:
+            np.savetxt('%s/Transmission.txt' % grid.folder, np.column_stack((spectrum_wl, Transmission)), fmt='%f', delimiter='\t',
+                       header='Wavelength (um)\tTransmission', comments='')
 
     def _sweep_(self,
                 wl_start: float = 1.5,
@@ -1023,7 +1089,7 @@ class Grid:
             plt.close()
 
     @staticmethod
-    def compute_frequency_domain(grid, wl_start, wl_end, name_det, input_data=None,
+    def compute_frequency_domain(grid, wl_start, wl_end, name_det=None, input_data=None,
                                  index=0, index_3d=[0, 0, 0], field_axis=0, field="E", folder=None):
         """
         傅里叶变换绘制频谱
@@ -1044,10 +1110,13 @@ class Grid:
         # TODO: 傅里叶变换后的单位？
         if folder is None:
             folder = grid.folder
-        if not input_data:
+        if input_data is None:
             for detector in grid._grid.detectors:
                 if detector.name == name_det or name_det is None:
                     input_data = np.array([x for x in detector.detector_values()["%s" % field]])
+                    name_det = detector.name
+        if name_det is None:
+            name_det = "Input_data"
         if input_data.ndim == 3:
             if not index:
                 index = int(input_data.shape[1] / 2)
@@ -1065,7 +1134,7 @@ class Grid:
         plt.plot(spectrum_freqs, spectrum)
         plt.xlabel('frequency (Hz)')
         plt.ylabel("spectrum")
-        file_name = "spectrum_%s%s" % (field, chr(field_axis + 120))
+        file_name = "spectrum_%s%s_%s" % (field, chr(field_axis + 120), name_det)
         plt.savefig(os.path.join(folder, f"{file_name}.png"))
         plt.close()
 
@@ -1073,15 +1142,15 @@ class Grid:
         plt.plot(spectrum_freqs, np.abs(spectrum))
         plt.xlabel('frequency (Hz)')
         plt.ylabel("amplitude")
-        file_name = "f-amplitude_%s%s" % (field, chr(field_axis + 120))
+        file_name = "f-amplitude_%s%s_%s" % (field, chr(field_axis + 120), name_det)
         plt.savefig(os.path.join(folder, f"{file_name}.png"))
         plt.close()
 
         # 绘制波长-振幅
-        plt.plot(constants.c / (spectrum_freqs * (10e-6)), np.abs(spectrum))
+        plt.plot(constants.c / (spectrum_freqs * (1e-6)), np.abs(spectrum))
         plt.xlabel('wavelength (um)')
         plt.ylabel("amplitude")
-        file_name = "wl-amplitude_%s%s" % (field, chr(field_axis + 120))
+        file_name = "wl-amplitude_%s%s_%s" % (field, chr(field_axis + 120), name_det)
         plt.savefig(os.path.join(folder, f"{file_name}.png"))
         plt.close()
 

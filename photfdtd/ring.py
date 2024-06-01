@@ -48,8 +48,7 @@ class Ring(Waveguide):
         else:
             self.width_r = width_r
         super().__init__(xlength, ylength, zlength, x, y, z, width_s, name, refractive_index, grid=grid,
-                         reset_xyz=False,
-                         priority=priority)
+                         reset_xyz=False, priority=priority)
 
     def _compute_permittivity(self):
         # y = np.linspace(1, 2 * self.outer_r, 2 * self.outer_r)
@@ -59,11 +58,12 @@ class Ring(Waveguide):
         #
 
         delta_z = int(np.round(self.length / 2))
+
         arc1 = Arc(outer_radius=self.outer_r, ylength=self.ylength, x=self.x, y=self.y, z=self.z + delta_z,
                    width=self.width_r, refractive_index=self.refractive_index, name="%s_arc1" % self.name, angle_phi=0,
                    angle_psi=180, angle_unit=True, grid=self.grid, priority=self.priority)
         arc2 = Arc(outer_radius=self.outer_r, ylength=self.ylength, x=self.x, y=self.y, z=self.z - delta_z,
-                   width=self.width_r, refractive_index=self.refractive_index, name="%s_arc3" % self.name,
+                   width=self.width_r, refractive_index=self.refractive_index, name="%s_arc2" % self.name,
                    angle_phi=180, angle_psi=180, angle_unit=True, grid=self.grid, priority=self.priority)
         self._internal_objects = [arc1, arc2]
         if self.length > 0:
@@ -95,40 +95,44 @@ class Ring(Waveguide):
                 priority=self.priority
             )
 
-            wg_bottom = Waveguide(
-                xlength=self.width,
-                ylength=self.ylength,
-                zlength=self.outer_r * 2 + self.length,
-                x=self.x - self.outer_r - self.gap - int(self.width / 2),
-                y=self.y,
-                z=self.z,
-                width=self.width,
-                name="%s_waveguide1" % self.name,
-                refractive_index=self.refractive_index,
-                grid=self.grid,
-                priority=self.priority
-            )
+            self._internal_objects += [wg3, wg4]
 
-            wg_top = Waveguide(
-                xlength=self.width,
-                ylength=self.ylength,
-                zlength=self.outer_r * 2 + self.length,
-                x=self.x + self.outer_r + self.gap + int(self.width / 2),
-                y=self.y,
-                z=self.z,
-                width=self.width,
-                name="%s_waveguide2" % self.name,
-                refractive_index=self.refractive_index,
-                grid=self.grid,
-                priority=self.priority
-            )
+        wg_bottom = Waveguide(
+            xlength=self.width,
+            ylength=self.ylength,
+            zlength=self.outer_r * 2 + self.length,
+            x=self.x - self.outer_r - self.gap - int(self.width / 2),
+            y=self.y,
+            z=self.z,
+            width=self.width,
+            name="%s_waveguide1" % self.name,
+            refractive_index=self.refractive_index,
+            grid=self.grid,
+            priority=self.priority
+        )
 
-            # self.x = self.x - int(self.xlength / 2)
-            # self.y = self.y - int(self.ylength / 2)
-            # self.z = self.z - int(self.zlength / 2)
+        wg_top = Waveguide(
+            xlength=self.width,
+            ylength=self.ylength,
+            zlength=self.outer_r * 2 + self.length,
+            x=self.x + self.outer_r + self.gap + int(self.width / 2),
+            y=self.y,
+            z=self.z,
+            width=self.width,
+            name="%s_waveguide2" % self.name,
+            refractive_index=self.refractive_index,
+            grid=self.grid,
+            priority=self.priority
+        )
 
-            self._internal_objects += [wg3, wg4, wg_top, wg_bottom]
+        # self.x = self.x - int(self.xlength / 2)
+        # self.y = self.y - int(self.ylength / 2)
+        # self.z = self.z - int(self.zlength / 2)
 
+        self._internal_objects += [wg_top, wg_bottom]
+
+    def _set_objects(self):
+        self._internal_objects += []
         #     m1 = (self.outer_r - self.width) ** 2 <= (Z - self.outer_r) ** 2 + (Y - self.outer_r) ** 2
         #     m = (Z - self.outer_r) ** 2 + (Y - self.outer_r) ** 2 <= self.outer_r ** 2
         #

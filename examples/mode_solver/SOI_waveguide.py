@@ -1,4 +1,3 @@
-import utils
 from photfdtd import Waveguide, Grid, Solve
 
 if __name__ == "__main__":
@@ -7,7 +6,7 @@ if __name__ == "__main__":
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=140, grid_ylength=150, grid_zlength=1, grid_spacing=20e-9,
                 permittivity=background_index ** 2,
-                foldername="test_eigenmode_solver")
+                foldername="waveguide_result")
 
     # 设置器件参数
     waveguide = Waveguide(
@@ -17,7 +16,7 @@ if __name__ == "__main__":
 
     # 添加波导
     grid.add_object(waveguide)
-    grid.save_fig(axis="z", axis_number=0)
+    grid.save_fig()
 
     # 接下来我们绘制z=0截面的折射率分布，并计算在该截面处的五个模式
     # 创建solve对象
@@ -30,7 +29,7 @@ if __name__ == "__main__":
     solve.plot()
 
     # Now we can calculate modes
-    data = solve.calculate_mode(lam=1550e-9, neff=3.47, neigs=20,
+    data = solve.calculate_mode(lam=1550e-9, neff=2., neigs=20,
                                 x_boundary_low="pml",
                                 y_boundary_low="pml",
                                 x_boundary_high="pml",

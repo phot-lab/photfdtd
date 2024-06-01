@@ -7,28 +7,27 @@ if __name__ == "__main__":
     index_SiO2 = Index(material="SiO2")
     index_Re_SiO2, index_Im_SiO2 = index_SiO2.get_refractive_index(wavelength=1.55e-6)
 
-    n = 5  # 输入端口数
-    m = 16  # 输出端口数
+    n = 1  # 输入端口数
+    m = 5  # 输出端口数
     grid_spacing = 100e-9  # 空间步长
 
-    grid = Grid(grid_xlength=15e-6, grid_ylength=2.5e-6, grid_zlength=25e-6, grid_spacing=grid_spacing,
+    grid = Grid(grid_xlength=14e-6, grid_ylength=1, grid_zlength=75e-6, grid_spacing=grid_spacing,
                 foldername="test_star",
-                permittivity=index_Re_SiO2 ** 2)
+                permittivity=1. ** 2)
 
     star = Mmi(
         xlength=10e-6,
-        ylength=0.4e-6,
-        zlength=14.7e-6,
-        We=10e-6,
+        ylength=1,
+        zlength=43.88e-6 - 0.5e-6,
         name="star_coupler",
         refractive_index=index_Re_Si,
         n=n,
         m=m,
-        width_port=0,
+        width_port=0.8e-6,
         width_wg=0.4e-6,
-        l_port=0,
-        ln=4e-6,
-        lm=4e-6,
+        l_port=5e-6,
+        ln=10e-6,
+        lm=10e-6,
         grid=grid
     )
 
@@ -42,8 +41,8 @@ if __name__ == "__main__":
     #         period=1550e-9 / 299792458,
     #     )
 
-    grid.set_source(source_type="planesource", wavelength=1550e-9, axis="z", name="source", z=3.4e-6, xlength=0.4e-6,
-                    ylength=0.4e-6, zlength=1, polarization="x")
+    grid.set_source(source_type="linesource", wavelength=1550e-9, axis="z", name="source", polarization="x",
+                    x_start=6.7e-6, x_end=7.3e-6, z_start=5e-6, z_end=5e-6)
 
     # 设置监视器
     # grid.set_detector(detector_type='linedetector',
@@ -52,16 +51,16 @@ if __name__ == "__main__":
     #                   name='detector1')
 
     grid.add_object(star)
-    grid.save_fig(axis="y", axis_number=13)
-    grid.plot_n(axis="y", axis_index=13)
+    grid.save_fig()
+    grid.plot_n()
 
     grid.run(time=5000)
     grid.save_simulation()
     #
     # # # 绘制仿真结束时刻空间场分布
-    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=13, folder=grid.folder)
+    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0, vmax=.5, vmin=-.5)
     grid.save_fig(axis="y",
-                  axis_number=13,
+                  axis_number=0,
                   show_energy=True)
     # # 读取仿真结果
     # data = Grid.read_simulation(folder=grid.folder)

@@ -44,7 +44,7 @@ class Taper(Waveguide):
         #     xlength = xlength_low
         #     width = xlength_high
         #     self.direction = -1
-        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index, grid=grid, priority=self.priority)
+        super().__init__(xlength, ylength, zlength, x, y, z, width, name, refractive_index, grid=grid, priority=priority)
 
     def _compute_permittivity(self):
 

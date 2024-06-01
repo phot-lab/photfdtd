@@ -1,4 +1,5 @@
 import numpy as np
+from copy import copy
 
 
 # from .grid import Grid
@@ -38,7 +39,7 @@ class Waveguide:
             priority: int = 1
     ) -> None:
         if x == None:
-            # 如果没设置x，自动选仿真区域中心If x not set, choose the center of grid
+            # If x not set, choose the center of grid. 如果没设置x，自动选仿真区域中心
             x = int(grid._grid_xlength / 2)
         if y == None:
             y = int(grid._grid_ylength / 2)
@@ -53,24 +54,23 @@ class Waveguide:
         self.zlength = zlength
 
         # save the center position保存中心
-        self.x_center = x
-        self.y_center = y
-        self.z_center = z
+        self.x_center = copy(x)
+        self.y_center = copy(y)
+        self.z_center = copy(z)
 
         if reset_xyz:
-            self.x = x - int(xlength / 2)
-            self.y = y - int(ylength / 2)
-            self.z = z - int(zlength / 2)
+            self.x = self.x_center - int(xlength / 2)
+            self.y = self.y_center - int(ylength / 2)
+            self.z = self.z_center - int(zlength / 2)
         else:
-            self.x = x
-            self.y = y
-            self.z = z
+            self.x = copy(x)
+            self.y = copy(y)
+            self.z = copy(z)
+
         self.width = width
         self.name = name
         self.refractive_index = refractive_index
         self.background_index = grid.background_index
-
-
 
         self.grid = grid
 
@@ -92,7 +92,8 @@ class Waveguide:
         if hasattr(self, "permittivity"):
             self.priority_matrix = (self.permittivity == self.refractive_index ** 2) * self.priority
         for obj in self._internal_objects:
-            obj.priority_matrix = (obj.permittivity == obj.refractive_index ** 2) * obj.priority
+            if hasattr(obj, "permittivity"):
+                obj.priority_matrix = (obj.permittivity == obj.refractive_index ** 2) * obj.priority
 
     def _set_objects(self):
         self._internal_objects = [self]

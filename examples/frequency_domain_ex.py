@@ -40,9 +40,7 @@ if __name__ == "__main__":
     # 创建solve对象
     solve = Solve(grid=grid)
 
-    solve.plot(axis='z',
-                 index=0,
-                 filepath=grid.folder)
+    solve.plot()
 
     grid.run()
 

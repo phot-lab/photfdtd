@@ -47,7 +47,7 @@ class Arc(Waveguide):
         self.psi = angle_psi
 
         super().__init__(xlength=outer_radius, ylength=ylength, zlength=outer_radius, x=x,
-                         y=y, z=z, width=width, name=name, refractive_index=refractive_index, reset_xyz=True,
+                         y=y - int(ylength / 2), z=z, width=width, name=name, refractive_index=refractive_index, reset_xyz=False,
                          grid=grid, priority=priority)
 
 
