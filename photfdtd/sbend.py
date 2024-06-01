@@ -41,7 +41,7 @@ class Sbend(Waveguide):
             else:
                 direction = 1
         self.direction = direction
-        super().__init__(abs(xlength), ylength, zlength, x, y, z, width, name, refractive_index, grid=grid, priority=self.priority)
+        super().__init__(abs(xlength), ylength, zlength, x, y, z, width, name, refractive_index, grid=grid, priority=priority)
 
     def _compute_permittivity(self):
         """

@@ -156,7 +156,7 @@ class Ysplitter(Waveguide):
         self.width_sbend = width_sbend
 
         super().__init__(xlength, ylength, zlength, x, y, z,
-                         width, name, refractive_index, grid=grid, reset_xyz=False, priority=self.priority)
+                         width, name, refractive_index, grid=grid, reset_xyz=False, priority=priority)
 
     def _set_objects(self):
 
