@@ -52,7 +52,7 @@ class PointSource:
             hanning_dt: timestep used for Hanning window waveform width (optional).
             waveform: "plane"代表平面波，“gaussian”代表高斯波形
             cycle: cycles for Hanning window waveform.
-            pulse_length: 脉宽(对于高斯脉冲：半高全宽*sqrt(2))单位s
+            pulse_length: 脉宽(对于高斯脉冲：半高全宽)单位s
             offset: 脉冲中心时间 修改于23.5.14 单位s
             pulse_type: "gaussian"代表高斯脉冲 "hanning"代表汉宁脉冲 "none"或者其他任何输入代表不使用脉冲
             polarization: 电场偏振方向 "x" "y" "z"

@@ -27,9 +27,9 @@ if __name__ == "__main__":
         grid=grid
     )
 
-    grid.set_source(source_type="linesource", wavelength=1100e-9, name="source", z=8e-6, xlength=1e-6,
-                    ylength=0, zlength=0, polarization="x", pulse_type="gaussian", pulse_length=1.268497e-15,
-                    offset=10e-15)
+    grid.set_source(source_type="linesource", wavelength=650e-9, name="source", z=8e-6, xlength=1e-6,
+                    ylength=0, zlength=0, polarization="x", pulse_type="gaussian", pulse_length=10e-15,
+                    offset=15e-15)
     grid.set_detector(detector_type='linedetector',
                       x_start=2.7e-6, y_start=0e-6, z_start=3e-6,
                       x_end=3.2e-6, y_end=0e-6, z_end=3e-6,
@@ -48,6 +48,7 @@ if __name__ == "__main__":
     Grid.plot_fieldtime(grid=grid, field_axis="x", field="E", index=5, name_det="detector1")
     wl_start = 400e-9
     wl_end = 1800e-9
+    source_data = grid.calculate_source_profile()
     Grid.compute_frequency_domain(grid=grid, name_det="detector1", wl_start=wl_start, wl_end=wl_end, index=5)
     # # 读取仿真结果
     grid.calculate_Transmission(field_axis="x", wl_start=400e-9, wl_end=1800e-9)
