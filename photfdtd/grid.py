@@ -1090,7 +1090,7 @@ class Grid:
 
     @staticmethod
     def compute_frequency_domain(grid, wl_start, wl_end, name_det=None, input_data=None,
-                                 index=0, index_3d=[0, 0, 0], field_axis=0, field="E", folder=None):
+                                 index=0, index_3d=[0, 0, 0], field_axis="x", field="E", folder=None):
         """
         傅里叶变换绘制频谱
         @param grid: photfdtd.grid
@@ -1108,6 +1108,8 @@ class Grid:
         # TODO: axis参数与其他可视化参数一致
         # TODO: 把fdtd的fourier.py研究明白
         # TODO: 傅里叶变换后的单位？
+        if field_axis is not None:
+            field_axis = conversions.letter_to_number(field_axis)
         if folder is None:
             folder = grid.folder
         if input_data is None:
