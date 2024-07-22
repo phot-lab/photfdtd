@@ -69,7 +69,13 @@ if __name__ == "__main__":
     # 运行仿真
     grid.run()
     grid.save_simulation()
-    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0, folder=grid.folder)
-    Grid.plot_field(grid=grid, field="E", axis="y", axis_index=0, folder=grid.folder)
+    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0, folder=grid.folder, vmin=-1, vmax=1)
     grid.save_fig(axis="y", axis_number=0, show_energy=True)
+
+    # 如果添加了监视器，还可以绘制某一点时域场变化曲线，这里选择index=30即监视器中心
+    Grid.plot_fieldtime(folder=grid.folder, grid=grid, field_axis="z", index=10, name_det="detector")
+
+    # 绘制频谱
+    Grid.compute_frequency_domain(grid=grid, wl_start=1000e-9, wl_end=2000e-9, name_det="detector",
+                                  index=10, field_axis="x", field="E", folder=None)
 

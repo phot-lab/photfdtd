@@ -27,15 +27,15 @@ if __name__ == "__main__":
                     xlength=400e-9, ylength=0, zlength=0, polarization="x")
 
     # # set a line detector 设置一个线监视器
-    # grid.set_detector(detector_type="linedetector",
-    #                   name="detector",
-    #                   x=300,
-    #                   y=75,
-    #                   z=0,
-    #                   xlength=0,
-    #                   ylength=400e-9,
-    #                   zlength=0
-    #                   )
+    grid.set_detector(detector_type="linedetector",
+                      name="detector",
+                      x=75,
+                      y=0,
+                      z=300,
+                      xlength=400e-9,
+                      ylength=0,
+                      zlength=0
+                      )
 
     # We can plot the geometry and the index map now
     grid.save_fig()
@@ -54,12 +54,12 @@ if __name__ == "__main__":
     # 如果添加了面监视器，可以绘制监视器范围内电场dB图, as the detector we have added is a linedetector, it's useless
     Grid.dB_map(grid=grid, field="E", field_axis="x")
 
-    # # 绘制仿真结束时刻空间场分布
+    # 绘制仿真结束时刻空间场分布
     Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0, vmin=-1, vmax=1)
 
-    # # 如果添加了监视器，还可以绘制某一点时域场变化曲线，这里选择index=30即监视器中心
-    # Grid.plot_fieldtime(folder=grid.folder, data=data, field_axis="z", index=30, name_det="detector")
+    # 如果添加了监视器，还可以绘制某一点时域场变化曲线，这里选择index=30即监视器中心
+    Grid.plot_fieldtime(folder=grid.folder, grid=grid, field_axis="z", index=10, name_det="detector")
 
     # 绘制频谱
-    # Grid.compute_frequency_domain(grid=grid, wl_start=1000e-9, wl_end=2000e-9, data=data, name_det="detector",
-    #                               index=30, axis=2, field="E", folder=None)
+    Grid.compute_frequency_domain(grid=grid, wl_start=1000e-9, wl_end=2000e-9, name_det="detector",
+                                  index=10, field_axis="x", field="E", folder=None)

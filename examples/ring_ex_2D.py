@@ -39,3 +39,5 @@ if __name__ == "__main__":
 
     # 由监视器数据绘制Ex场随时间变化的图像
     Grid.plot_fieldtime(grid=grid, field_axis="x", field="E", index=5, name_det="detector1")
+
+

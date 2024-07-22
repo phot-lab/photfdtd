@@ -13,10 +13,12 @@ if __name__ == "__main__":
     arc = Arc(outer_radius=2e-6, ylength=1, width=0.4e-6, refractive_index=3.47, name="arc", angle_phi=0, angle_psi=90,
               grid=grid, angle_unit=True)
     waveguide1 = Waveguide(
-        xlength=2.2e-6, ylength=1, zlength=0.4e-6, x=2e-6, y=0, z=4.8e-6, refractive_index=3.47, name="Waveguide1", grid=grid
+        xlength=2.2e-6, ylength=1, zlength=0.4e-6, x=2e-6, y=0, z=4.8e-6, refractive_index=3.47, name="Waveguide1",
+        grid=grid
     )
     waveguide2 = Waveguide(
-        xlength=0.4e-6, ylength=1, zlength=2.2e-6, x=4.8e-6, y=0, z=2e-6, refractive_index=3.47, name="Waveguide2", grid=grid
+        xlength=0.4e-6, ylength=1, zlength=2.2e-6, x=4.8e-6, y=0, z=2e-6, refractive_index=3.47, name="Waveguide2",
+        grid=grid
     )
 
     # 往 grid 里添加器件
@@ -41,10 +43,14 @@ if __name__ == "__main__":
 
     # # 绘制仿真结束时刻空间场分布
     grid.save_fig(axis="y", axis_number=0, show_energy=True)
-    Grid.plot_field(grid=grid, field="E", field_axis="z", axis="y", axis_index=0, folder=grid.folder, vmax=2)
+    Grid.plot_field(grid=grid, field="E", field_axis="z", axis="y", axis_index=0, folder=grid.folder, vmin=-1, vmax=1)
 
     # 读取仿真结果
     data = Grid.read_simulation(folder=grid.folder)
 
     # 由监视器数据绘制Ex场随时间变化的图像
     Grid.plot_fieldtime(grid=grid, field_axis="z", field="E", index=5, name_det="detector1")
+
+    # 绘制频谱
+    Grid.compute_frequency_domain(grid=grid, wl_start=1000e-9, wl_end=2000e-9, name_det="detector1",
+                                  index=10, field_axis="x", field="E", folder=None)
