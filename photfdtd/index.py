@@ -13,14 +13,14 @@ class Index:
     """
 
     def __init__(self,
-                 material: str = 'materials/Si.csv',
+                 material: str = 'Si.csv',
                  data=None,
                  ):
         self.material = material
         import os
-        current_directory = os.getcwd()
-        parent_directory = os.path.dirname(current_directory)
-        self.file = "%s\\photfdtd\\materials\\%s.csv" % (parent_directory, material)
+        current_directory = os.path.dirname(os.path.abspath(__file__))
+        # parent_directory = os.path.dirname(current_directory)
+        self.file = "%s\\materials\\%s.csv" % (current_directory, material)
         self.data = data
         self.fit_function_Reindex = None
         self.fit_function_Imindex = None
