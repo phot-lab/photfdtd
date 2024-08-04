@@ -268,9 +268,10 @@ class Solve:
                 elif axis == "z":
                     plt.xlabel('x/um')
                     plt.ylabel('y/um')
-
-                plt.title('%s_of_%s, neff=%s' % (content, j, str(effective_index[i])))
+                formatted_neff = "{:.6f}".format(effective_index[i])
+                plt.title('%s_of_%s, neff=%s' % (content, j, str(formatted_neff)))
                 # 保存图片
+                plt.tight_layout()
                 plt.savefig(fname='%s\\%s%d_%s_%s.png' % (filepath, 'mode', i + 1, content, j))
                 plt.close()
 

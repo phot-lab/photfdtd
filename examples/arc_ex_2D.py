@@ -43,10 +43,11 @@ if __name__ == "__main__":
 
     # # 绘制仿真结束时刻空间场分布
     grid.save_fig(axis="y", axis_number=0, show_energy=True)
-    Grid.plot_field(grid=grid, field="E", field_axis="z", axis="y", axis_index=0, folder=grid.folder, vmin=-1, vmax=1)
-
+    Grid.plot_field(grid=grid, field="E", field_axis="z", axis="y", axis_index=0, folder=grid.folder, vmin=-0.5, vmax=0.5)
+    grid.detector_profile()
+    grid.calculate_source_profile()
     # 读取仿真结果
-    data = Grid.read_simulation(folder=grid.folder)
+    # grid = Grid.read_simulation(folder=grid.folder)
 
     # 由监视器数据绘制Ex场随时间变化的图像
     Grid.plot_fieldtime(grid=grid, field_axis="z", field="E", index=5, name_det="detector1")

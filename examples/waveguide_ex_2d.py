@@ -47,7 +47,9 @@ if __name__ == "__main__":
 
     # Save result of simulation 保存仿真结果
     grid.save_simulation()
-
+    # grid.read_simulation(grid.folder)
+    grid.calculate_source_profile()
+    grid.detector_profile()
     # Or you can read from a folder 也可以读取仿真结果
     # grid = grid.read_simulation(folder=grid.folder)
 

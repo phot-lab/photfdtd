@@ -22,7 +22,7 @@ if __name__ == "__main__":
     #
     grid.set_source(source_type="linesource", wavelength=1550e-9,
                     x_start=5.4e-6, y_start=0, z_start=0.9e-6,
-                    x_end=6e-6, y_end=0, z_end=0.9e-6,
+                    x_end=6e-6, y_end=0, z_end=0.9e-6, pulse_type="gaussian",
                     polarization="x")
 
     grid.set_detector(detector_type='linedetector',
@@ -38,15 +38,24 @@ if __name__ == "__main__":
     grid.plot_n(grid=grid, axis="y", axis_index=0)
     grid.save_fig(axis="y", axis_number=0)
 
-    grid.run()
+    grid.run(time=300e-15)
+
+    # # 保存仿真结果
+    grid.save_simulation()
+    # grid = Grid.read_simulation(folder=grid.folder)
     grid.save_fig(axis="y", axis_number=0, show_energy=True)
     # # 绘制仿真结束时刻空间场分布
     Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0, folder=grid.folder,
-                    vmax=1.5, vmin=-1.5)
-
-    # 保存仿真结果
-    grid.save_simulation()
-    data = Grid.read_simulation(folder=grid.folder)
+                    vmax=1, vmin=-1)
+    grid.detector_profile()
+    source_data = grid.calculate_source_profile()
     # 由监视器数据绘制Ex场随时间变化的图像
-    Grid.plot_fieldtime(grid=grid, field_axis="z", field="E", index=5, name_det="detector1")
+    Grid.plot_fieldtime(grid=grid, field_axis="x", field="E", index=5, name_det="detector1")
+
+    wl, spectrum1 = grid.compute_frequency_domain(grid=grid, name_det="detector1", wl_start=1300e-9, wl_end=1800e-9)
+    wl, spectrum2 = grid.compute_frequency_domain(grid=grid, name_det="detector2", wl_start=1300e-9, wl_end=1800e-9)
+    wl, spectrum_source = grid.compute_frequency_domain(grid=grid, input_data=source_data[:, 15, 0], wl_start=1300e-9, wl_end=1800e-9)
+    grid.calculate_Transmission(field_axis="x", wl_start=1300e-9, wl_end=1800e-9, detector_name="detector1")
+    grid.calculate_Transmission(field_axis="x", wl_start=1300e-9, wl_end=1800e-9, detector_name="detector2")
+
 

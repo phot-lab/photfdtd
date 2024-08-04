@@ -41,7 +41,7 @@ if __name__ == "__main__":
     grid.run()
 
     grid.save_fig(axis="y", axis_number=37, show_energy=True)
-
+    grid.calculate_source_profile()
     # 绘制空间场分布
     Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=37, folder=grid.folder)
     Grid.plot_field(grid=grid, field="E", field_axis="y", axis="y", axis_index=37, folder=grid.folder)

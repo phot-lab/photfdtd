@@ -84,8 +84,8 @@ class Grid:
         # Check if the object exceeds the region
         if object_to_check:
             x_start, x_end, y_start, y_end, z_start, z_end = object_to_check.x, object_to_check.xlength + object_to_check.x, \
-                                                             object_to_check.y, object_to_check.ylength + object_to_check.y, \
-                                                             object_to_check.z, object_to_check.zlength + object_to_check.z
+                object_to_check.y, object_to_check.ylength + object_to_check.y, \
+                object_to_check.z, object_to_check.zlength + object_to_check.z
             name = object_to_check.name
         if max(x_start, x_end) > self._grid_xlength or min(x_start, x_end) < 0:
             raise ValueError("X range of %s (%i, %i) has exceeded the simulation region (0, %i)!"
@@ -303,8 +303,12 @@ class Grid:
 
     def calculate_source_profile(self, time: int or float = None, source_name: str = None):
         if time is None:
-            time = 100e-15
+            if self._grid.time_steps_passed != 0:
+                time = self._grid.time_steps_passed
+            else:
+                time = 100e-15
         time = self._grid._handle_time(time)
+
         def _try_to_find_source(self):
             try:
                 found_source = self._grid.sources[0]
@@ -312,6 +316,7 @@ class Grid:
                 return found_source
             except:
                 raise Exception("No source found in Grid.")
+
         if source_name is not None:
             found_source = None
             for source in self._grid.sources:
@@ -325,6 +330,15 @@ class Grid:
                 found_source = _try_to_find_source(self)
         else:
             found_source = _try_to_find_source(self)
+        x_sticks = np.linspace(0, len(found_source.profile), len(found_source.profile)) * self._grid.grid_spacing
+        plt.plot(x_sticks, found_source.profile)
+        plt.xticks()
+        plt.xlabel('um')
+        plt.ylabel("E")
+        plt.legend()
+        file_name = "source_profile"
+        plt.savefig(os.path.join(self.folder, f"{file_name}.png"))
+        plt.close()
 
         if isinstance(found_source, fdtd.LineSource):
             print("This is a Linesource")
@@ -343,13 +357,13 @@ class Grid:
                         vect = found_source.profile * 0
                 elif found_source.pulse_type == "gaussian":
                     vect = found_source.profile * fdtd.waveforms.pulse_oscillation(frequency=found_source.frequency,
-                                                            t=q * found_source.grid.time_step,
-                                                            pulselength=found_source.pulse_length,
-                                                            offset=found_source.offset)
+                                                                                   t=q * found_source.grid.time_step,
+                                                                                   pulselength=found_source.pulse_length,
+                                                                                   offset=found_source.offset)
                 else:
                     vect = found_source.profile * np.sin(2 * np.pi * q / found_source.period + found_source.phase_shift)
                 source_field[q, :, _Epol] = vect
-        x_sticks = np.linspace(0, len(source_field), len(source_field)) * self._grid.time_step *1e15
+        x_sticks = np.linspace(0, len(source_field), len(source_field)) * self._grid.time_step * 1e15
         plt.plot(x_sticks, source_field[:, int(size / 2), 0], label="Ex")
         plt.plot(x_sticks, source_field[:, int(size / 2), 1], label="Ey")
         plt.plot(x_sticks, source_field[:, int(size / 2), 2], label="Ez")
@@ -389,7 +403,6 @@ class Grid:
         @param name:
         @param axis: "x", "y", "z", only for blockdetector
         """
-
 
         if x == None:
             # 如果没设置x，自动选仿真区域中心If x not set, choose the center of grid
@@ -451,6 +464,47 @@ class Grid:
                 z: z] = fdtd.BlockDetector(name=name)
         else:
             raise ValueError("Invalid detector type.")
+
+    def detector_profile(self, detector_name: str = None, field: str = "E", field_axis: str = "x", timesteps: int = -1):
+        # TODO: block detector
+
+        def _try_to_find_detector(self):
+            try:
+                found_detector = self._grid.detectors[0]
+                print("Found detector successfully without name")
+                return found_detector
+            except:
+                raise Exception("No detector found in Grid.")
+
+        if detector_name is not None:
+            found_detector = None
+            for detector in self._grid.detectors:
+                if detector.name == detector_name:
+                    print("Found detector successfully")
+                    found_detector = detector
+                    flag_found_detector = True
+                    break
+            if found_detector is None:
+                print(
+                    "There is no detector named %s in the Grid, trying to find a detector automatically." % detector_name)
+                found_detector = _try_to_find_detector(self)
+        else:
+            found_detector = _try_to_find_detector(self)
+        # TODO:考虑y和z方向
+        x = found_detector.x
+        x = np.array(x) * self._grid.grid_spacing
+        x_sticks = x
+        field_number = conversions.letter_to_number(field_axis)
+        detector_profile = np.array([x for x in found_detector.detector_values()["%s" % field]])[timesteps, :,
+                           field_number]
+        plt.plot(x_sticks, detector_profile)
+        plt.xticks()
+        plt.xlabel('um')
+        plt.ylabel("E")
+        plt.legend()
+        file_name = "detector_profile_timestep=%i" % timesteps
+        plt.savefig(os.path.join(self.folder, f"{file_name}.png"))
+        plt.close()
 
     def save_fig(self,
                  axis=None,
@@ -597,6 +651,7 @@ class Grid:
         axis = axis.lower()
         if time is None:
             time = self._calculate_time()
+
         if not animate:
             if not isinstance(time, int):
                 time = self._grid._handle_time(time)
@@ -671,6 +726,7 @@ class Grid:
                                save_to_txt: bool = True,
                                grid=None) -> None:
         """
+        # TODO:
         Calculate transmission spectrum, detector required.
 
         @param detector_name: The name of detector whose data will be calculated, can be None if there is only 1 detector in grid.
@@ -692,12 +748,15 @@ class Grid:
                 if detector.name == detector_name or detector_name is None:
                     detector_data = np.array([x for x in detector.detector_values()["E"]])
             if detector_index is None:
-                detector_index = int(len(detector_data[0, :, 0]) / 2)
-            detector_data = detector_data[:, detector_index ,field_axis]
+                detector_index = int(detector_data.shape[1] / 2)
+            detector_data = detector_data[:, detector_index, field_axis]
 
         if source_data is None:
             source_data = grid.calculate_source_profile(time=grid._grid.time_steps_passed, source_name=source_name)
-            source_data = source_data[:, int(len(source_data[0, :, 0]) / 2), field_axis]
+            source_data = source_data[:, int(source_data.shape[1] / 2), field_axis]
+
+        detector_data = detector_data
+        source_data = source_data
 
         fr_s = fdtd.FrequencyRoutines(grid._grid, objs=source_data)
         spectrum_freqs_s, spectrum_s = fr_s.FFT(
@@ -708,15 +767,17 @@ class Grid:
             freq_window_tuple=[constants.c / (wl_end), constants.c / (wl_start)], )
 
         spectrum_wl = constants.c / (spectrum_freqs_s * (1e-6))
-        Transmission = np.abs(spectrum_d / spectrum_s)
+        Transmission = (abs(spectrum_d) / abs(spectrum_s)) ** 2
+        Transmission[Transmission > 1] = 1
         plt.plot(spectrum_wl, Transmission)
         plt.xlabel('Wavelength (um)')
         plt.ylabel("T")
-        plt.savefig(os.path.join(grid.folder, f"{'Transmission'}.png"))
+        plt.savefig(os.path.join(grid.folder, f"{'Transmission_'}{detector_name}.png"))
         plt.close()
 
         if save_to_txt:
-            np.savetxt('%s/Transmission.txt' % grid.folder, np.column_stack((spectrum_wl, Transmission)), fmt='%f', delimiter='\t',
+            np.savetxt('%s/Transmission.txt' % grid.folder, np.column_stack((spectrum_wl, Transmission)), fmt='%f',
+                       delimiter='\t',
                        header='Wavelength (um)\tTransmission', comments='')
 
     def _sweep_(self,
@@ -1155,6 +1216,8 @@ class Grid:
         file_name = "wl-amplitude_%s%s_%s" % (field, chr(field_axis + 120), name_det)
         plt.savefig(os.path.join(folder, f"{file_name}.png"))
         plt.close()
+
+        return constants.c / (spectrum_freqs * (1e-6)), np.abs(spectrum)
 
     def slice_grid(self, grid=None, x_slice=[], y_slice=[], z_slice=[]):
         """切割grid，以切割后的grid创建grid_sliced
