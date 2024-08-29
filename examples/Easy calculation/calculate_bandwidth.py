@@ -36,10 +36,10 @@ def calculate_pulselength_or_bandwidth(pulselength=None, bandwidth=None, wl_unit
         return
 
 
-wavelength = c / ((c / 400e-9 + c / 1800e-9) / 2)
+wavelength = 1550e-9
 print("wavelength = %f um" % (wavelength * 1e6))
 try:
     calculate_pulselength_or_bandwidth(pulselength=2e-15)  # 输入脉宽 s
-    calculate_pulselength_or_bandwidth(bandwidth=(c / 400e-9 - c / 1800e-9) / 1.5, wl_unit=False)  # 输入带宽为 THz
+    calculate_pulselength_or_bandwidth(bandwidth=(c / 1500e-9 - c / 1600e-9), wl_unit=False)  # 输入带宽为 THz
 except ValueError as e:
     print(e)

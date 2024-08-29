@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def linear_to_db(P):
     """
     Convert a linear scale value to decibels (dB).
@@ -7,6 +8,7 @@ def linear_to_db(P):
     :return: Power in dB
     """
     return - 10 * np.log10(P)
+
 
 def db_to_linear(dB):
     """
@@ -16,12 +18,12 @@ def db_to_linear(dB):
     """
     return 10 ** (-dB / 10)
 
+
 # Example usage
-P_linear = 0.5  # Example power in linear scale
+P_linear = 0.375  # Example power in linear scale
 P_db = linear_to_db(P_linear)
 print(f"{P_linear} linear scale is {P_db:.2f} dB")
 
-dB_value = 1e-3 * 2 * 103.26 * 2 * np.pi  # Example power in dB
+dB_value = 1e-3 * 2 * 100 * 2 * np.pi / 2  # Example power in dB
 P_linear_converted = db_to_linear(dB_value)
 print(f"{dB_value} dB is {P_linear_converted:.2f} in linear scale")
-

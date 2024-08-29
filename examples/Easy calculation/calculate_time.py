@@ -1,10 +1,10 @@
 import numpy as np
 import photfdtd.fdtd.constants as constants
 n = 3.5  # 请输入材料的折射率
-L = 26  # "请输入光传输的长度（格数）
-grid_spacing = 1000  # "请输入空间步长（nm）
+L = 15000 / 20  # "请输入光传输的长度（格数）
+grid_spacing = 20  # "请输入空间步长（nm）
 c = constants.c  # 单位m/s
-dimension = 3
+dimension = 2
 
 grid_spacing = grid_spacing * 1e-9
 L = L * grid_spacing

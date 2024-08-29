@@ -13,7 +13,7 @@ class Index:
     """
 
     def __init__(self,
-                 material: str = 'Si.csv',
+                 material: str = 'Si',
                  data=None,
                  ):
         self.material = material

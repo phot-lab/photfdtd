@@ -54,7 +54,7 @@ if __name__ == "__main__":
     grid.save_fig()
     grid.plot_n()
 
-    grid.run(time=5000)
+    grid.run()
     grid.save_simulation()
     #
     # # # 绘制仿真结束时刻空间场分布
