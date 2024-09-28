@@ -301,6 +301,14 @@ class Grid:
         else:
             raise ValueError("Invalid source type.")
 
+    def _try_to_find_source(self):
+        try:
+            found_source = self._grid.sources[0]
+            print("Found source successfully without name")
+            return found_source
+        except:
+            raise Exception("No source found in Grid.")
+
     def calculate_source_profile(self, time: int or float = None, source_name: str = None):
         if time is None:
             if self._grid.time_steps_passed != 0:
@@ -308,14 +316,6 @@ class Grid:
             else:
                 time = 100e-15
         time = self._grid._handle_time(time)
-
-        def _try_to_find_source(self):
-            try:
-                found_source = self._grid.sources[0]
-                print("Found source successfully without name")
-                return found_source
-            except:
-                raise Exception("No source found in Grid.")
 
         if source_name is not None:
             found_source = None
@@ -327,14 +327,15 @@ class Grid:
                     break
             if found_source is None:
                 print("There is no source named %s in the Grid, trying to find a source automatically." % source_name)
-                found_source = _try_to_find_source(self)
+                found_source = self._try_to_find_source()
         else:
-            found_source = _try_to_find_source(self)
+            found_source = self._try_to_find_source()
         x_sticks = np.linspace(0, len(found_source.profile), len(found_source.profile)) * self._grid.grid_spacing
         plt.plot(x_sticks, found_source.profile)
         plt.xticks()
         plt.xlabel('um')
         plt.ylabel("E")
+        plt.title(f"{source_name}")
         plt.legend()
         file_name = "source_profile"
         plt.savefig(os.path.join(self.folder, f"{file_name}.png"))
@@ -370,6 +371,7 @@ class Grid:
         plt.xticks()
         plt.xlabel('fs')
         plt.ylabel("amplitude")
+        plt.title(f"Time Signal of {source_name}")
         plt.legend()
         file_name = "E_source"
         plt.savefig(os.path.join(self.folder, f"{file_name}.png"))
@@ -465,9 +467,6 @@ class Grid:
         else:
             raise ValueError("Invalid detector type.")
 
-    def detector_profile(self, detector_name: str = None, field: str = "E", field_axis: str = "x", timesteps: int = -1):
-        # TODO: block detector
-
         def _try_to_find_detector(self):
             try:
                 found_detector = self._grid.detectors[0]
@@ -475,6 +474,17 @@ class Grid:
                 return found_detector
             except:
                 raise Exception("No detector found in Grid.")
+
+    def _try_to_find_detector(self):
+        try:
+            found_detector = self._grid.detectors[0]
+            print("Found detector successfully without name")
+            return found_detector
+        except:
+            raise Exception("No detector found in Grid.")
+
+    def detector_profile(self, detector_name: str = None, field: str = "E", field_axis: str = "x", timesteps: int = -1):
+        # TODO: block detector
 
         if detector_name is not None:
             found_detector = None
@@ -487,9 +497,9 @@ class Grid:
             if found_detector is None:
                 print(
                     "There is no detector named %s in the Grid, trying to find a detector automatically." % detector_name)
-                found_detector = _try_to_find_detector(self)
+                found_detector = self._try_to_find_detector()
         else:
-            found_detector = _try_to_find_detector(self)
+            found_detector = self._try_to_find_detector()
         # TODO:考虑y和z方向
         x = found_detector.x
         x = np.array(x) * self._grid.grid_spacing
@@ -502,6 +512,7 @@ class Grid:
         plt.xlabel('um')
         plt.ylabel("E")
         plt.legend()
+        plt.title(f"{detector_name}")
         file_name = "detector_profile_timestep=%i" % timesteps
         plt.savefig(os.path.join(self.folder, f"{file_name}.png"))
         plt.close()
@@ -730,14 +741,14 @@ class Grid:
         Calculate transmission spectrum, detector required.
 
         @param detector_name: The name of detector whose data will be calculated, can be None if there is only 1 detector in grid.
-        @param field_axis: Default to "x"
+        @param source_name: The name of source whose data will be calculated, can be None if there is only 1 source in grid.
+        @param field_axis: Optional: Default to "x"
         @param wl_start: Start wavelength
         @param wl_end: End wavelength
         @param detector_data: Optional: must be a 1 dimension array
         @param source_data: Optional: must be a 1 dimension array with same size as detector_data
-        @param detector_index: Default to center of the detector
-        @param source_name: The name of source whose data will be calculated, can be None if there is only 1 source in grid.
-        @param save_to_txt: Default to True
+        @param detector_index: Optional: Default to center of the detector
+        @param save_to_txt: Optional: Default to True
         @param grid: Optinal: photfdtd.Grid instance
         """
         field_axis = fdtd.conversions.letter_to_number(field_axis)
@@ -772,6 +783,7 @@ class Grid:
         plt.plot(spectrum_wl, Transmission)
         plt.xlabel('Wavelength (um)')
         plt.ylabel("T")
+        plt.ylabel("Transmission")
         plt.savefig(os.path.join(grid.folder, f"{'Transmission_'}{detector_name}.png"))
         plt.close()
 
@@ -972,12 +984,7 @@ class Grid:
         @param vmin: Optional. Min value of the color bar.
 
         """
-        if not axis:
-            # Tell which dimension to draw automatically
-            dims_with_size_one = [i for i, size in enumerate(grid._grid.inverse_permittivity.shape) if size == 1]
-            if not dims_with_size_one:
-                raise ValueError("Parameter 'axis' should not be None for 3D simulation")
-            axis = conversions.number_to_letter(dims_with_size_one[0])
+
         if not show_field:
             title = "%s=%i" % (axis, axis_index)
         elif not field_axis:
@@ -1128,7 +1135,7 @@ class Grid:
 
         if data.ndim == 3:
             if index == None:
-                raise ValueError("Parameter 'index' must be set for linedetector!")
+                index = int(data.shape[1] / 2)
             plt.plot(range(len(data)), data[:, index, ord(field_axis) - 120], linestyle='-', label="Experiment")
             plt.ylabel('%s%s' % (field, field_axis))
             plt.xlabel("timesteps")
@@ -1138,7 +1145,7 @@ class Grid:
             plt.close()
         else:
             if index_3d == None:
-                raise ValueError("Parameter 'index_3d' must be set for blockdetector!")
+                index_3d = [int(data.shape[0] / 2), int(data.shape[1] / 2), int(data.shape[2] / 2)]
             plt.plot(range(len(data)), data[:, index_3d[0], index_3d[1], index_3d[2], ord(field_axis) - 120],
                      linestyle='-',
                      label="Experiment")
@@ -1162,7 +1169,7 @@ class Grid:
         其长度表示时间步长，每一个元素表示在该时间场的幅值。
         @param index: 用于线监视器，选择读取数据的点
         @param index_3d: 用于面监视器，选择读取数据的点
-        @param field_axis: 0或1或2分别表示E或H的x，y，z分量
+        @param field_axis: "x", "y", "z"
         @param field: ”E"或"H"
         @param folder: Optional: default: grid.folder 保存图片的地址，若为None则为grid.folder
         """
@@ -1197,6 +1204,7 @@ class Grid:
         plt.plot(spectrum_freqs, spectrum)
         plt.xlabel('frequency (Hz)')
         plt.ylabel("spectrum")
+        plt.title("Spectrum")
         file_name = "spectrum_%s%s_%s" % (field, chr(field_axis + 120), name_det)
         plt.savefig(os.path.join(folder, f"{file_name}.png"))
         plt.close()
@@ -1205,6 +1213,7 @@ class Grid:
         plt.plot(spectrum_freqs, np.abs(spectrum))
         plt.xlabel('frequency (Hz)')
         plt.ylabel("amplitude")
+        plt.title("Spectrum")
         file_name = "f-amplitude_%s%s_%s" % (field, chr(field_axis + 120), name_det)
         plt.savefig(os.path.join(folder, f"{file_name}.png"))
         plt.close()
@@ -1213,6 +1222,7 @@ class Grid:
         plt.plot(constants.c / (spectrum_freqs * (1e-6)), np.abs(spectrum))
         plt.xlabel('wavelength (um)')
         plt.ylabel("amplitude")
+        plt.title("Spectrum")
         file_name = "wl-amplitude_%s%s_%s" % (field, chr(field_axis + 120), name_det)
         plt.savefig(os.path.join(folder, f"{file_name}.png"))
         plt.close()
@@ -1239,3 +1249,35 @@ class Grid:
                                                  y_slice[0]:y_slice[1], z_slice[0]:z_slice[1]]
 
         return grid_sliced
+
+    def visualize(self, axis=None, axis_index=None, field="E", field_axis=None):
+        if not axis:
+            # Tell which dimension to draw automatically
+            dims_with_size_one = [i for i, size in enumerate(self._grid.inverse_permittivity.shape) if size == 1]
+            if not dims_with_size_one:
+                dims_with_size_one = [1]
+                # raise ValueError("Parameter 'axis' should not be None for 3D simulation")
+            axis = conversions.number_to_letter(dims_with_size_one[0])
+        else:
+            dims_with_size_one = [conversions.letter_to_number(axis)]
+        if not axis_index:
+            axis_index = int(self._grid.inverse_permittivity.shape[dims_with_size_one[0]] / 2)
+        source = self._try_to_find_source()
+        if field_axis == None:
+            field_axis = source.polarization
+
+        self.save_fig()
+        self.plot_n()
+        self.plot_field(grid=self, field=field, field_axis=field_axis, axis=axis, axis_index=axis_index, vmin=-1,
+                        vmax=1)
+
+        for detector in self._grid.detectors:
+            self.detector_profile(detector_name=detector.name, field=field, field_axis=field_axis)
+            self.plot_fieldtime(grid=self, field=field, field_axis=field_axis, name_det=detector.name)
+            self.compute_frequency_domain(grid=self, wl_start=1400e-9, wl_end=1700e-9, name_det=detector.name,
+                                          field=field, field_axis=field_axis)
+            if isinstance(detector, fdtd.detectors.BlockDetector):
+                self.dB_map(grid=self, field=field, field_axis=field_axis)
+            self.calculate_Transmission(detector_name=detector.name, source_name=self._try_to_find_source())
+        for source in self._grid.sources:
+            self.calculate_source_profile(source_name=source.name)
