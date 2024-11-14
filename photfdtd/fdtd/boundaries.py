@@ -430,7 +430,7 @@ class PML(Boundary):
             * self.phi_H
         )
 
-    def update_phi_E(self):
+    def update_phi_E(self, dx=None, dy=None, dz=None):
         """ Update convolution [phi_E]
 
         Note:
@@ -445,20 +445,25 @@ class PML(Boundary):
         Hy = self.grid.H[self.locy]
         Hz = self.grid.H[self.locz]
 
-        self.psi_Ex[:, 1:, :, 1] += (Hz[:, 1:, :] - Hz[:, :-1, :]) * c[:, 1:, :, 1]
-        self.psi_Ex[:, :, 1:, 2] += (Hy[:, :, 1:] - Hy[:, :, :-1]) * c[:, :, 1:, 2]
+        # TODO：检查应用不同空间步长时方程是否应该这么写
+        # 暂时先让代码保持原来的样子
+        dx = 1
+        dy = 1
+        dz = 1
+        self.psi_Ex[:, 1:, :, 1] += (Hz[:, 1:, :] - Hz[:, :-1, :]) * c[:, 1:, :, 1] * dz / dy
+        self.psi_Ex[:, :, 1:, 2] += (Hy[:, :, 1:] - Hy[:, :, :-1]) * c[:, :, 1:, 2] * dy / dz
 
-        self.psi_Ey[:, :, 1:, 2] += (Hx[:, :, 1:] - Hx[:, :, :-1]) * c[:, :, 1:, 2]
-        self.psi_Ey[1:, :, :, 0] += (Hz[1:, :, :] - Hz[:-1, :, :]) * c[1:, :, :, 0]
+        self.psi_Ey[:, :, 1:, 2] += (Hx[:, :, 1:] - Hx[:, :, :-1]) * c[:, :, 1:, 2] * dx / dz
+        self.psi_Ey[1:, :, :, 0] += (Hz[1:, :, :] - Hz[:-1, :, :]) * c[1:, :, :, 0] * dz / dx
 
-        self.psi_Ez[1:, :, :, 0] += (Hy[1:, :, :] - Hy[:-1, :, :]) * c[1:, :, :, 0]
-        self.psi_Ez[:, 1:, :, 1] += (Hx[:, 1:, :] - Hx[:, :-1, :]) * c[:, 1:, :, 1]
+        self.psi_Ez[1:, :, :, 0] += (Hy[1:, :, :] - Hy[:-1, :, :]) * c[1:, :, :, 0] * dy / dx
+        self.psi_Ez[:, 1:, :, 1] += (Hx[:, 1:, :] - Hx[:, :-1, :]) * c[:, 1:, :, 1] * dx / dy
 
         self.phi_E[..., 0] = self.psi_Ex[..., 1] - self.psi_Ex[..., 2]
         self.phi_E[..., 1] = self.psi_Ey[..., 2] - self.psi_Ey[..., 0]
         self.phi_E[..., 2] = self.psi_Ez[..., 0] - self.psi_Ez[..., 1]
 
-    def update_phi_H(self):
+    def update_phi_H(self, dx=None, dy=None, dz=None):
         """ Update convolution [phi_H]
 
         Note:
@@ -472,15 +477,19 @@ class PML(Boundary):
         Ex = self.grid.E[self.locx]
         Ey = self.grid.E[self.locy]
         Ez = self.grid.E[self.locz]
+        # TODO：检查应用不同空间步长时方程是否应该这么写
+        # 暂时先让代码保持原来的样子
+        dx = 1
+        dy = 1
+        dz = 1
+        self.psi_Hx[:, :-1, :, 1] += (Ez[:, 1:, :] - Ez[:, :-1, :]) * c[:, :-1, :, 1] * dz / dy
+        self.psi_Hx[:, :, :-1, 2] += (Ey[:, :, 1:] - Ey[:, :, :-1]) * c[:, :, :-1, 2] * dy / dz
 
-        self.psi_Hx[:, :-1, :, 1] += (Ez[:, 1:, :] - Ez[:, :-1, :]) * c[:, :-1, :, 1]
-        self.psi_Hx[:, :, :-1, 2] += (Ey[:, :, 1:] - Ey[:, :, :-1]) * c[:, :, :-1, 2]
+        self.psi_Hy[:, :, :-1, 2] += (Ex[:, :, 1:] - Ex[:, :, :-1]) * c[:, :, :-1, 2] * dx / dz
+        self.psi_Hy[:-1, :, :, 0] += (Ez[1:, :, :] - Ez[:-1, :, :]) * c[:-1, :, :, 0] * dz / dx
 
-        self.psi_Hy[:, :, :-1, 2] += (Ex[:, :, 1:] - Ex[:, :, :-1]) * c[:, :, :-1, 2]
-        self.psi_Hy[:-1, :, :, 0] += (Ez[1:, :, :] - Ez[:-1, :, :]) * c[:-1, :, :, 0]
-
-        self.psi_Hz[:-1, :, :, 0] += (Ey[1:, :, :] - Ey[:-1, :, :]) * c[:-1, :, :, 0]
-        self.psi_Hz[:, :-1, :, 1] += (Ex[:, 1:, :] - Ex[:, :-1, :]) * c[:, :-1, :, 1]
+        self.psi_Hz[:-1, :, :, 0] += (Ey[1:, :, :] - Ey[:-1, :, :]) * c[:-1, :, :, 0] * dy / dx
+        self.psi_Hz[:, :-1, :, 1] += (Ex[:, 1:, :] - Ex[:, :-1, :]) * c[:, :-1, :, 1] * dx / dy
 
         self.phi_H[..., 0] = self.psi_Hx[..., 1] - self.psi_Hx[..., 2]
         self.phi_H[..., 1] = self.psi_Hy[..., 2] - self.psi_Hy[..., 0]

@@ -34,9 +34,10 @@ class Ring(Waveguide):
             grid=None,
             priority: int = 1
     ) -> None:
-        outer_radius, ylength, width_s, width_r, length, gap = grid._handle_unit(
-            [outer_radius, ylength, width_s, width_r, length, gap],
+        outer_radius, width_s, width_r, length, gap = grid._handle_unit(
+            [outer_radius, width_s, width_r, length, gap],
             grid_spacing=grid._grid.grid_spacing)
+        ylength = grid._handle_unit([ylength], grid_spacing=grid._grid.grid_spacing_y)
         self.outer_r = outer_radius
         self.length = length
         self.gap = gap

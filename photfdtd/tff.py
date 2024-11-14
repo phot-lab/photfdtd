@@ -42,8 +42,9 @@ class TFF(Waveguide):
         @param grid:
         @param priority: the priority of the waveguide( high index indicates high priority).
         """
-        xlength, ylength, zlength, dl, dh, x, y, z = grid._handle_unit([xlength, ylength, zlength, dl, dh, x, y, z],
-                                                              grid_spacing=grid._grid.grid_spacing)
+        xlength, x = grid._handle_unit([xlength, x], grid_spacing=grid._grid.grid_spacing_x)
+        ylength, y = grid._handle_unit([ylength, y], grid_spacing=grid._grid.grid_spacing_y)
+        zlength, z = grid._handle_unit([zlength, z], grid_spacing=grid._grid.grid_spacing_z)
         if x == None:
             # 如果没设置x，自动选仿真区域中心If x not set, choose the center of grid
             x = int(grid._grid_xlength / 2)
@@ -61,6 +62,7 @@ class TFF(Waveguide):
 
         # xlength_l, ylength_l, zlength_l = int(xlength_l), int(ylength_l), int(zlength_l)
         if axis == "z":
+            dl, dh = grid._handle_unit([dl, dh],grid_spacing=grid._grid.grid_spacing_z)
             z = self._calculate_position(z, layers, dl, dh)
             for i in range(layers):
                 if i % 2 == 0:
@@ -68,6 +70,7 @@ class TFF(Waveguide):
                 else:
                     zlength_l[i] = dl
         elif axis == "x":
+            dl, dh = grid._handle_unit([dl, dh], grid_spacing=grid._grid.grid_spacing_x)
             x = self._calculate_position(x, layers, dl, dh)
             for i in range(layers):
                 if i % 2 == 0:
@@ -75,6 +78,7 @@ class TFF(Waveguide):
                 else:
                     xlength_l[i] = dl
         elif axis == "y":
+            dl, dh = grid._handle_unit([dl, dh], grid_spacing=grid._grid.grid_spacing_y)
             y = self._calculate_position(y, layers, dl, dh)
             for i in range(layers):
                 if i % 2 == 0:

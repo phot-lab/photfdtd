@@ -33,7 +33,7 @@ class Waveguide:
             width: int or float = None,
             name: str = "waveguide",
             refractive_index: float = None,
-            material: str = "",
+            material: str = None,
             reset_xyz: bool = True,
             grid=None,
             priority: int = 1
@@ -46,9 +46,10 @@ class Waveguide:
         if z == None:
             z = int(grid._grid_zlength / 2)
 
-        xlength, ylength, zlength, width, x, y, z = grid._handle_unit([xlength, ylength, zlength, width, x, y, z],
-                                                                      grid_spacing=grid._grid.grid_spacing)
-
+        xlength, x, = grid._handle_unit([xlength, x], grid_spacing=grid._grid.grid_spacing_x)
+        ylength, y, = grid._handle_unit([ylength, y], grid_spacing=grid._grid.grid_spacing_y)
+        zlength, z, = grid._handle_unit([zlength, z], grid_spacing=grid._grid.grid_spacing_z)
+        width = grid._handle_unit([width], grid_spacing=grid._grid.grid_spacing)[0]
         self.xlength = xlength
         self.ylength = ylength
         self.zlength = zlength
@@ -67,7 +68,10 @@ class Waveguide:
             self.y = copy(y)
             self.z = copy(z)
 
-        self.width = width
+        if not width:
+            self.width = self.xlength
+        else:
+            self.width = width
         self.name = name
         self.refractive_index = refractive_index
         self.background_index = grid.background_index
@@ -153,7 +157,9 @@ class Waveguide:
         matrix = self.permittivity
         shape = matrix.shape
         if center:
-            center = self.grid._handle_unit(center, grid_spacing=self.grid._grid.grid_spacing)
+            center[0] = self.grid._handle_unit(center[0], grid_spacing=self.grid._grid.grid_spacing_x)[0]
+            center[1] = self.grid._handle_unit(center[1], grid_spacing=self.grid._grid.grid_spacing_y)[0]
+            center[2] = self.grid._handle_unit(center[2], grid_spacing=self.grid._grid.grid_spacing_z)[0]
             center = [center[0] - self.x, center[1] - self.y, center[2] - self.z]
         elif center is None:
             # 这里的center是波导原点坐标系，输入的center也是

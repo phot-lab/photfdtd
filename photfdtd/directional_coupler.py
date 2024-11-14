@@ -22,28 +22,30 @@ class DirectionalCoupler(Waveguide):
 
     def __init__(
         self,
-            xlength: int or float = 200,
-            ylength: int or float = 80,
-            zlength: int or float = 20,
             x: int or float = None,
             y: int or float = None,
             z: int or float = None,
+            xlength: int or float = 200,
+            ylength: int or float = 80,
+            zlength: int or float = 20,
             width_1: int or float = 20,
             width_2: int or float = None,
-            name: str = "dc",
-            refractive_index: float = 3.47,
             zlength_rectangle: int or float = 50,
             zlength_sbend: int or float = None,
             xlength_sbend: int or float = None,
             gap: int or float = 10,
+            name: str = "dc",
+            refractive_index: float = 3.47,
             grid=None,
             priority: int = 1
     ) -> None:
         if not width_2:
             width_2 = width_1
-        xlength, ylength, zlength, width_1, width_2, zlength_rectangle, gap, zlength_sbend, xlength_sbend = \
-            grid._handle_unit([xlength, ylength, zlength, width_1, width_2, zlength_rectangle, gap, zlength_sbend, xlength_sbend],
-                                                                                     grid_spacing=grid._grid.grid_spacing)
+        xlength, width_1, width_2, gap, xlength_sbend = \
+            grid._handle_unit([xlength, width_1, width_2, gap, xlength_sbend],  grid_spacing=grid._grid.grid_spacing_x)
+        ylength = grid._handle_unit([ylength], grid_spacing=grid._grid.grid_spacing_y)[0]
+        zlength, zlength_rectangle, zlength_sbend = \
+            grid._handle_unit([zlength, zlength_rectangle, zlength_sbend], grid_spacing=grid._grid.grid_spacing_z)
         self.zlength_rectangle = zlength_rectangle
         if xlength_sbend is not None:
             self.xlength_sbend = xlength_sbend

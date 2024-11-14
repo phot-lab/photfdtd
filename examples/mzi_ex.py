@@ -1,97 +1,32 @@
 import utils
-from photfdtd import Mzi, Grid, Solve, Ysplitter
+from photfdtd import Mzi, Grid, Solve, Ysplitter, Index
 import photfdtd.fdtd.constants as constants
 
 if __name__ == "__main__":
-    background_index = 1.0
+    background_index = 1.4447
 
-    mzi = Mzi(gap=50,
-              xlength_dc=150,
-              zlength=1,
-              x=350,
-              y=125,
-              z=0,
-              width=20,
-              refractive_index=3.47,
-              name='mzi',
-              couplelength=100,
-              addlength_arm1=0,
-              addlength_arm2=0,
-              couplelength_dc=10,
-              gap_dc=10,
-              background_index=background_index)
+    index_Si = Index(material="Si")
+    index_Re_Si, index_Im_Si = index_Si.get_refractive_index(wavelength=1.55e-6)
 
-    # mzi2 = Mzi(gap=50,
-    #            xlength_dc=150,
-    #            zlength=1,
-    #            x=750,
-    #            y=130,
-    #            z=0,
-    #            width=20,
-    #            refractive_index=3.47,
-    #            name='mzi2',
-    #            couplelength=100,
-    #            addlength_arm1=0,
-    #            addlength_arm2=0,
-    #            couplelength_dc=10,
-    #            gap_dc=10,
-    #            background_index=background_index)
+    # create the simulation region, which is a Grid object 新建一个 grid 对象
+    grid = Grid(grid_xlength=5e-6, grid_ylength=1, grid_zlength=18e-6,
+                grid_spacing=20e-9,
+                permittivity=background_index ** 2,
+                foldername="MZI_ex")
 
-    # 设置y分支波导时应给s波导之间留有一定间距，否则光场可能在连接处反复振荡导致数值过大而报错
-    ysplitter1 = Ysplitter(xlength=150,
-                           ylength=90,
-                           zlength=1,
-                           x=50,
-                           y=125,
-                           z=0,
-                           direction=1,
-                           width=20,
-                           name="ysplitter1",
-                           refractive_index=3.47,
-                           xlength_waveguide=30,
-                           xlength_taper=40,
-                           ylength_taper=44,
-                           width_sbend=20,
-                           background_index=background_index)
-
-    # ysplitter2 = Ysplitter(xlength=150,
-    #                        ylength=90,
-    #                        zlength=1,
-    #                        x=650,
-    #                        y=125,
-    #                        z=0,
-    #                        direction=-1,
-    #                        width=20,
-    #                        name="ysplitter2",
-    #                        refractive_index=3.47,
-    #                        xlength_waveguide=30,
-    #                        xlength_taper=40,
-    #                        ylength_taper=44,
-    #                        width_sbend=20,
-    #                        background_index=background_index)
-
-    grid = Grid(grid_xlength=700, grid_ylength=250, grid_zlength=1, grid_spacing=20e-9, total_time=4000,
-                pml_width_x=10,
-                pml_width_y=10, pml_width_z=0,
-                foldername="test_mzi_1023", permittivity=background_index ** 2)
+    mzi = Mzi(xlength=2e-6,
+              ylength=1,
+              zlength_DC=6e-6,
+              couplelength_DC=3e-6,
+              width_1=500e-9,
+              width_2=500e-9,
+              couplelength=1.5e-6,
+              gap_DC=40e-9,
+              name="MZI",
+              refractive_index=index_Re_Si,
+              grid=grid)
 
     grid.add_object(mzi)
-    # grid.add_object(mzi2)
-    grid.add_object(ysplitter1)
-    # grid.add_object(ysplitter2)
-
-    # 设置光源
-    grid.set_source(source_type="linesource",
-                    period=1550e-9 / constants.c,
-                    name="source",
-                    pulse_type="none",
-                    x=20,
-                    y=125,
-                    z=0,
-                    xlength=1,
-                    ylength=18,
-                    zlength=1
-                    )
 
     # 设置监视器
     # grid.set_detector(detector_type="linedetector",
@@ -104,22 +39,17 @@ if __name__ == "__main__":
     #                   zlength=1
     #                   )
 
-    # 创建solve对象
-    solve = Solve(grid=grid)
+    grid.set_source(source_type="linesource",
+                    wavelength=1550e-9, name="source", x=1600e-9, y=0, z=2100e-9,
+                    xlength=400e-9, ylength=0, zlength=0, polarization="x")
 
-    # 绘制任一截面折射率分布
-    solve.plot(axis='z',
-               index=0,
-               filepath=grid.folder)
-
-    # 运行仿真
+    # # run the FDTD simulation 运行仿真
+    grid.plot_n()
     grid.run()
-
-    # 保存仿真结果
     grid.save_simulation()
-
-    # z=0截面场图
-    grid.visualize(z=0, showEnergy=True, show=True, save=True)
-
     # 读取仿真结果
-    data = grid.read_simulation(folder=grid.folder)
+    # grid = Grid.read_simulation(folder=grid.folder)
+
+    grid.visualize()
+
+

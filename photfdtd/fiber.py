@@ -13,6 +13,7 @@ class Circle(Waveguide):
                  priority: int = 1) -> None:
 
         length, x, y, z, radius = grid._handle_unit([length, x, y, z, radius], grid_spacing=grid._grid.grid_spacing)
+
         self.radius = radius
         self.length = length
         self.axis = axis

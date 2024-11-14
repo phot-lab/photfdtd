@@ -16,4 +16,5 @@ from .cone import Cone
 from .tff import TFF
 from .fwg import FWG
 from .pc import Hexagonal_PC
+from .grating import Grating
 

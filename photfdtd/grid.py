@@ -12,9 +12,11 @@ import photfdtd.fdtd.conversions as conversions
 
 
 class Grid:
-
     def __init__(
             self, grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=20e-9,
+            grid_spacing_x: float = None,
+            grid_spacing_y: float = None,
+            grid_spacing_z: float = None,
             # total_time=1,
             # pml_width_x=0,
             # pml_width_y=0, pml_width_z=0, 
@@ -23,24 +25,40 @@ class Grid:
     ) -> None:
         """
         Args:
-            grid_xlength (int or float, optional): xlength of Simulation Region, SI unit(m) if float or grid_spacing unit if int
-            grid_ylength (int or float, optional): ylength of Simulation Region, SI unit(m) if float or grid_spacing unit if int
-            grid_zlength (int or float, optional): zlength of Simulation Region, SI unit(m) if float or grid_spacing unit if int
-            grid_spacing (float, optional): fdtd算法的空间步长（yee元胞的网格宽度）. 单位为m
-            total_time (int, optional): 计算时间. Defaults to 1.
-            pml_width (int, optional): PML宽度.
+            grid_xlength (int or float): xlength of Simulation Region, SI unit(m) if float or grid_spacing unit if int
+            grid_ylength (int or float): ylength of Simulation Region, SI unit(m) if float or grid_spacing unit if int
+            grid_zlength (int or float): zlength of Simulation Region, SI unit(m) if float or grid_spacing unit if int
+            grid_spacing (float): fdtd算法的空间步长（yee元胞的网格宽度）. 单位为m
+            grid_spacing_x (float, optional):
+            grid_spacing_y (float, optional):
+            grid_spacing_z (float, optional):
             permeability (float, optional): 环境相对磁导率 1.0
             permittivity (float, optional): 环境相对介电常数 1.0
             (refractive_index ** 2 = permeability * permittivity, 对大部分材料permeability=1.0)
             courant_number: 科朗数 默认为None
             foldername: 文件夹名称, 若其不存在将在目录下创建该文件夹
+        Note:
+            The units of E and H field in this package have been scaled:
+            E(r, t) = √ϵ0 x E_real(r, t)
+            H(r, t) = √μ0 x H_real(r, t)
         """
-
-        grid_xlength, grid_ylength, grid_zlength = self._handle_unit(lengths=[grid_xlength, grid_ylength, grid_zlength],
-                                                                     grid_spacing=grid_spacing)
-
+        if grid_spacing_x is None:
+            grid_spacing_x = grid_spacing
+        if grid_spacing_y is None:
+            grid_spacing_y = grid_spacing
+        if grid_spacing_z is None:
+            grid_spacing_z = grid_spacing
+        grid_xlength = self._handle_unit(lengths=[grid_xlength],
+                                         grid_spacing=grid_spacing_x)[0]
+        grid_ylength = self._handle_unit(lengths=[grid_ylength],
+                                         grid_spacing=grid_spacing_y)[0]
+        grid_zlength = self._handle_unit(lengths=[grid_zlength],
+                                         grid_spacing=grid_spacing_z)[0]
         grid = fdtd.Grid(shape=(grid_xlength, grid_ylength, grid_zlength),
                          grid_spacing=grid_spacing,
+                         grid_spacing_x=grid_spacing_x,
+                         grid_spacing_y=grid_spacing_y,
+                         grid_spacing_z=grid_spacing_z,
                          permittivity=permittivity,
                          permeability=permeability,
                          courant_number=courant_number
@@ -62,7 +80,9 @@ class Grid:
         self.background_index = np.sqrt(permittivity * permeability)
         self.flag_PML_not_set = True
 
-    def _handle_unit(self, lengths, grid_spacing):
+    def _handle_unit(self, lengths, grid_spacing=None):
+        if grid_spacing is None:
+            grid_spacing = self._grid.grid_spacing
         # 把SI单位变成空间步长单位 SI unit -> grid spacing unit
         for i in range(len(lengths)):
             if not np.issubdtype(type(lengths[i]), np.integer) and lengths[i] is not None:
@@ -75,7 +95,8 @@ class Grid:
         # calculate total time for FDTD simulation
         # return: total time in timesteps
         n = np.sqrt(1 / self._grid.inverse_permittivity.min())
-        L = max(self._grid_xlength, self._grid_ylength, self._grid_zlength) * self._grid.grid_spacing
+        # 默认传播方向为z default propagating direction: z
+        L = max(self._grid_xlength, self._grid_ylength, self._grid_zlength) * self._grid.grid_spacing_z
         time = int(L * 1.5 * n / constants.c / self._grid.time_step)  # Multiply 1.5 to make sure stabilization
         return time
 
@@ -114,6 +135,7 @@ class Grid:
                                 priority_matrix=internal_object.priority_matrix)
 
     def del_object(self, object: Waveguide):
+        #TODO: unfinished
         for internal_object in object._internal_objects:
 
             if internal_object == 0:
@@ -126,7 +148,8 @@ class Grid:
                 internal_object.y: internal_object.y + internal_object.ylength,
                 internal_object.z: internal_object.z + internal_object.zlength,
                 ] = fdtd.Object(permittivity=self.background_index ** 2, name="deleted",
-                                background_index=internal_object.background_index)
+                                background_index=internal_object.background_index,
+                                priority_matrix=internal_object.priority_matrix)
                 self._grid.objects.pop(internal_object)
         pass
 
@@ -160,10 +183,11 @@ class Grid:
             axis: str = "y"
     ):
         """
+        TODO: cycle是什么？
         @param source_type: 光源种类：点或线或面 "pointsource", "linesource", "planesource"
         @param wavelength: 波长(m)
         @param period:周期
-        @param amplitude: 振幅(V/m)
+        @param amplitude: 振幅
         @param phase_shift: 相移
         @param name: 名称
         @param waveform: default to "gaussian" 波形 "plane":平面波 "gaussian": 高斯波
@@ -198,29 +222,28 @@ class Grid:
                 raise ValueError("please set wavelength or period for the source")
 
         if self.flag_PML_not_set:
-            pml_width = self._handle_unit([(period * constants.c) / 2],
-                                          grid_spacing=self._grid.grid_spacing)[0]
+            pml_width_x = self._handle_unit([(period * constants.c) / 2],
+                                            grid_spacing=self._grid.grid_spacing_x)[0]
+            pml_width_y = self._handle_unit([(period * constants.c) / 2],
+                                            grid_spacing=self._grid.grid_spacing_y)[0]
+            pml_width_z = self._handle_unit([(period * constants.c) / 2],
+                                            grid_spacing=self._grid.grid_spacing_z)[0]
             if self._grid_xlength != 1:
-                self._grid[0:pml_width, :, :] = fdtd.PML(name="pml_xlow")
-                self._grid[-pml_width:, :, :] = fdtd.PML(name="pml_xhigh")
-            # if self._grid_ylength != 1:
-            #     self._grid[:, 0:pml_width, :] = fdtd.PML(name="pml_ylow")
-            #     self._grid[:, -pml_width:, :] = fdtd.PML(name="pml_yhigh")
+                self._grid[0:pml_width_x, :, :] = fdtd.PML(name="pml_xlow")
+                self._grid[-pml_width_x:, :, :] = fdtd.PML(name="pml_xhigh")
+            if self._grid_ylength != 1:
+                self._grid[:, 0:pml_width_y, :] = fdtd.PML(name="pml_ylow")
+                self._grid[:, -pml_width_y:, :] = fdtd.PML(name="pml_yhigh")
             if self._grid_zlength != 1:
-                self._grid[:, :, 0:pml_width] = fdtd.PML(name="pml_zlow")
-                self._grid[:, :, -pml_width:] = fdtd.PML(name="pml_zhigh")
+                self._grid[:, :, 0:pml_width_z] = fdtd.PML(name="pml_zlow")
+                self._grid[:, :, -pml_width_z:] = fdtd.PML(name="pml_zhigh")
             self.flag_PML_not_set = False
-        xlength, ylength, zlength, x, y, z, x_start, y_start, z_start, x_end, y_end, z_end = self._handle_unit([xlength,
-                                                                                                                ylength,
-                                                                                                                zlength,
-                                                                                                                x, y, z,
-                                                                                                                x_start,
-                                                                                                                y_start,
-                                                                                                                z_start,
-                                                                                                                x_end,
-                                                                                                                y_end,
-                                                                                                                z_end],
-                                                                                                               grid_spacing=self._grid.grid_spacing)
+        xlength, x, x_start, x_end = self._handle_unit([xlength, x, x_start, x_end],
+                                                       grid_spacing=self._grid.grid_spacing_x)
+        ylength, y, y_start, y_end = self._handle_unit([ylength, y, y_start, y_end],
+                                                       grid_spacing=self._grid.grid_spacing_y)
+        zlength, z, z_start, z_end = self._handle_unit([zlength, z, z_start, z_end],
+                                                       grid_spacing=self._grid.grid_spacing_z)
         if x == None:
             # 如果没设置x，自动选仿真区域中心If x not set, choose the center of grid
             x = int(self._grid_xlength / 2)
@@ -304,7 +327,7 @@ class Grid:
     def _try_to_find_source(self):
         try:
             found_source = self._grid.sources[0]
-            print("Found source successfully without name")
+            print(f"Found source successfully: {found_source.name}")
             return found_source
         except:
             raise Exception("No source found in Grid.")
@@ -330,7 +353,9 @@ class Grid:
                 found_source = self._try_to_find_source()
         else:
             found_source = self._try_to_find_source()
-        x_sticks = np.linspace(0, len(found_source.profile), len(found_source.profile)) * self._grid.grid_spacing
+            source_name = found_source.name
+        # TODO: 考虑其他方向，consider other directions
+        x_sticks = np.linspace(0, len(found_source.profile), len(found_source.profile)) * self._grid.grid_spacing_x
         plt.plot(x_sticks, found_source.profile)
         plt.xticks()
         plt.xlabel('um')
@@ -370,7 +395,7 @@ class Grid:
         plt.plot(x_sticks, source_field[:, int(size / 2), 2], label="Ez")
         plt.xticks()
         plt.xlabel('fs')
-        plt.ylabel("amplitude")
+        plt.ylabel("E")
         plt.title(f"Time Signal of {source_name}")
         plt.legend()
         file_name = "E_source"
@@ -414,10 +439,15 @@ class Grid:
         if z == None:
             z = int(self._grid_zlength / 2)
 
-        xlength, ylength, zlength, x, y, z, x_start, x_end, y_start, y_end, z_start, z_end = \
-            self._handle_unit([xlength, ylength, zlength, x, y, z, x_start, x_end, y_start, y_end, z_start, z_end],
-                              grid_spacing=self._grid.grid_spacing)
-
+        xlength, x, x_start, x_end = \
+            self._handle_unit([xlength, x, x_start, x_end],
+                              grid_spacing=self._grid.grid_spacing_x)
+        ylength, y, y_start, y_end = \
+            self._handle_unit([ylength, y, y_start, y_end],
+                              grid_spacing=self._grid.grid_spacing_y)
+        zlength, z, z_start, z_end = \
+            self._handle_unit([zlength, z, z_start, z_end],
+                              grid_spacing=self._grid.grid_spacing_z)
         # 设置监视器
         if detector_type == 'linedetector':
 
@@ -502,7 +532,7 @@ class Grid:
             found_detector = self._try_to_find_detector()
         # TODO:考虑y和z方向
         x = found_detector.x
-        x = np.array(x) * self._grid.grid_spacing
+        x = np.array(x) * self._grid.grid_spacing_x
         x_sticks = x
         field_number = conversions.letter_to_number(field_axis)
         detector_profile = np.array([x for x in found_detector.detector_values()["%s" % field]])[timesteps, :,
@@ -624,18 +654,25 @@ class Grid:
         # It's quite important to transpose n
         from matplotlib import cm
         n = np.transpose(n, [1, 0, 2])
-        plt.imshow(n[:, :, 0], cmap=cm.jet, origin="lower",
-                   extent=[0, x * grid.grid_spacing * 1e6, 0, y * grid.grid_spacing * 1e6])
-        plt.clim([np.amin(n), np.amax(n)])
+
         if axis == "x":
             plt.xlabel('y/um')
             plt.ylabel('z/um')
+            x_stick = x * grid.grid_spacing_y * 1e6
+            y_stick = y * grid.grid_spacing_z * 1e6
         elif axis == "y":
             plt.xlabel('x/um')
             plt.ylabel('z/um')
+            x_stick = x * grid.grid_spacing_x * 1e6
+            y_stick = y * grid.grid_spacing_z * 1e6
         elif axis == "z":
             plt.xlabel('x/um')
             plt.ylabel('y/um')
+            x_stick = x * grid.grid_spacing_x * 1e6
+            y_stick = y * grid.grid_spacing_y * 1e6
+        plt.imshow(n[:, :, 0], cmap=cm.jet, origin="lower",
+                   extent=[0, x_stick, 0, y_stick])
+        plt.clim([np.amin(n), np.amax(n)])
         plt.colorbar()
         plt.title("refractive_index_real")
         # 保存图片
@@ -967,7 +1004,7 @@ class Grid:
         #     data = data[name_det + " (%s)" % field]
 
     @staticmethod
-    def plot_field(grid=None, axis=None, axis_index=0, field="E", field_axis=None, folder=None, cmap="jet",
+    def plot_field(grid=None, axis="y", axis_index=0, field="E", field_axis=None, folder=None, cmap="jet",
                    show_geometry=True, show_field=True, vmax=None, vmin=None):
         """
         Plot a field map at current state. No need for detectors. 绘制当前时刻场分布（不需要监视器）
@@ -988,9 +1025,9 @@ class Grid:
         if not show_field:
             title = "%s=%i" % (axis, axis_index)
         elif not field_axis:
-            title = "%s intensity" % field
+            title = "%s^2" % field
         else:
-            title = "%s%s" % (field, field_axis)
+            title = f"{field}{field_axis}"
         if not folder:
             folder = grid.folder
         background_index = grid.background_index
@@ -1006,6 +1043,7 @@ class Grid:
             if field == "E":
                 if not field_axis:
                     # 能量
+                    # TODO：这种算能量的方法对吗
                     if axis == "z":
                         field = grid.E[:, :, axis_index, 0] ** 2 + grid.E[:, :, axis_index, 1] ** 2 + grid.E[:, :,
                                                                                                       axis_index,
@@ -1027,7 +1065,7 @@ class Grid:
                         field = grid.E[axis_index, :, :, ord(field_axis) - 120]
             elif field == "H":
                 if not field_axis:
-                    # 能量场
+                    # 能量
                     if axis == "z":
                         field = grid.H[:, :, axis_index, 0] ** 2 + grid.H[:, :, axis_index, 1] ** 2 + grid.H[:, :,
                                                                                                       axis_index,
@@ -1058,10 +1096,17 @@ class Grid:
 
         # 创建颜色图
         plt.figure()
-
+        if axis == "x":
+            x_stick = field.shape[0] * grid.grid_spacing_y * 1e6
+            y_stick = field.shape[1] * grid.grid_spacing_z * 1e6
+        if axis == "y":
+            x_stick = field.shape[0] * grid.grid_spacing_x * 1e6
+            y_stick = field.shape[1] * grid.grid_spacing_z * 1e6
+        if axis == "z":
+            x_stick = field.shape[0] * grid.grid_spacing_x * 1e6
+            y_stick = field.shape[1] * grid.grid_spacing_y * 1e6
         plt.imshow(np.transpose(field), vmin=vmin, vmax=vmax, cmap=cmap,
-                   extent=[0, field.shape[0] * grid.grid_spacing * 1e6, 0,
-                           field.shape[1] * grid.grid_spacing * 1e6],
+                   extent=[0, x_stick, 0, y_stick],
                    origin="lower")  # cmap 可以选择不同的颜色映射
         if show_field:
             cbar = plt.colorbar()
@@ -1079,8 +1124,8 @@ class Grid:
                 n_to_draw = geo[:, :, axis_index]
             # n_to_draw /= n_to_draw.max()
             contour_data = np.where(n_to_draw != background_index, 1, 0)
-            plt.contour(np.linspace(0, field.shape[0] * grid.grid_spacing * 1e6, field.shape[0]),
-                        np.linspace(0, field.shape[1] * grid.grid_spacing * 1e6, field.shape[1]),
+            plt.contour(np.linspace(0, x_stick, field.shape[0]),
+                        np.linspace(0, y_stick, field.shape[1]),
                         contour_data.T, colors='black', linewidths=1)
 
         # plt.ylim(-1, field.shape[1])
@@ -1091,7 +1136,7 @@ class Grid:
         # cbar.set_label('')
 
         # 添加标题和坐标轴标签
-        plt.title(title)
+        plt.title(f"{title}")
 
         if axis == "z":
             plt.xlabel('x/um')
@@ -1172,10 +1217,12 @@ class Grid:
         @param field_axis: "x", "y", "z"
         @param field: ”E"或"H"
         @param folder: Optional: default: grid.folder 保存图片的地址，若为None则为grid.folder
+        NOTE：
+            关于傅里叶变换后的单位：有的人说是原单位，有的人说是原单位乘以积分时积的单位(s)
+            https://stackoverflow.com/questions/1523814/units-of-a-fourier-transform-fft-when-doing-spectral-analysis-of-a-signal
         """
         # TODO: axis参数与其他可视化参数一致
         # TODO: 把fdtd的fourier.py研究明白
-        # TODO: 傅里叶变换后的单位？
         if field_axis is not None:
             field_axis = conversions.letter_to_number(field_axis)
         if folder is None:
@@ -1209,21 +1256,22 @@ class Grid:
         plt.savefig(os.path.join(folder, f"{file_name}.png"))
         plt.close()
 
-        # 绘制频率-振幅
+        # 绘制频率-幅度
+        # E = Aexp(-jwt) A 叫振幅amplitude 幅度,模magnitude = sqrt(real^2 + imag^2)
         plt.plot(spectrum_freqs, np.abs(spectrum))
         plt.xlabel('frequency (Hz)')
-        plt.ylabel("amplitude")
+        plt.ylabel("magnitude")
         plt.title("Spectrum")
-        file_name = "f-amplitude_%s%s_%s" % (field, chr(field_axis + 120), name_det)
+        file_name = "f-magnitude_%s%s_%s" % (field, chr(field_axis + 120), name_det)
         plt.savefig(os.path.join(folder, f"{file_name}.png"))
         plt.close()
 
-        # 绘制波长-振幅
+        # 绘制波长-幅度
         plt.plot(constants.c / (spectrum_freqs * (1e-6)), np.abs(spectrum))
         plt.xlabel('wavelength (um)')
-        plt.ylabel("amplitude")
+        plt.ylabel("magnitude")
         plt.title("Spectrum")
-        file_name = "wl-amplitude_%s%s_%s" % (field, chr(field_axis + 120), name_det)
+        file_name = "wl-magnitude_%s%s_%s" % (field, chr(field_axis + 120), name_det)
         plt.savefig(os.path.join(folder, f"{file_name}.png"))
         plt.close()
 
@@ -1251,6 +1299,7 @@ class Grid:
         return grid_sliced
 
     def visualize(self, axis=None, axis_index=None, field="E", field_axis=None):
+        # TODO: wl 能自动找到脉冲范围
         if not axis:
             # Tell which dimension to draw automatically
             dims_with_size_one = [i for i, size in enumerate(self._grid.inverse_permittivity.shape) if size == 1]
@@ -1262,11 +1311,18 @@ class Grid:
             dims_with_size_one = [conversions.letter_to_number(axis)]
         if not axis_index:
             axis_index = int(self._grid.inverse_permittivity.shape[dims_with_size_one[0]] / 2)
-        source = self._try_to_find_source()
-        if field_axis == None:
-            field_axis = source.polarization
+        for source in self._grid.sources:
+            self.calculate_source_profile(source_name=source.name)
+
+        if field_axis is None:
+            try:
+                source = self._try_to_find_source()
+                field_axis = source.polarization
+            except:
+                print("No source found in grid")
 
         self.save_fig()
+        self.save_fig(show_energy=True)
         self.plot_n()
         self.plot_field(grid=self, field=field, field_axis=field_axis, axis=axis, axis_index=axis_index, vmin=-1,
                         vmax=1)
@@ -1278,6 +1334,4 @@ class Grid:
                                           field=field, field_axis=field_axis)
             if isinstance(detector, fdtd.detectors.BlockDetector):
                 self.dB_map(grid=self, field=field, field_axis=field_axis)
-            self.calculate_Transmission(detector_name=detector.name, source_name=self._try_to_find_source())
-        for source in self._grid.sources:
-            self.calculate_source_profile(source_name=source.name)
+            self.calculate_Transmission(detector_name=detector.name, source_name=self._try_to_find_source().name)

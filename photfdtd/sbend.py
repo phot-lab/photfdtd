@@ -31,8 +31,9 @@ class Sbend(Waveguide):
             direction: int = None,
             priority: int = 1
     ) -> None:
-        xlength, ylength, zlength, width, x, y, z = grid._handle_unit([xlength, ylength, zlength, width, x, y, z],
-                                                                      grid_spacing=grid._grid.grid_spacing)
+        xlength, width, x= grid._handle_unit([xlength, width, x], grid_spacing=grid._grid.grid_spacing_x)
+        ylength, y = grid._handle_unit([ylength, y], grid_spacing=grid._grid.grid_spacing_y)
+        zlength, z = grid._handle_unit([zlength, z], grid_spacing=grid._grid.grid_spacing_z)
         if not center_postion:
             x, y, z = x + xlength / 2 - width / 2, y, z + zlength / 2
         if not direction:

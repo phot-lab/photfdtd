@@ -16,8 +16,7 @@ class Arc(Waveguide):
     angle_unit: bool: True if using angle unit.如果输入为角度单位为angle，选择True
     priority: the priority of the waveguide( high index indicates high priority).
     """
-
-    # FIXME: 在圆弧跨越x=0时存在问题
+    # 使用arc时x步长和z步长得一致
     def __init__(
             self,
             outer_radius: int or float = 60,

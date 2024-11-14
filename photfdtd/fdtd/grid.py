@@ -16,7 +16,7 @@ from datetime import datetime
 
 # 3rd party
 from tqdm import tqdm
-from numpy import savez
+from numpy import savez, sqrt
 
 # typing
 from .typing_ import Tuple, Number, Tensorlike
@@ -25,55 +25,8 @@ from .typing_ import Tuple, Number, Tensorlike
 from .backend import backend as bd
 from . import constants as const
 
+
 ## Functions
-def curl_E(E: Tensorlike) -> Tensorlike:
-    """Transforms an E-type field into an H-type field by performing a curl
-    operation
-
-    Args:
-        E: Electric field to take the curl of (E-type field located on the
-           edges of the grid cell [integer gridpoints])
-
-    Returns:
-        The curl of E (H-type field located on the faces of the grid [half-integer grid points])
-    """
-    curl = bd.zeros(E.shape,dtype=E.dtype)
-
-    curl[:, :-1, :, 0] += E[:, 1:, :, 2] - E[:, :-1, :, 2]
-    curl[:, :, :-1, 0] -= E[:, :, 1:, 1] - E[:, :, :-1, 1]
-
-    curl[:, :, :-1, 1] += E[:, :, 1:, 0] - E[:, :, :-1, 0]
-    curl[:-1, :, :, 1] -= E[1:, :, :, 2] - E[:-1, :, :, 2]
-
-    curl[:-1, :, :, 2] += E[1:, :, :, 1] - E[:-1, :, :, 1]
-    curl[:, :-1, :, 2] -= E[:, 1:, :, 0] - E[:, :-1, :, 0]
-
-    return curl
-
-
-def curl_H(H: Tensorlike) -> Tensorlike:
-    """Transforms an H-type field into an E-type field by performing a curl
-    operation
-
-    Args:
-        H: Magnetic field to take the curl of (H-type field located on half-integer grid points)
-
-    Returns:
-        The curl of H (E-type field located on the edges of the grid [integer grid points])
-
-    """
-    curl = bd.zeros(H.shape,dtype=H.dtype)
-
-    curl[:, 1:, :, 0] += H[:, 1:, :, 2] - H[:, :-1, :, 2]
-    curl[:, :, 1:, 0] -= H[:, :, 1:, 1] - H[:, :, :-1, 1]
-
-    curl[:, :, 1:, 1] += H[:, :, 1:, 0] - H[:, :, :-1, 0]
-    curl[1:, :, :, 1] -= H[1:, :, :, 2] - H[:-1, :, :, 2]
-
-    curl[1:, :, :, 2] += H[1:, :, :, 1] - H[:-1, :, :, 1]
-    curl[:, 1:, :, 2] -= H[:, 1:, :, 0] - H[:, :-1, :, 0]
-
-    return curl
 
 
 ## FDTD Grid Class
@@ -88,12 +41,15 @@ class Grid:
     from .visualization import visualize
 
     def __init__(
-        self,
-        shape: Tuple[Number, Number, Number],
-        grid_spacing: float = 155e-9,
-        permittivity: float = 1.0,
-        permeability: float = 1.0,
-        courant_number: float = None,
+            self,
+            shape: Tuple[Number, Number, Number],
+            grid_spacing: float = 155e-9,
+            grid_spacing_x: float = None,
+            grid_spacing_y: float = None,
+            grid_spacing_z: float = None,
+            permittivity: float = 1.0,
+            permeability: float = 1.0,
+            courant_number: float = None,
     ):
         """
         Args:
@@ -108,7 +64,18 @@ class Grid:
         """
         # save the grid spacing
         self.grid_spacing = float(grid_spacing)
-
+        if grid_spacing_x is None:
+            self.grid_spacing_x = self.grid_spacing
+        else:
+            self.grid_spacing_x = grid_spacing_x
+        if grid_spacing_y is None:
+            self.grid_spacing_y = self.grid_spacing
+        else:
+            self.grid_spacing_y = grid_spacing_y
+        if grid_spacing_z is None:
+            self.grid_spacing_z = self.grid_spacing
+        else:
+            self.grid_spacing_z = grid_spacing_z
         # save grid shape as integers
         self.Nx, self.Ny, self.Nz = self._handle_tuple(shape)
 
@@ -129,6 +96,9 @@ class Grid:
             self.courant_number = float(courant_number)
 
         # timestep of the simulation
+        # self.time_step = self.courant_number / (const.c * sqrt((1 / self.grid_spacing_x) ** 2
+        #                                                        + (1 / (self.grid_spacing_y)) ** 2
+        #                                                        + (1 / (self.grid_spacing_z)) ** 2))
         self.time_step = self.courant_number * self.grid_spacing / const.c
 
         # save electric and magnetic field
@@ -171,11 +141,95 @@ class Grid:
         # folder path to store the simulation
         self.folder = None
 
-    def _handle_distance(self, distance: Number) -> int:
+    def _handle_distance(self, distance: Number, axis: "x") -> int:
         """transform a distance to an integer number of gridpoints"""
-        if not isinstance(distance, int):
-            return int(float(distance) / self.grid_spacing + 0.5)
-        return distance
+        if axis == "x":
+            if not isinstance(distance, int):
+                return int(float(distance) / self.grid_spacing_x + 0.5)
+            return distance
+
+        if axis == "y":
+            if not isinstance(distance, int):
+                return int(float(distance) / self.grid_spacing_y + 0.5)
+            return distance
+
+        if axis == "z":
+            if not isinstance(distance, int):
+                return int(float(distance) / self.grid_spacing_z + 0.5)
+            return distance
+
+    def curl_E(self, E: Tensorlike) -> Tensorlike:
+        """Transforms an E-type field into an H-type field by performing a curl
+        operation
+
+        Args:
+            E: Electric field to take the curl of (E-type field located on the
+               edges of the grid cell [integer gridpoints])
+
+        Returns:
+            The curl of E (H-type field located on the faces of the grid [half-integer grid points])
+        """
+        curl = bd.zeros(E.shape, dtype=E.dtype)
+
+        divide_x = self.time_step * const.c / self.courant_number / self.grid_spacing_x
+        divide_y = self.time_step * const.c / self.courant_number / self.grid_spacing_y
+        divide_z = self.time_step * const.c / self.courant_number / self.grid_spacing_z
+        curl[:, :-1, :, 0] += (E[:, 1:, :, 2] - E[:, :-1, :, 2]) * divide_y
+        curl[:, :, :-1, 0] -= (E[:, :, 1:, 1] - E[:, :, :-1, 1]) * divide_z
+
+        curl[:, :, :-1, 1] += (E[:, :, 1:, 0] - E[:, :, :-1, 0]) * divide_z
+        curl[:-1, :, :, 1] -= (E[1:, :, :, 2] - E[:-1, :, :, 2]) * divide_x
+
+        curl[:-1, :, :, 2] += (E[1:, :, :, 1] - E[:-1, :, :, 1]) * divide_x
+        curl[:, :-1, :, 2] -= (E[:, 1:, :, 0] - E[:, :-1, :, 0]) * divide_y
+
+        # curl[:, :-1, :, 0] += (E[:, 1:, :, 2] - E[:, :-1, :, 2])
+        # curl[:, :, :-1, 0] -= (E[:, :, 1:, 1] - E[:, :, :-1, 1])
+        #
+        # curl[:, :, :-1, 1] += (E[:, :, 1:, 0] - E[:, :, :-1, 0])
+        # curl[:-1, :, :, 1] -= (E[1:, :, :, 2] - E[:-1, :, :, 2])
+        #
+        # curl[:-1, :, :, 2] += (E[1:, :, :, 1] - E[:-1, :, :, 1])
+        # curl[:, :-1, :, 2] -= (E[:, 1:, :, 0] - E[:, :-1, :, 0])
+
+        return curl
+
+    def curl_H(self, H: Tensorlike) -> Tensorlike:
+        """Transforms an H-type field into an E-type field by performing a curl
+        operation
+
+        Args:
+            H: Magnetic field to take the curl of (H-type field located on half-integer grid points)
+
+        Returns:
+            The curl of H (E-type field located on the edges of the grid [integer grid points])
+
+        """
+        curl = bd.zeros(H.shape, dtype=H.dtype)
+
+        divide_x = self.time_step * const.c / self.courant_number / self.grid_spacing_x
+        divide_y = self.time_step * const.c / self.courant_number / self.grid_spacing_y
+        divide_z = self.time_step * const.c / self.courant_number / self.grid_spacing_z
+
+        curl[:, 1:, :, 0] += (H[:, 1:, :, 2] - H[:, :-1, :, 2]) * divide_y
+        curl[:, :, 1:, 0] -= (H[:, :, 1:, 1] - H[:, :, :-1, 1]) * divide_z
+
+        curl[:, :, 1:, 1] += (H[:, :, 1:, 0] - H[:, :, :-1, 0]) * divide_z
+        curl[1:, :, :, 1] -= (H[1:, :, :, 2] - H[:-1, :, :, 2]) * divide_x
+
+        curl[1:, :, :, 2] += (H[1:, :, :, 1] - H[:-1, :, :, 1]) * divide_x
+        curl[:, 1:, :, 2] -= (H[:, 1:, :, 0] - H[:, :-1, :, 0]) * divide_y
+
+        # curl[:, 1:, :, 0] += (H[:, 1:, :, 2] - H[:, :-1, :, 2])
+        # curl[:, :, 1:, 0] -= (H[:, :, 1:, 1] - H[:, :, :-1, 1])
+        #
+        # curl[:, :, 1:, 1] += (H[:, :, 1:, 0] - H[:, :, :-1, 0])
+        # curl[1:, :, :, 1] -= (H[1:, :, :, 2] - H[:-1, :, :, 2])
+        #
+        # curl[1:, :, :, 2] += (H[1:, :, :, 1] - H[:-1, :, :, 1])
+        # curl[:, 1:, :, 2] -= (H[:, 1:, :, 0] - H[:, :-1, :, 0])
+
+        return curl
 
     def _handle_time(self, time: Number) -> int:
         """transform a time value to an integer number of timesteps"""
@@ -184,7 +238,7 @@ class Grid:
         return time
 
     def _handle_tuple(
-        self, shape: Tuple[Number, Number, Number]
+            self, shape: Tuple[Number, Number, Number]
     ) -> Tuple[int, int, int]:
         """validate the grid shape and transform to a length-3 tuple of ints"""
         if len(shape) != 3:
@@ -193,52 +247,52 @@ class Grid:
                 f"grid shape should be a 3D tuple containing floats or ints"
             )
         x, y, z = shape
-        x = self._handle_distance(x)
-        y = self._handle_distance(y)
-        z = self._handle_distance(z)
+        x = self._handle_distance(x, "x")
+        y = self._handle_distance(y, "y")
+        z = self._handle_distance(z, "z")
         return x, y, z
 
-    def _handle_slice(self, s: slice) -> slice:
+    def _handle_slice(self, s: slice, axis: "x") -> slice:
         """validate the slice and transform possibly float values to ints"""
         start = (
             s.start
             if not isinstance(s.start, float)
-            else self._handle_distance(s.start)
+            else self._handle_distance(s.start, axis)
         )
         stop = (
-            s.stop if not isinstance(s.stop, float) else self._handle_distance(s.stop)
+            s.stop if not isinstance(s.stop, float) else self._handle_distance(s.stop, axis)
         )
         step = (
-            s.step if not isinstance(s.step, float) else self._handle_distance(s.step)
+            s.step if not isinstance(s.step, float) else self._handle_distance(s.step, axis)
         )
         return slice(start, stop, step)
 
-    def _handle_single_key(self, key):
+    def _handle_single_key(self, key, axis="x"):
         """transform a single index key to a slice or list"""
         try:
             len(key)
-            return [self._handle_distance(k) for k in key]
+            return [self._handle_distance(k, axis) for k in key]
         except TypeError:
             if isinstance(key, slice):
-                return self._handle_slice(key)
+                return self._handle_slice(key, axis)
             else:
-                return [self._handle_distance(key)]
+                return [self._handle_distance(key, axis)]
         return key
 
     @property
     def x(self) -> int:
         """get the number of grid cells in the x-direction"""
-        return self.Nx * self.grid_spacing
+        return self.Nx * self.grid_spacing_x
 
     @property
     def y(self) -> int:
         """get the number of grid cells in the y-direction"""
-        return self.Ny * self.grid_spacing
+        return self.Ny * self.grid_spacing_y
 
     @property
     def z(self) -> int:
         """get the number of grid cells in the y-direction"""
-        return self.Nz * self.grid_spacing
+        return self.Nz * self.grid_spacing_z
 
     @property
     def shape(self) -> Tuple[int, int, int]:
@@ -266,7 +320,7 @@ class Grid:
             time = tqdm(time)
         for _ in time:
             self.step()
-    
+
     def step(self):
         """do a single FDTD step by first updating the electric field and then
         updating the magnetic field
@@ -280,9 +334,10 @@ class Grid:
 
         # update boundaries: step 1
         for boundary in self.boundaries:
-            boundary.update_phi_E()
+            boundary.update_phi_E(dx=self.grid_spacing_x, dy=self.grid_spacing_y, dz=self.grid_spacing_z)
 
-        curl = curl_H(self.H)
+        curl = self.curl_H(self.H)
+        # Before: self.E += self.courant_number * self.inverse_permittivity * curl
         self.E += self.courant_number * self.inverse_permittivity * curl
 
         # update objects
@@ -308,9 +363,10 @@ class Grid:
 
         # update boundaries: step 1
         for boundary in self.boundaries:
-            boundary.update_phi_H()
+            boundary.update_phi_H(dx=self.grid_spacing_x, dy=self.grid_spacing_y, dz=self.grid_spacing_z)
 
-        curl = curl_E(self.E)
+        curl = self.curl_E(self.E)
+        # Before: self.H -= self.courant_number * self.inverse_permeability * curl
         self.H -= self.courant_number * self.inverse_permeability * curl
 
         # # update objects
@@ -342,6 +398,7 @@ class Grid:
         # if not hasattr(self, "source_profile"):
         #     self.source_profile = {}
         # self.source_profile += {name: bd.empty((3))}
+
     def add_boundary(self, name, boundary):
         """add a boundary to the grid"""
         boundary._register_grid(self)
@@ -356,7 +413,7 @@ class Grid:
         """add an object to the grid"""
         obj._register_grid(self)
         self.objects[name] = obj
-    
+
     def promote_dtypes_to_complex(self):
         self.E = self.E.astype(bd.complex)
         self.H = self.H.astype(bd.complex)
@@ -376,15 +433,16 @@ class Grid:
 
         attr._register_grid(
             grid=self,
-            x=self._handle_single_key(x),
-            y=self._handle_single_key(y),
-            z=self._handle_single_key(z),
+            x=self._handle_single_key(x, "x"),
+            y=self._handle_single_key(y, "y"),
+            z=self._handle_single_key(z, "z"),
         )
 
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(shape=({self.Nx},{self.Ny},{self.Nz}), "
-            f"grid_spacing={self.grid_spacing:.2e}, courant_number={self.courant_number:.2f})"
+            f"grid_spacing_x={self.grid_spacing_x:.2e}, grid_spacing_y={self.grid_spacing_y:.2e}, "
+            f"grid_spacing_z={self.grid_spacing_z:.2e}, courant_number={self.courant_number:.2f})"
         )
 
     def __str__(self):
@@ -422,17 +480,17 @@ class Grid:
         makedirs("fdtd_output", exist_ok=True)  # Output master folder declaration
         # making full_sim_name with timestamp
         full_sim_name = (
-            str(datetime.now().year)
-            + "-"
-            + str(datetime.now().month)
-            + "-"
-            + str(datetime.now().day)
-            + "-"
-            + str(datetime.now().hour)
-            + "-"
-            + str(datetime.now().minute)
-            + "-"
-            + str(datetime.now().second)
+                str(datetime.now().year)
+                + "-"
+                + str(datetime.now().month)
+                + "-"
+                + str(datetime.now().day)
+                + "-"
+                + str(datetime.now().hour)
+                + "-"
+                + str(datetime.now().minute)
+                + "-"
+                + str(datetime.now().second)
         )
         # Simulation name (optional)
         if sim_name is not None:
@@ -496,7 +554,9 @@ class Grid:
 
     def save_data(self):
         """
-        Saves readings from all detectors in the grid into a numpy zip file. Each detector is stored in separate arrays. Electric and magnetic field field readings of each detector are also stored separately with suffix " (E)" and " (H)" (Example: ['detector0 (E)', 'detector0 (H)']). Therefore, the numpy zip file contains arrays twice the number of detectors.
+        Saves readings from all detectors in the grid into a numpy zip file.
+        Each detector is stored in separate arrays. Electric and magnetic field field readings of each detector are also stored separately with suffix " (E)" and " (H)" (Example: ['detector0 (E)', 'detector0 (H)']).
+        Therefore, the numpy zip file contains arrays twice the number of detectors.
         REQUIRES 'fdtd.Grid.save_simulation()' to be run before this function.
 
         Parameters: None

@@ -99,7 +99,7 @@ class Ysplitter(Waveguide):
     xlength: 区域x方向全长,
     ylength: 区域y方向全长/厚度,
     zlength: 区域x方向全长/长度,
-    direction=1：方向，1表示单端口在近，-1表示单端口在远
+    direction=1：1: splitter, -1: combiner
     width：直波导宽度
     name：名称
     refractive_index：折射率
@@ -111,7 +111,8 @@ class Ysplitter(Waveguide):
     width_sbend: sbend的波导宽度,
     priority: the priority of the waveguide( high index indicates high priority)
     """
-
+    # TODO: 两端不一样的波导
+    # TODO: 插入损耗，单波导处等光稳定计算输入
     def __init__(
             self,
             xlength: int or float = None,
@@ -121,7 +122,7 @@ class Ysplitter(Waveguide):
             y: int or float = None,
             z: int or float = None,
             direction: int = 1,
-            width: int or float = 20,
+            width: int or float = None,
             name: str = "ysplitter",
             refractive_index: float = 3.47,
             xlength_taper: int or float = 40,
@@ -133,11 +134,14 @@ class Ysplitter(Waveguide):
             grid=None,
             priority: int = 1
     ):
-        xlength, ylength, zlength, width, zlength_waveguide, zlength_taper, xlength_taper, width_sbend, xlength_sbend, zlength_sbend = \
+        xlength, width, xlength_taper, width_sbend, xlength_sbend = grid._handle_unit(
+                [xlength, width, xlength_taper, width_sbend, xlength_sbend],
+                grid_spacing=grid._grid.grid_spacing_x)
+        ylength = grid._handle_unit([ylength], grid_spacing=grid._grid.grid_spacing_y)[0]
+        zlength, zlength_waveguide, zlength_taper, zlength_sbend = \
             grid._handle_unit(
-                [xlength, ylength, zlength, width, zlength_waveguide, zlength_taper, xlength_taper, width_sbend,
-                 xlength_sbend, zlength_sbend],
-                grid_spacing=grid._grid.grid_spacing)
+                [zlength, zlength_waveguide, zlength_taper, zlength_sbend],
+                grid_spacing=grid._grid.grid_spacing_z)
         self.direction = direction
         self.zlength_waveguide = zlength_waveguide
         self.zlength_taper = zlength_taper

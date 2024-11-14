@@ -4,17 +4,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from os import path
-import photfdtd.fdtd as fdtd
 
 
 class Solve:
     """
     绘制二维截面、计算波导模式，通过加入philsol包实现 https://github.com/philmain28/philsol
-    # TODO:似乎有更好的库来代替philsol？
     """
 
     def __init__(self,
-                 grid: fdtd.grid,
+                 grid: None,
                  axis: str = 'x',
                  axis_index: int = None,
                  index: int = 0,
@@ -25,7 +23,7 @@ class Solve:
         本函数除了作为__init__函数，其主要功能是将fdtd.grid变量及其内部保存的waveguide映射到矩阵self.geometry中。
         self.geometry是一个四维矩阵 [x,y,z,3]，这是因为对于各向异性材料，它们在x，y，z三个方向上折射率不同，所以需要四维才能表现。
         但暂时还不能编辑各向异性材料
-        :param grid: fdtd.grid
+        :param grid: photfdtd.grid
         :param: axis: 哪个轴的截面
         :param: axis_index/index: index of the axis choosed 轴上哪点
         :param: filepath: 保存图片的文件夹
@@ -116,11 +114,11 @@ class Solve:
         @param y_boundary_high:
         @param x_thickness_high:
         @param y_thickness_high:
+        @param background_index: Background refractive index, no need to set manually
         @return:
         """
-        if background_index == None:
-            # If background_index not given, it will be min(self.n) which is not right in some cases (like photonic crystal)
-            background_index = np.amin(self.n)
+        if background_index is None:
+            background_index = self.grid.background_index
         # NOTE: fdtd的单位是m，而philsol的单位是um
         if neff == None:
             neff = np.max(self.n)
@@ -135,12 +133,22 @@ class Solve:
             y_thickness_low = PML_with
         if y_boundary_high == "pml" and not y_thickness_high:
             y_thickness_high = PML_with
-        x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high = \
-            self.grid._handle_distance(x_thickness_low), self.grid._handle_distance(x_thickness_high), \
-            self.grid._handle_distance(y_thickness_low), self.grid._handle_distance(y_thickness_high),
+        if self.axis == "x":
+            x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high = \
+                self.grid._handle_distance(x_thickness_low, "y"), self.grid._handle_distance(x_thickness_high, "y"), \
+                self.grid._handle_distance(y_thickness_low, "z"), self.grid._handle_distance(y_thickness_high, "z"),
+        if self.axis == "y":
+            x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high = \
+                self.grid._handle_distance(x_thickness_low, "x"), self.grid._handle_distance(x_thickness_high, "x"), \
+                self.grid._handle_distance(y_thickness_low, "z"), self.grid._handle_distance(y_thickness_high, "z"),
+        if self.axis == "z":
+            x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high = \
+                self.grid._handle_distance(x_thickness_low, "x"), self.grid._handle_distance(x_thickness_high, "x"), \
+                self.grid._handle_distance(y_thickness_low, "y"), self.grid._handle_distance(y_thickness_high, "y"),
         print(x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high)
         # Calculate modes
         # FIXME: 检查pml边界的四个方向是否有问题
+        # Note the units in philsol are in um
         P, matrices = ps.eigen_build(self.k, self.n, self.grid.grid_spacing * 1e6, self.grid.grid_spacing * 1e6,
                                      x_boundary_low=x_boundary_low, y_boundary_low=y_boundary_low,
                                      x_thickness_low=x_thickness_low,
@@ -155,15 +163,18 @@ class Solve:
         print("neff=", self.beta * self.lam / (2 * np.pi))
 
         # Discard dispersion modes 丢掉耗散模
-        # for i in range(len(self.beta)):
-        #     # print(abs(self.beta[i].imag * self.lam / (2 * np.pi)))
-        #     if abs(self.beta[i].imag * self.lam / (2 * np.pi)) > 1e-5:
-        #         flag_deleted.append(i)
-        #         neigs -= 1
+        for i in range(len(self.beta)):
+            # if abs(self.beta[i].imag * self.lam / (2 * np.pi)) > 1e-5:
+            #     flag_deleted.append(i)
+            #     neigs -= 1
+            if abs(self.beta[i].real * self.lam / (2 * np.pi)) < self.grid.background_index:
+                flag_deleted.append(i)
+                neigs -= 1
 
         self.beta, Ex_field, Ey_field = np.delete(self.beta, flag_deleted), \
                                         np.delete(Ex_field, flag_deleted, 0), \
                                         np.delete(Ey_field, flag_deleted, 0)
+
         print("%i dispersion modes have been discarded" % len(flag_deleted))
 
         self.effective_index = self.beta * self.lam / (2 * np.pi)
@@ -231,8 +242,8 @@ class Solve:
                   ) -> None:
         '''
         绘制模式，保存图片与相应的有效折射率
-        :param neigs: 绘制模式数
-        :param component: ey: 绘制Ey ex: 绘制Ex # TODO: Ez与磁场？
+        :param data: dic returned by calculated_mode
+        :param content: "real_part", "amplitude", "imaginary_part", "phase"
         :return: None
         '''
         axis = data["axis"]
@@ -276,16 +287,10 @@ class Solve:
                 plt.close()
 
         # Draw E/H intensity
+        # https://innovationspace.ansys.com/forum/forums/topic/e-intensity-and-ex-component-definition/
         for i in range(data["number_of_modes"]):
-            if axis == "x":
-                E_intensity = data["Ey"][i].real ** 2 + data["Ez"][i].real ** 2
-                H_intensity = data["Hy"][i].real ** 2 + data["Hz"][i].real ** 2
-            if axis == "y":
-                E_intensity = data["Ex"][i].real ** 2 + data["Ez"][i].real ** 2
-                H_intensity = data["Hx"][i].real ** 2 + data["Hz"][i].real ** 2
-            if axis == "z":
-                E_intensity = data["Ex"][i].real ** 2 + data["Ey"][i].real ** 2
-                H_intensity = data["Hx"][i].real ** 2 + data["Hy"][i].real ** 2
+            E_intensity = data["Ex"][i] ** 2 + data["Ey"][i] ** 2 + data["Ez"][i] ** 2
+            H_intensity = data["Hx"][i] ** 2 + data["Hy"][i] ** 2 + data["Hz"][i] ** 2
             E_intensity = np.transpose(E_intensity)
             H_intensity = np.transpose(H_intensity)
             plt.figure()
@@ -329,6 +334,11 @@ class Solve:
             # 保存图片
             plt.savefig(fname='%s\\%s%d_H_intensity.png' % (filepath, 'mode', i + 1))
             plt.close()
+
+        # power = 0.5*integrate(real(Pz), [1,2], x, y)
+        # https://innovationspace.ansys.com/forum/forums/topic/how-to-find-power-density-of-any-mode-in-mode-solution/
+        # energy intensity
+        # https://optics.ansys.com/hc/en-us/articles/360034395354-Calculating-the-effective-mode-area-of-a-waveguide-mode
 
         # Draw neff plot
         # plt.plot(np.linspace(1, len(effective_index), len(effective_index)), effective_index.real, label='Line',

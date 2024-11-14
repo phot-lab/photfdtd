@@ -255,9 +255,9 @@ class LineSource:
                 raise IndexError(
                     "sources require grid to be indexed with slices or equal length list-indices"
                 )
-            x = [self.grid._handle_distance(_x) for _x in x]
-            y = [self.grid._handle_distance(_y) for _y in y]
-            z = [self.grid._handle_distance(_z) for _z in z]
+            x = [self.grid._handle_distance(_x, "x") for _x in x]
+            y = [self.grid._handle_distance(_y, "y") for _y in y]
+            z = [self.grid._handle_distance(_z, "z") for _z in z]
             return x, y, z
 
         # if a combination of list-indices and slices were chosen,
@@ -265,30 +265,30 @@ class LineSource:
         # TODO: maybe issue a warning here?
         if isinstance(x, list):
             x = slice(
-                self.grid._handle_distance(x[0]),
-                self.grid._handle_distance(x[-1]),
+                self.grid._handle_distance(x[0], "x"),
+                self.grid._handle_distance(x[-1], "x"),
                 None,
             )
         if isinstance(y, list):
             y = slice(
-                self.grid._handle_distance(y[0]),
-                self.grid._handle_distance(y[-1]),
+                self.grid._handle_distance(y[0], "y"),
+                self.grid._handle_distance(y[-1], "y"),
                 None,
             )
         if isinstance(z, list):
             z = slice(
-                self.grid._handle_distance(z[0]),
-                self.grid._handle_distance(z[-1]),
+                self.grid._handle_distance(z[0], "z"),
+                self.grid._handle_distance(z[-1], "z"),
                 None,
             )
 
         # if we get here, we can assume slices:
-        x0 = self.grid._handle_distance(x.start if x.start is not None else 0)
-        y0 = self.grid._handle_distance(y.start if y.start is not None else 0)
-        z0 = self.grid._handle_distance(z.start if z.start is not None else 0)
-        x1 = self.grid._handle_distance(x.stop if x.stop is not None else self.grid.Nx)
-        y1 = self.grid._handle_distance(y.stop if y.stop is not None else self.grid.Ny)
-        z1 = self.grid._handle_distance(z.stop if z.stop is not None else self.grid.Nz)
+        x0 = self.grid._handle_distance(x.start if x.start is not None else 0, "x")
+        y0 = self.grid._handle_distance(y.start if y.start is not None else 0, "y")
+        z0 = self.grid._handle_distance(z.start if z.start is not None else 0, "z")
+        x1 = self.grid._handle_distance(x.stop if x.stop is not None else self.grid.Nx, "x")
+        y1 = self.grid._handle_distance(y.stop if y.stop is not None else self.grid.Ny, "y")
+        z1 = self.grid._handle_distance(z.stop if z.stop is not None else self.grid.Nz, "z")
 
         # we can now convert these coordinates into index lists
         m = max(abs(x1 - x0), abs(y1 - y0), abs(z1 - z0))
@@ -319,7 +319,7 @@ class LineSource:
         # if not pulse_type
         else:
             vect = self.profile * sin(2 * pi * q / self.period + self.phase_shift)
-            # TODO: 要绘制光源图像只需绘制vect
+            # 要绘制光源图像只需绘制vect
         # do not use list indexing here, as this is much slower especially for torch backend
         # DISABLED: self.grid.E[self.x, self.y, self.z, 2] = vect
         self._Epol = 'xyz'.index(self.polarization)
@@ -440,28 +440,28 @@ class PlaneSource:
             if isinstance(x, list):
                 (x,) = x
             x = slice(
-                self.grid._handle_distance(x), self.grid._handle_distance(x) + 1, None
+                self.grid._handle_distance(x, "x"), self.grid._handle_distance(x, "x") + 1, None
             )
         if not isinstance(y, slice):
             if isinstance(y, list):
                 (y,) = y
             y = slice(
-                self.grid._handle_distance(y), self.grid._handle_distance(y) + 1, None
+                self.grid._handle_distance(y, "y"), self.grid._handle_distance(y, "y") + 1, None
             )
         if not isinstance(z, slice):
             if isinstance(z, list):
                 (z,) = z
             z = slice(
-                self.grid._handle_distance(z), self.grid._handle_distance(z) + 1, None
+                self.grid._handle_distance(z, "z"), self.grid._handle_distance(z, "z") + 1, None
             )
 
         # if we get here, we can assume slices:
-        x0 = self.grid._handle_distance(x.start if x.start is not None else 0)
-        y0 = self.grid._handle_distance(y.start if y.start is not None else 0)
-        z0 = self.grid._handle_distance(z.start if z.start is not None else 0)
-        x1 = self.grid._handle_distance(x.stop if x.stop is not None else self.grid.Nx)
-        y1 = self.grid._handle_distance(y.stop if y.stop is not None else self.grid.Ny)
-        z1 = self.grid._handle_distance(z.stop if z.stop is not None else self.grid.Nz)
+        x0 = self.grid._handle_distance(x.start if x.start is not None else 0, "x")
+        y0 = self.grid._handle_distance(y.start if y.start is not None else 0, "y")
+        z0 = self.grid._handle_distance(z.start if z.start is not None else 0, "z")
+        x1 = self.grid._handle_distance(x.stop if x.stop is not None else self.grid.Nx, "x")
+        y1 = self.grid._handle_distance(y.stop if y.stop is not None else self.grid.Ny, "y")
+        z1 = self.grid._handle_distance(z.stop if z.stop is not None else self.grid.Nz, "z")
 
         # make sure all slices have a start, stop and no step:
         x = (
@@ -515,6 +515,7 @@ class PlaneSource:
         self.grid.E[self.x, self.y, self.z, self._Epol] = vect
 
     def update_H(self):
+        # TODO: 在修改网格xyz不等后，光源的update_H和E代码需不需要改变
         """Add the source to the magnetic field"""
         q = self.grid.time_steps_passed
         vect = self.profile * sin(2 * pi * q / self.period + self.phase_shift)

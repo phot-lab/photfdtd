@@ -45,8 +45,11 @@ class Mmi(Waveguide):
     ) -> None:
         # TODO: 落实We，如果没有给定We，则算出We
         # TODO: 光路沿ｙ方向？
-        xlength, ylength, zlength, width_wg, width_port, We, ln, lm, l_port = grid._handle_unit(
-            [xlength, ylength, zlength, width_wg, width_port, We, ln, lm, l_port], grid_spacing=grid._grid.grid_spacing)
+        xlength, width_wg, width_port, We = grid._handle_unit(
+            [xlength, width_wg, width_port, We], grid_spacing=grid._grid.grid_spacing_x)
+        ylength = grid._handle_unit([ylength], grid_spacing=grid._grid.grid_spacing_y)[0]
+        zlength, ln, lm, l_port = grid._handle_unit(
+            [zlength, ln, lm, l_port], grid_spacing=grid._grid.grid_spacing_z)
         self.n = n
         self.m = m
         if not width_port:
