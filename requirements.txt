@@ -1,0 +1,10 @@
+imageio==2.33.1
+matplotlib==3.8.0
+numpy==2.0.0
+petsc4py==3.21.3
+Pillow==10.4.0
+plotly==5.9.0
+scipy==1.11.4
+slepc4py==3.21.1
+torch==2.3.1
+tqdm==4.65.0
