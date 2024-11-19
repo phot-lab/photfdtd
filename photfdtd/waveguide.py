@@ -92,6 +92,9 @@ class Waveguide:
         self.permittivity = permittivity
 
     def _compute_priority(self):
+        # TODO: there is something wrong with these codes, if the core of fiber has a n equals to the background n, error would occur,
+        # I don't know how to handle it right now, but this can be solved by setting the n a little larger (0.00001) than background n. - Tao Jia
+
         # the priority matrix of the waveguide
         if hasattr(self, "permittivity"):
             self.priority_matrix = (self.permittivity == self.refractive_index ** 2) * self.priority

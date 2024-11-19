@@ -44,3 +44,5 @@ examples/test_3D_plot.py
 examples/草稿3.py
 
 examples/mode_solver/test_multi_core_fiber/
+
+examples/mode_solver/
