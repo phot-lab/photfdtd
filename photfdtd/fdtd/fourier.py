@@ -93,6 +93,11 @@ class FrequencyRoutines:
             # the window is the default, whole array (even if it's trimmed later)
             fft_num_bins_in_window = input_data.shape[0]
 
+        # 根据tidy3d给的阈值
+        # if fft_num_bins_in_window > 2000:
+        #     fft_num_bins_in_window = 2000
+        # print(f"fft num bins = {fft_num_bins_in_window}")
+
         waveform_frequency_resolution = 1.0 / end_time
         fft_bin_resolution = (1.0 / dt) / (fft_num_bins_in_window)
         print("Waveform data has an intrinsic resolution of: {:.2E} Hz" \
@@ -189,7 +194,7 @@ class FrequencyRoutines:
                                                    freq_window_tuple=freq_window_tuple,
                                                    fft_num_bins_in_window=fft_num_bins_in_window,
                                                    fft_bin_freq_resolution=fft_bin_freq_resolution)
-
+        # Padding makes spectrums more smoothier
         input_data = bd.pad(input_data, (0, required_padding), 'edge')
 
         spectrum = bd.fft(input_data)

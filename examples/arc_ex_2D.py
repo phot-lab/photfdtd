@@ -45,7 +45,7 @@ if __name__ == "__main__":
     grid.save_fig(axis="y", axis_number=0, show_energy=True)
     Grid.plot_field(grid=grid, field="E", field_axis="z", axis="y", axis_index=0, folder=grid.folder, vmin=-0.5, vmax=0.5)
     grid.detector_profile()
-    grid.calculate_source_profile()
+    grid.source_data()
     # 读取仿真结果
     # grid = Grid.read_simulation(folder=grid.folder)
 
@@ -53,5 +53,5 @@ if __name__ == "__main__":
     Grid.plot_fieldtime(grid=grid, field_axis="z", field="E", index=5, name_det="detector1")
 
     # 绘制频谱
-    Grid.compute_frequency_domain(grid=grid, wl_start=1000e-9, wl_end=2000e-9, name_det="detector1",
-                                  index=10, field_axis="x", field="E", folder=None)
+    Grid.visulize_detector(grid=grid, wl_start=1000e-9, wl_end=2000e-9, name_det="detector1",
+                           index=10, field_axis="x", field="E", folder=None)

@@ -16,7 +16,6 @@ class Analyse:
         self.P_positive: 正向的瞬时功率
         self.P_positive: 负向的瞬时功率
         """
-        # TODO: 还是不能确定是否是标准单位
         self.grid_spacing = grid_spacing
         # fdtd中的E与真实的E的关系是前者=后者 * sqrt(const.eps0), 而H与真实的H的关系是前者=后者 * sqrt(const.mu0)
         # 见https://www.photonics.intec.ugent.be/download/phd_259.pdf 4.1.2-4.1.6 （python fdtd原作者的毕业论文）
@@ -38,7 +37,7 @@ class Analyse:
         self.P_positive = np.where(self.P_positive, self.P, 0)
         self.P_negative = np.where(self.P_negative, self.P, 0)
 
-        # 字典Powr保存三个x,y,z三个方向上的瞬时频率
+        # 字典Powr保存三个x,y,z三个方向上的瞬时功率
         self.Power = {}
         for i in range(3):
             if self.P.ndim == 3:

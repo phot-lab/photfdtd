@@ -20,6 +20,7 @@ from .grid import Grid
 from .backend import backend as bd
 from .waveforms import *
 from .detectors import CurrentDetector
+from .conversions import *
 
 
 ## PointSource class
@@ -154,7 +155,7 @@ class LineSource:
             amplitude: float = 1.0,
             phase_shift: float = 0.0,
             name: str = None,
-            pulse_type: str = "none",
+            pulse_type: str = None,
             cycle: int = 5,
             pulse_length: float = 39e-15,
             offset: float = 112e-15,
@@ -180,7 +181,10 @@ class LineSource:
         self.phase_shift = phase_shift
         self.name = name
         self.waveform = waveform
-        self.pulse_type = pulse_type
+        if pulse_type != "gaussian" and pulse_type != "hanning":
+            self.pulse_type = None
+        else:
+            self.pulse_type = pulse_type
         self.cycle = cycle
         self.frequency = 1.0 / period
         self.pulse_length = pulse_length
@@ -230,7 +234,6 @@ class LineSource:
             # self.profile /= self.profile.sum()
         self.profile /= self.profile.max()  # 在计算高斯分布之后，代码将其归一化，确保分布的最大值为1。
         self.profile *= self.amplitude
-
     def _handle_slices(
             self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ) -> Tuple[List, List, List]:
@@ -299,6 +302,12 @@ class LineSource:
         z = [v.item() for v in bd.array(bd.linspace(z0, z1, m, endpoint=False), bd.int)]
 
         return x, y, z
+    @property
+    def bandwidth(self):
+        if self.pulse_type is not None:
+            return bandwidth(self.pulse_length)
+        else:
+            return 25e12
 
     def update_E(self):
         """Add the source to the electric field"""

@@ -1,49 +1,82 @@
-from photfdtd import Hexagonal_PC, Grid, Solve, Fiber
+from photfdtd import Waveguide, Grid, Solve, Index
+import numpy as np
+import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-    background_index = 1.445
+    # This example shows a 2D simulation of a basic straight waveguide 本示例展示了一个基础矩形波导的二维仿真
+    # set background index设置背景折射率
+    background_index = 1.4447
 
-    # 设置器件参数
-    pc = Hexagonal_PC(n_side=3, zlength=1, x=100, y=100, z=0, H_number=1, refractive_index=1, name="pc",
-                      background_index=background_index, a=40, radius=10)
+    index_Si = Index(material="Si")
+    index_Re_Si, index_Im_Si = index_Si.get_refractive_index(wavelength=1.55e-6)
 
-    core = Fiber(length=1, x=100, y=100, z=0, radius=[30], refractive_index=[1.45],
-                 name="core", axis='z', background_index=background_index)
+    # # create the simulation region, which is a Grid object 新建一个 grid 对象
+    grid = Grid(grid_xlength=3.5e-6, grid_ylength=1, grid_zlength=5.5e-6,
+                grid_spacing_x=20e-9,
+                grid_spacing_z=20e-9,
+                grid_spacing_y=20e-9,
+                permittivity=background_index ** 2,
+                foldername="transmission_ex")
 
-    # 新建一个 grid 对象
-    grid = Grid(grid_xlength=200, grid_ylength=200, grid_zlength=1, grid_spacing=200e-9,
-                foldername="test_Hexagonal_PC",
-                permittivity=background_index ** 2)
+    # We can plot the geometry and the index map now
+    grid.save_fig()
+    # plot the refractive index map on z=0绘制z=0截面折射率分布
+    grid.plot_n()
 
-    # 往 grid 里添加器件
-    grid.add_object(pc)
-    grid.add_object(core)
+    grid = grid.read_simulation(folder=grid.folder)
 
-    solve = Solve(grid=grid,
-                  axis='z',
-                  index=0,
-                  filepath=grid.folder
-                  )
-    solve.plot()
+    for detector in grid._grid.detectors:
+        if detector.name == "detector1":
+            signal = detector.flux[:, 0, 2]
+    # 参数定义
+    fs = 1e15  # 采样频率 (Hz)
+    T = len(signal) / fs  # 信号总时间 (s)
+    t = np.linspace(0, T, len(signal))  # 时间轴
+    freq_range = (1.75e14, 2.15e14)  # 目标频率范围 (Hz)
 
-    grid_sliced = grid.slice_grid(x_slice=[100, 200], y_slice=[100, 200], z_slice=[0, 1])
+    # 计算傅里叶变换
+    fft_result = np.fft.fft(signal)
+    frequencies = np.fft.fftfreq(len(signal), d=1 / fs)  # 计算频率轴
+    magnitude = np.abs(fft_result)
 
-    solve = Solve(grid=grid_sliced,
-                  axis='z',
-                  index=0,
-                  filepath=grid_sliced.folder
-                  )
-    solve.plot()
+    # 零填充信号
+    N = len(t) * 2  # 目标点数为原来的一倍
+    signal_padded = np.pad(signal, (0, N - len(signal)), 'constant')
 
-    # 计算这个截面处，波长1.55um，折射率3.47附近的2个模式，边界条件选择在四个方向上都是pml，厚度均为15格
-    data = solve.calculate_mode(lam=1550e-9, neff=1.45, neigs=5,
-                                x_boundary_high="pml",
-                                y_boundary_high="pml",
-                                x_thickness_high=15,
-                                y_thickness_high=15)
-    # data = solve.calculate_mode(lam=1550e-9, neff=1.45, neigs=2)
+    # 计算傅里叶变换 (零填充后)
+    fft_result_padded = np.fft.fft(signal_padded)
+    frequencies_padded = np.fft.fftfreq(N, d=1 / fs)
+    magnitude_padded = np.abs(fft_result_padded)
 
-    # 接下来即可绘制模式场，我们选择绘制amplitude，即幅值。filepath为保存绘制的图片的路径
-    solve.draw_mode(filepath=solve.filepath,
-                    data=data,
-                    content="amplitude")
+    # 绘制时域和频域图
+    plt.figure(figsize=(12, 6))
+
+    # 时域信号
+    plt.subplot(2, 1, 1)
+    plt.plot(t, signal, label="Original Signal")
+    plt.plot(np.linspace(0, T, N), signal_padded, label="Zero Padded Signal", linestyle='--')
+    plt.title("Time Domain Signal")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Amplitude")
+    plt.legend()
+
+    # 频域信号
+    plt.subplot(2, 1, 2)
+    plt.plot(frequencies[:len(frequencies) // 2], magnitude[:len(frequencies) // 2], label="Original FFT")
+    plt.plot(frequencies_padded[:len(frequencies_padded) // 2], magnitude_padded[:len(frequencies_padded) // 2],
+             label="Zero Padded FFT", linestyle='--')
+    plt.title("Frequency Domain (Magnitude Spectrum)")
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("Magnitude")
+    plt.legend()
+    plt.grid()
+
+    import os
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(grid.folder, f"new_spectrum.png"))
+    plt.close()
+
+    grid.visualize()
+
+    grid.calculate_Transmission(detector_name_1="detector1", detector_name_2="detector2", wl_start=1400e-9, wl_end=1700e-9)

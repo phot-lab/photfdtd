@@ -48,7 +48,7 @@ if __name__ == "__main__":
     # Save result of simulation 保存仿真结果
     grid.save_simulation()
     # grid.read_simulation(grid.folder)
-    grid.calculate_source_profile()
+    grid.source_data()
     grid.detector_profile()
     # Or you can read from a folder 也可以读取仿真结果
     # grid = grid.read_simulation(folder=grid.folder)
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     Grid.plot_fieldtime(folder=grid.folder, grid=grid, field_axis="z", index=10, name_det="detector")
 
     # 绘制频谱
-    Grid.compute_frequency_domain(grid=grid, wl_start=1000e-9, wl_end=2000e-9, name_det="detector",
-                                  index=10, field_axis="x", field="E", folder=None)
+    Grid.visulize_detector(grid=grid, wl_start=1000e-9, wl_end=2000e-9, name_det="detector", index=10, field_axis="x",
+                           field="E", folder=None)
 
 

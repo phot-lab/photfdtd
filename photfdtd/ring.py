@@ -26,6 +26,7 @@ class Ring(Waveguide):
             z: int or float = None,
             width_s: int or float = 20,
             width_r: int or float = None,
+            length_s: int or float = None,
             length: int or float = 0,
             gap: int or float = 5,
             name: str = "ring",
@@ -34,14 +35,17 @@ class Ring(Waveguide):
             grid=None,
             priority: int = 1
     ) -> None:
-        outer_radius, width_s, width_r, length, gap = grid._handle_unit(
-            [outer_radius, width_s, width_r, length, gap],
+        if length_s is None:
+            length_s = outer_radius * 2 + length
+        outer_radius, width_s, width_r, length, gap, length_s = grid._handle_unit(
+            [outer_radius, width_s, width_r, length, gap, length_s],
             grid_spacing=grid._grid.grid_spacing)
-        ylength = grid._handle_unit([ylength], grid_spacing=grid._grid.grid_spacing_y)
+        ylength = grid._handle_unit([ylength], grid_spacing=grid._grid.grid_spacing_y)[0]
         self.outer_r = outer_radius
         self.length = length
         self.gap = gap
         self.direction = direction
+        self.length_s = length_s
         zlength = self.outer_r * 2 + self.length
         xlength = self.outer_r * 2
         if not width_r:
@@ -101,7 +105,7 @@ class Ring(Waveguide):
         wg_bottom = Waveguide(
             xlength=self.width,
             ylength=self.ylength,
-            zlength=self.outer_r * 2 + self.length,
+            zlength=self.length_s,
             x=self.x - self.outer_r - self.gap - int(self.width / 2),
             y=self.y,
             z=self.z,
@@ -115,7 +119,7 @@ class Ring(Waveguide):
         wg_top = Waveguide(
             xlength=self.width,
             ylength=self.ylength,
-            zlength=self.outer_r * 2 + self.length,
+            zlength=self.length_s,
             x=self.x + self.outer_r + self.gap + int(self.width / 2),
             y=self.y,
             z=self.z,

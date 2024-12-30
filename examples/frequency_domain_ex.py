@@ -70,4 +70,4 @@ if __name__ == "__main__":
 
 
     #计算频域结果并绘图
-    grid.compute_frequency_domain(wl_start=1.0, wl_end=2.0, input_data=np.array(grid._grid.detector_source.E)[:,2,2])
+    grid.visulize_detector(wl_start=1.0, wl_end=2.0, input_data=np.array(grid._grid.detector_source.E)[:, 2, 2])

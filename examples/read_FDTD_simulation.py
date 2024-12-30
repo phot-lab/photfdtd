@@ -13,7 +13,7 @@ if __name__ == "__main__":
     # 由监视器数据绘制Ex场随时间变化的图像
     Grid.plot_fieldtime(grid=grid, field_axis="x", field="E", index=5, name_det="detector1")
     # grid.calculate_Transmission(field_axis="x", wl_start=400e-9, wl_end=1800e-9)
-    source_profile = grid.calculate_source_profile(time=100e-15)
+    source_profile = grid.source_data(time=100e-15)
     # start = 0
     # end = 2141
     source_data = source_profile[:, 25, 0]
@@ -23,8 +23,8 @@ if __name__ == "__main__":
     wl_start = 400e-9
     wl_end = 1800e-9
     # grid.calculate_Transmission(detector_data=detector_data, source_data=source_data, wl_start=wl_start, wl_end=wl_end)
-    Grid.compute_frequency_domain(grid=grid, input_data=detector_data ,wl_start=wl_start, wl_end=wl_end, index=5)
-    Grid.compute_frequency_domain(grid=grid, input_data=source_data, wl_start=wl_start, wl_end=wl_end, index=5)
+    Grid.visulize_detector(grid=grid, wl_start=wl_start, wl_end=wl_end, input_data=detector_data, index=5)
+    Grid.visulize_detector(grid=grid, wl_start=wl_start, wl_end=wl_end, input_data=source_data, index=5)
     grid.calculate_Transmission(field_axis="x", wl_start=400e-9, wl_end=1800e-9)
 
 

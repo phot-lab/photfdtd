@@ -48,13 +48,13 @@ if __name__ == "__main__":
     Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0, folder=grid.folder,
                     vmax=1, vmin=-1)
     grid.detector_profile()
-    source_data = grid.calculate_source_profile()
+    source_data = grid.source_data()
     # 由监视器数据绘制Ex场随时间变化的图像
     Grid.plot_fieldtime(grid=grid, field_axis="x", field="E", index=5, name_det="detector1")
 
-    wl, spectrum1 = grid.compute_frequency_domain(grid=grid, name_det="detector1", wl_start=1300e-9, wl_end=1800e-9)
-    wl, spectrum2 = grid.compute_frequency_domain(grid=grid, name_det="detector2", wl_start=1300e-9, wl_end=1800e-9)
-    wl, spectrum_source = grid.compute_frequency_domain(grid=grid, input_data=source_data[:, 15, 0], wl_start=1300e-9, wl_end=1800e-9)
+    wl, spectrum1 = grid.visulize_detector(grid=grid, name_det="detector1", wl_start=1300e-9, wl_end=1800e-9)
+    wl, spectrum2 = grid.visulize_detector(grid=grid, name_det="detector2", wl_start=1300e-9, wl_end=1800e-9)
+    wl, spectrum_source = grid.visulize_detector(grid=grid, input_data=source_data[:, 15, 0], wl_start=1300e-9, wl_end=1800e-9)
     grid.calculate_Transmission(field_axis="x", wl_start=1300e-9, wl_end=1800e-9, detector_name="detector1")
     grid.calculate_Transmission(field_axis="x", wl_start=1300e-9, wl_end=1800e-9, detector_name="detector2")
 

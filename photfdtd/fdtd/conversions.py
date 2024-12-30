@@ -54,3 +54,30 @@ def letter_to_number(input):
 
 def number_to_letter(input):
     return chr(input + 120)
+
+def wl_f_conversion(input):
+    return const.c / input
+
+def delta_wl_to_delta_f(input, central_wl):
+    return input * const.c / central_wl ** 2
+
+def delta_f_to_delta_wl(input, central_wl):
+    return input * central_wl ** 2 / const.c
+
+def pulselength(bandwidth=None) -> float:
+    """
+    calculate gaussian pulselength from bandwidth
+
+    @param bandwidth: bandwidth in Hz
+    @return: pulse length in s
+    """
+    return 0.44 / bandwidth
+
+def bandwidth(pulselength=None) -> float:
+    """
+    calculate bandwidth from pulselength
+
+    @param bandwidth: pulselength in s
+    @return: bandwidth in Hz
+    """
+    return 0.44 / pulselength

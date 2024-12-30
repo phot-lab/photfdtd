@@ -5,6 +5,7 @@ Available Detectors:
  - LineDetector
 
 """
+import numpy as np
 
 ## Imports
 
@@ -14,7 +15,8 @@ from .typing_ import ListOrSlice, Tuple, List
 # relative
 from .grid import Grid
 from .backend import backend as bd
-from .constants import X, Y, Z
+from .constants import X, Y, Z, c
+
 
 ## Detector
 class LineDetector:
@@ -137,6 +139,22 @@ class LineDetector:
     def detector_values(self):
         """ outputs what detector detects """
         return {"E": self.E, "H": self.H}
+
+    @property
+    def poynting(self) -> np.ndarray:
+        # 似乎乘以H的共轭或非共轭都一样（因为H不是复数？）
+        return c * np.cross(self.E, self.H, axis=-1)
+    @property
+    def flux(self) -> np.ndarray:
+        # energy flux (power)
+        # *(self.poynting > 0)
+        # * self.grid.grid_spacing_x * self.grid.grid_spacing_y
+        return np.sum(self.poynting, axis=1, keepdims=True)
+
+
+
+
+
 
 
 # is the "detector" paradigm necessary? Can we just flag a segment of the base mesh to be

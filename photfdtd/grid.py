@@ -153,6 +153,33 @@ class Grid:
                 self._grid.objects.pop(internal_object)
         pass
 
+    def set_PML(self,
+                pml_width=None,
+                pml_width_x=None,
+                pml_width_y=None,
+                pml_width_z=None):
+        # TODO: 删除PML
+        if pml_width is not None:
+            pml_width_x = pml_width if pml_width_x is None else pml_width_x
+            pml_width_y = pml_width if pml_width_y is None else pml_width_y
+            pml_width_z = pml_width if pml_width_z is None else pml_width_z
+        pml_width_x = self._handle_unit([pml_width_x],
+                                        grid_spacing=self._grid.grid_spacing_x)[0]
+        pml_width_y = self._handle_unit([pml_width_y],
+                                        grid_spacing=self._grid.grid_spacing_y)[0]
+        pml_width_z = self._handle_unit([pml_width_z],
+                                        grid_spacing=self._grid.grid_spacing_z)[0]
+        if self._grid_xlength != 1 and pml_width_x > 0:
+            self._grid[0:pml_width_x, :, :] = fdtd.PML(name="pml_xlow")
+            self._grid[-pml_width_x:, :, :] = fdtd.PML(name="pml_xhigh")
+        if self._grid_ylength != 1 and pml_width_y > 0:
+            self._grid[:, 0:pml_width_y, :] = fdtd.PML(name="pml_ylow")
+            self._grid[:, -pml_width_y:, :] = fdtd.PML(name="pml_yhigh")
+        if self._grid_zlength != 1 and pml_width_z > 0:
+            self._grid[:, :, 0:pml_width_z] = fdtd.PML(name="pml_zlow")
+            self._grid[:, :, -pml_width_z:] = fdtd.PML(name="pml_zhigh")
+        self.flag_PML_not_set = False
+
     def set_source(
             self,
             source_type: str = "pointsource",
@@ -222,22 +249,8 @@ class Grid:
                 raise ValueError("please set wavelength or period for the source")
 
         if self.flag_PML_not_set:
-            pml_width_x = self._handle_unit([(period * constants.c) / 2],
-                                            grid_spacing=self._grid.grid_spacing_x)[0]
-            pml_width_y = self._handle_unit([(period * constants.c) / 2],
-                                            grid_spacing=self._grid.grid_spacing_y)[0]
-            pml_width_z = self._handle_unit([(period * constants.c) / 2],
-                                            grid_spacing=self._grid.grid_spacing_z)[0]
-            if self._grid_xlength != 1:
-                self._grid[0:pml_width_x, :, :] = fdtd.PML(name="pml_xlow")
-                self._grid[-pml_width_x:, :, :] = fdtd.PML(name="pml_xhigh")
-            if self._grid_ylength != 1:
-                self._grid[:, 0:pml_width_y, :] = fdtd.PML(name="pml_ylow")
-                self._grid[:, -pml_width_y:, :] = fdtd.PML(name="pml_yhigh")
-            if self._grid_zlength != 1:
-                self._grid[:, :, 0:pml_width_z] = fdtd.PML(name="pml_zlow")
-                self._grid[:, :, -pml_width_z:] = fdtd.PML(name="pml_zhigh")
-            self.flag_PML_not_set = False
+            self.set_PML((period * constants.c) / 2)
+
         xlength, x, x_start, x_end = self._handle_unit([xlength, x, x_start, x_end],
                                                        grid_spacing=self._grid.grid_spacing_x)
         ylength, y, y_start, y_end = self._handle_unit([ylength, y, y_start, y_end],
@@ -332,7 +345,9 @@ class Grid:
         except:
             raise Exception("No source found in Grid.")
 
-    def calculate_source_profile(self, time: int or float = None, source_name: str = None):
+    def source_data(self,
+                    time: int or float = None,
+                    source_name: str = None):
         if time is None:
             if self._grid.time_steps_passed != 0:
                 time = self._grid.time_steps_passed
@@ -355,16 +370,6 @@ class Grid:
             found_source = self._try_to_find_source()
             source_name = found_source.name
         # TODO: 考虑其他方向，consider other directions
-        x_sticks = np.linspace(0, len(found_source.profile), len(found_source.profile)) * self._grid.grid_spacing_x
-        plt.plot(x_sticks, found_source.profile)
-        plt.xticks()
-        plt.xlabel('um')
-        plt.ylabel("E")
-        plt.title(f"{source_name}")
-        plt.legend()
-        file_name = "source_profile"
-        plt.savefig(os.path.join(self.folder, f"{file_name}.png"))
-        plt.close()
 
         if isinstance(found_source, fdtd.LineSource):
             print("This is a Linesource")
@@ -389,20 +394,58 @@ class Grid:
                 else:
                     vect = found_source.profile * np.sin(2 * np.pi * q / found_source.period + found_source.phase_shift)
                 source_field[q, :, _Epol] = vect
-        x_sticks = np.linspace(0, len(source_field), len(source_field)) * self._grid.time_step * 1e15
-        plt.plot(x_sticks, source_field[:, int(size / 2), 0], label="Ex")
-        plt.plot(x_sticks, source_field[:, int(size / 2), 1], label="Ey")
-        plt.plot(x_sticks, source_field[:, int(size / 2), 2], label="Ez")
-        plt.xticks()
-        plt.xlabel('fs')
-        plt.ylabel("E")
-        plt.title(f"Time Signal of {source_name}")
-        plt.legend()
-        file_name = "E_source"
+
+        # Spectrum
+        fr = fdtd.FrequencyRoutines(self._grid, objs=source_field[:, int(size / 2), 0])
+        spectrum_freqs, fourier = fr.FFT(
+            freq_window_tuple=[found_source.frequency - 2 * found_source.bandwidth,
+                               found_source.frequency + 2 * found_source.bandwidth], )
+        spectrum = abs(fourier)
+
+        # time
+        length = np.linspace(0, len(found_source.profile), len(found_source.profile)) * self._grid.grid_spacing_x
+        time = np.linspace(0, len(source_field), len(source_field)) * self._grid.time_step * 1e15
+
+        # 创建一个画布，包含两个子图
+        fig, axes = plt.subplots(2, 2, figsize=(12, 6))  # 1行2列的子图
+
+        # 左侧子图: 源 Profile 图
+        axes[0][0].plot(length * 1e6, found_source.profile)
+        # axes[0][0].set_xticks()  # 每隔10个显示一个刻度
+        axes[0][0].set_xlabel('um')
+        axes[0][0].set_ylabel("E")
+        axes[0][0].set_title(f"Space distribution")
+        axes[0][0].legend(["Source Profile"])
+
+        # 右侧子图: Time Signal 图
+        axes[0][1].plot(time, source_field[:, int(size / 2), 0], label="Ex")
+        axes[0][1].plot(time, source_field[:, int(size / 2), 1], label="Ey")
+        axes[0][1].plot(time, source_field[:, int(size / 2), 2], label="Ez")
+        # axes[0][1].set_xticks()  # 每隔10个显示一个刻度
+        axes[0][1].set_xlabel('fs')
+        axes[0][1].set_ylabel("E")
+        axes[0][1].set_title(f"Time Signal of {source_name}")
+        axes[0][1].legend()
+
+        # Spectrum
+        axes[1][0].plot(spectrum_freqs * 1e-12, spectrum)
+        axes[1][0].set_xlabel('frequency (THz)')
+        axes[1][0].set_ylabel("E")
+        axes[1][0].set_title(f"Spectrum of {source_name}")
+
+        axes[1][1].plot(constants.c / spectrum_freqs * 1e6, spectrum)
+        axes[1][1].set_xlabel('wavelength (um)')
+        axes[1][1].set_ylabel("E")
+        axes[1][1].set_title(f"Spectrum of {source_name}")
+
+        plt.tight_layout()
+
+        file_name = "Source profile"
         plt.savefig(os.path.join(self.folder, f"{file_name}.png"))
+
         plt.close()
 
-        return source_field
+        return found_source, source_field, spectrum
 
     def set_detector(self,
                      detector_type: str = 'linedetector',
@@ -571,12 +614,13 @@ class Grid:
             # Tell which dimension to draw automatically
             dims_with_size_one = [i for i, size in enumerate(self._grid.inverse_permittivity.shape) if size == 1]
             if not dims_with_size_one:
-                raise ValueError("Parameter 'axis' should not be None for 3D simulation")
-            axis = conversions.number_to_letter(dims_with_size_one[0])
+                axis = "y"
+            else:
+                axis = conversions.number_to_letter(dims_with_size_one[0])
 
         if axis_index is None:
             if axis_number is None:
-                raise ValueError("Parameter 'axis_index' should not be None")
+                axis_index = int(self._grid.Ny / 2)
             else:
                 axis_index = axis_number
 
@@ -627,8 +671,10 @@ class Grid:
             # Tell which dimension to draw automatically
             dims_with_size_one = [i for i, size in enumerate(self._grid.inverse_permittivity.shape) if size == 1]
             if not dims_with_size_one:
-                raise ValueError("Parameter 'axis' should not be None for 3D simulation")
-            axis = conversions.number_to_letter(dims_with_size_one[0])
+                axis = "y"
+                axis_index = int(self._grid.Ny / 2)
+            else:
+                axis = conversions.number_to_letter(dims_with_size_one[0])
         if self:
             grid = self
         if not grid:
@@ -766,9 +812,12 @@ class Grid:
 
         print(f'动画已保存为 {output_file}')
 
-    def calculate_Transmission(self, detector_name: str = None, field_axis: str = "x",
-                               wl_start: float = 1400e-9, wl_end: float = 1700e-9,
-                               detector_data: np.array = None, source_data: np.array = None,
+    def calculate_Transmission(self,
+                               detector_name_1: str = None,
+                               detector_name_2: str = None,
+                               wl_start: float = None,
+                               wl_end: float = None,
+                               field_axis: str = "x",
                                detector_index: int = None,
                                source_name: str = None,
                                save_to_txt: bool = True,
@@ -788,40 +837,182 @@ class Grid:
         @param save_to_txt: Optional: Default to True
         @param grid: Optinal: photfdtd.Grid instance
         """
+        # Spectrum
+        # TODO: consider multiple sources?考虑有不同光源的情况？
+
+        if grid is None:
+            grid = self
+        source, _, source_spectrum = self.source_data()
+
+        # True先对坡印廷矢量傅里叶变换再积分
+        # False: 先积分算功率再傅里叶变换
+        integral_poynting = True
+        if integral_poynting:
+            for detector in grid._grid.detectors:
+                if detector.name == detector_name_1:
+                    P1 = detector.poynting[:, :, 2]
+                    # P1[P1 > 0] = 0
+                elif detector.name == detector_name_2:
+                    P2 = detector.poynting[:, :, 2]
+                    # P2[P2 > 0] = 0
+            F1, F2 = np.empty(shape=P1[0].shape, dtype=object), np.empty(shape=P1[0].shape, dtype=object)
+            for i in range(P1[0].shape[0]):
+                fr = fdtd.FrequencyRoutines(self._grid, objs=P1[:, i])
+                spectrum_freqs_1, fourier = fr.FFT(
+                    freq_window_tuple=[source.frequency - 2 * source.bandwidth,
+                                       source.frequency + 2 * source.bandwidth], )
+                F1[i] = abs(fourier)
+                fr = fdtd.FrequencyRoutines(self._grid, objs=P2[:, i])
+                spectrum_freqs_2, fourier = fr.FFT(
+                    freq_window_tuple=[source.frequency - 2 * source.bandwidth,
+                                       source.frequency + 2 * source.bandwidth], )
+                F2[i] = abs(fourier)
+            spectrum_1 = np.sum(F1, axis=0, keepdims=True)
+            spectrum_2 = np.sum(F2, axis=0, keepdims=True)
+            Transmission = (spectrum_2 / spectrum_1)[0]
+        else:
+            for detector in grid._grid.detectors:
+                if detector.name == detector_name_1:
+                    flux_1 = detector.flux[:, 0, 2]
+                elif detector.name == detector_name_2:
+                    flux_2 = detector.flux[:, 0, 2]
+            fr_1 = fdtd.FrequencyRoutines(grid._grid, objs=flux_1)
+            spectrum_freqs_1, fourier_1 = fr_1.FFT(
+                freq_window_tuple=[source.frequency - 2 * source.bandwidth,
+                                   source.frequency + 2 * source.bandwidth], )
+            fr_2 = fdtd.FrequencyRoutines(grid._grid, objs=flux_2)
+            spectrum_freqs_2, fourier_2 = fr_2.FFT(
+                freq_window_tuple=[source.frequency - 2 * source.bandwidth,
+                                   source.frequency + 2 * source.bandwidth], )
+
+            spectrum_1, spectrum_2 = abs(fourier_1), abs(fourier_2)
+            Transmission = spectrum_2 / spectrum_1
+
+            # # Power Spectrums
+            fig, axes = plt.subplots(2, 2, figsize=(12, 6))  # 1行2列的子图
+
+            axes[0][0].plot(np.linspace(0, len(flux_1), len(flux_1)) * self._grid.time_step * 1e15, flux_1)
+            axes[0][0].set_xlabel('fs')
+            axes[0][0].set_ylabel('Power (W)')
+            axes[0][0].set_title(f"Power of {detector_name_1}")
+
+            axes[0][1].plot(np.linspace(0, len(flux_1), len(flux_1)) * self._grid.time_step * 1e15, flux_2)
+            axes[0][1].set_xlabel('fs')
+            axes[0][1].set_ylabel('Power (W)')
+            axes[0][1].set_title(f"Power of {detector_name_2}")
+
+            axes[1][0].plot(spectrum_freqs_1, spectrum_1)
+            axes[1][0].set_xlabel('frequency (THz)')
+            axes[1][0].set_ylabel('Power (W)')
+            axes[1][0].set_title(f"Power spectrum of {detector_name_1}")
+
+            axes[1][1].plot(spectrum_freqs_2, spectrum_2)
+            axes[1][1].set_xlabel('frequency (THz)')
+            axes[1][1].set_ylabel('Power (W)')
+            axes[1][1].set_title(f"Power spectrum of {detector_name_2}")
+
+            plt.tight_layout()
+            plt.savefig(os.path.join(grid.folder, f"Power_{detector_name_1}_{detector_name_2}.png"))
+            plt.close()
+
+        spectrum_wl = constants.c / (spectrum_freqs_1 * (1e-6))
+
+        # Transmission Spectrums
+        fig, axes = plt.subplots(1, 2, figsize=(12, 6))  # 1行2列的子图
+
+        axes[0].plot(conversions.wl_f_conversion((spectrum_wl)), Transmission)
+        axes[0].set_xlabel('frequency (THz)')
+        axes[0].set_ylabel('Normalized transmission')
+        axes[0].set_title("Transmission")
+
+        axes[1].plot(spectrum_wl, Transmission)
+        axes[1].set_xlabel('wavelength (um)')
+        axes[1].set_ylabel('Normalized transmission')
+        axes[1].set_title("Transmission")
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(grid.folder, f"Transmission_{detector_name_1}_{detector_name_2}.png"))
+        plt.close()
+
+        if save_to_txt:
+            np.savetxt('%s/Transmission.txt' % grid.folder, np.column_stack((spectrum_wl, Transmission)), fmt='%f',
+                       delimiter='\t',
+                       header='Wavelength (um)\tTransmission', comments='')
+
+    def calculate_Transmission_old(self,
+                                   detector_name_1: str = None,
+                                   detector_name_2: str = None,
+                                   wl_start: float = None,
+                                   wl_end: float = None,
+                                   field_axis: str = "x",
+                                   detector_index: int = None,
+                                   source_name: str = None,
+                                   save_to_txt: bool = True,
+                                   grid=None) -> None:
+        """
+        # TODO:
+        Calculate transmission spectrum, detector required.
+
+        @param detector_name: The name of detector whose data will be calculated, can be None if there is only 1 detector in grid.
+        @param source_name: The name of source whose data will be calculated, can be None if there is only 1 source in grid.
+        @param field_axis: Optional: Default to "x"
+        @param wl_start: Start wavelength
+        @param wl_end: End wavelength
+        @param detector_data: Optional: must be a 1 dimension array
+        @param source_data: Optional: must be a 1 dimension array with same size as detector_data
+        @param detector_index: Optional: Default to center of the detector
+        @param save_to_txt: Optional: Default to True
+        @param grid: Optinal: photfdtd.Grid instance
+        """
+        # Spectrum
+        # TODO: consider multiple sources?考虑有不同光源的情况？
+
         field_axis = fdtd.conversions.letter_to_number(field_axis)
         if grid is None:
             grid = self
-        if detector_data is None:
-            for detector in grid._grid.detectors:
-                if detector.name == detector_name or detector_name is None:
-                    detector_data = np.array([x for x in detector.detector_values()["E"]])
-            if detector_index is None:
-                detector_index = int(detector_data.shape[1] / 2)
-            detector_data = detector_data[:, detector_index, field_axis]
+        for detector in grid._grid.detectors:
+            if detector.name == detector_name_1:
+                flux_1 = detector.flux[:, 0, 2]
+            elif detector.name == detector_name_2:
+                flux_2 = detector.flux[:, 0, 2]
 
-        if source_data is None:
-            source_data = grid.calculate_source_profile(time=grid._grid.time_steps_passed, source_name=source_name)
-            source_data = source_data[:, int(source_data.shape[1] / 2), field_axis]
+        plt.plot(flux_1)
+        plt.savefig(os.path.join(grid.folder, f"flux_1.png"))
+        plt.close()
+        plt.plot(flux_2)
+        plt.savefig(os.path.join(grid.folder, f"flux_2.png"))
+        plt.close()
 
-        detector_data = detector_data
-        source_data = source_data
+        source = self._try_to_find_source()
+        fr_1 = fdtd.FrequencyRoutines(grid._grid, objs=flux_1)
+        spectrum_freqs_1, fourier_1 = fr_1.FFT(
+            freq_window_tuple=[source.frequency - 2 * source.bandwidth,
+                               source.frequency + 2 * source.bandwidth], )
 
-        fr_s = fdtd.FrequencyRoutines(grid._grid, objs=source_data)
-        spectrum_freqs_s, spectrum_s = fr_s.FFT(
-            freq_window_tuple=[constants.c / (wl_end), constants.c / (wl_start)], )
+        fr_2 = fdtd.FrequencyRoutines(grid._grid, objs=flux_2)
+        spectrum_freqs_2, fourier_2 = fr_2.FFT(
+            freq_window_tuple=[source.frequency - 2 * source.bandwidth,
+                               source.frequency + 2 * source.bandwidth], )
 
-        fr_d = fdtd.FrequencyRoutines(grid._grid, objs=detector_data)
-        spectrum_freqs_d, spectrum_d = fr_d.FFT(
-            freq_window_tuple=[constants.c / (wl_end), constants.c / (wl_start)], )
+        spectrum_1, spectrum_2 = abs(fourier_1), abs(fourier_2)
 
-        spectrum_wl = constants.c / (spectrum_freqs_s * (1e-6))
-        Transmission = (abs(spectrum_d) / abs(spectrum_s)) ** 2
+        spectrum_wl = constants.c / (spectrum_freqs_1 * (1e-6))
+        Transmission = spectrum_2 / spectrum_1
         Transmission[Transmission > 1] = 1
-        plt.plot(spectrum_wl, Transmission)
-        plt.xlabel('Wavelength (um)')
-        plt.ylabel("T")
-        plt.ylabel("Transmission")
-        plt.savefig(os.path.join(grid.folder, f"{'Transmission_'}{detector_name}.png"))
+
+        # 创建一个画布，包含两个子图
+        fig, axes = plt.subplots(1, 2, figsize=(12, 6))  # 1行2列的子图
+        # Spectrum
+        axes[0].plot(conversions.wl_f_conversion((spectrum_wl)), Transmission)
+        axes[0].set_xlabel('frequency (THz)')
+        axes[0].set_title("Transmission")
+
+        axes[1].plot(spectrum_wl, Transmission)
+        axes[1].set_xlabel('wavelength (um)')
+        axes[1].set_title("Transmission")
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(grid.folder, f"Transmission_{detector_name_1}_{detector_name_2}.png"))
         plt.close()
 
         if save_to_txt:
@@ -1201,12 +1392,121 @@ class Grid:
             plt.savefig(os.path.join(folder, f"{file_name}.png"))
             plt.close()
 
-    @staticmethod
-    def compute_frequency_domain(grid, wl_start, wl_end, name_det=None, input_data=None,
-                                 index=0, index_3d=[0, 0, 0], field_axis="x", field="E", folder=None):
+    def visulize_single_detector(self,
+                                 detector=None,
+                                 name_det=None,
+                                 index=0,
+                                 index_3d=[0, 0, 0],
+                                 field_axis="x",
+                                 field="E"):
         """
         傅里叶变换绘制频谱
-        @param grid: photfdtd.grid
+        @param detector: photfdtd.grid.detector
+        @param name_det: 监视器名称
+        @param index: 用于线监视器，选择读取数据的点
+        @param index_3d: 用于面监视器，选择读取数据的点
+        @param field_axis: "x", "y", "z"
+        @param field: ”E"或"H"
+        NOTE：
+            关于傅里叶变换后的单位：有的人说是原单位，有的人说是原单位乘以积分时积的单位(s)
+            https://stackoverflow.com/questions/1523814/units-of-a-fourier-transform-fft-when-doing-spectral-analysis-of-a-signal
+        """
+        # TODO: axis参数与其他可视化参数一致
+        # TODO: 把fdtd的fourier.py研究明白
+        if field_axis is not None:
+            field_axis = conversions.letter_to_number(field_axis)
+        if detector is None and name_det is not None:
+            for d in self._grid.detectors:
+                if d.name == name_det:
+                    detector = d
+
+        data = np.array([x for x in detector.detector_values()["%s" % field]])
+        if data is None:
+            detector = self._grid.detectors[0]
+            data = np.array([x for x in detector.detector_values()["%s" % field]])
+        if data is None:
+            raise ValueError("No detector found in Grid")
+        shape = data.shape
+        if data.ndim == 3:
+            if not index:
+                index = int(shape[1] / 2)
+            indexed_data = data[:, index, field_axis]
+        elif data.ndim == 5:
+            if not index_3d:
+                index_3d = [int(shape[0] / 2), int(shape[1] / 2), int(shape[2] / 2)]
+            indexed_data = data[:, index_3d[0], index_3d[1], index_3d[2], field_axis]
+
+        # Spectrum
+        # TODO: consider multiple sources?考虑有不同光源的情况？
+        source = self._try_to_find_source()
+        fr = fdtd.FrequencyRoutines(self._grid, objs=indexed_data)
+        spectrum_freqs, fourier = fr.FFT(
+            freq_window_tuple=[source.frequency - 2 * source.bandwidth,
+                               source.frequency + 2 * source.bandwidth], )
+        spectrum = abs(fourier)
+
+        ### 试试ufdtd书中的方法，对空间中每个点的电场分别傅里叶变换
+        # F = np.empty(shape=data[0].shape, dtype=object)
+        # for i in range(data[0].shape[0]):
+        #     for j in range(3):
+        #         fr = fdtd.FrequencyRoutines(self._grid, objs=data[:, i, j])
+        #         spectrum_freqs, fourier = fr.FFT(
+        #             freq_window_tuple=[source.frequency - 2 * source.bandwidth,
+        #                             source.frequency + 2 * source.bandwidth], )
+        #         F[i, j] = abs(fourier)
+        ###
+
+        # TODO: 目前只考虑了线监视器
+        length = np.linspace(0, shape[1], shape[1]) * self._grid.grid_spacing_x
+        time = np.linspace(0, shape[0], shape[0]) * self._grid.time_step * 1e15
+
+        # 创建一个画布，包含两个子图
+        fig, axes = plt.subplots(2, 2, figsize=(12, 6))  # 1行2列的子图
+
+        # 左侧子图: 源 Profile 图
+        axes[0][0].plot(length * 1e6, data[-1, :, field_axis])
+        # axes[0][0].set_xticks()  # 每隔10个显示一个刻度
+        axes[0][0].set_xlabel('um')
+        axes[0][0].set_ylabel("E")
+        axes[0][0].set_title(f"Space distribution of {detector.name} at {self._grid.time_passed * 1e15} fs")
+        axes[0][0].legend(["Detector profile"])
+
+        # 右侧子图: Time Signal 图
+        axes[0][1].plot(time, data[:, index, 0], label="Ex")
+        axes[0][1].plot(time, data[:, index, 1], label="Ey")
+        axes[0][1].plot(time, data[:, index, 2], label="Ez")
+        axes[0][1].set_xlabel('fs')
+        axes[0][1].set_ylabel("E")
+        axes[0][1].set_title(f"Time Signal of {detector.name}")
+        axes[0][1].legend()
+
+        # Spectrum
+        axes[1][0].plot(spectrum_freqs * 1e-12, spectrum)
+        axes[1][0].set_xlabel('frequency (THz)')
+        axes[1][0].set_ylabel("E")
+        axes[1][0].set_title(f"Spectrum of {detector.name}")
+
+        axes[1][1].plot(constants.c / spectrum_freqs * 1e6, spectrum)
+        axes[1][1].set_xlabel('wavelength (um)')
+        axes[1][1].set_ylabel("E")
+        axes[1][1].set_title(f"Spectrum of {detector.name}")
+
+        plt.tight_layout()
+
+        file_name = f"{detector.name} profile"
+        plt.savefig(os.path.join(self.folder, f"{file_name}.png"))
+
+        plt.close()
+
+        return spectrum_freqs * 1e-12, spectrum
+
+    def visulize_detector(self,
+                          index=0,
+                          index_3d=[0, 0, 0],
+                          field_axis="x",
+                          field="E"):
+        """
+        傅里叶变换绘制频谱
         @param wl_start: 起始波长(m)
         @param wl_end: 结束波长(m)
         @param name_det: 监视器名称
@@ -1216,7 +1516,6 @@ class Grid:
         @param index_3d: 用于面监视器，选择读取数据的点
         @param field_axis: "x", "y", "z"
         @param field: ”E"或"H"
-        @param folder: Optional: default: grid.folder 保存图片的地址，若为None则为grid.folder
         NOTE：
             关于傅里叶变换后的单位：有的人说是原单位，有的人说是原单位乘以积分时积的单位(s)
             https://stackoverflow.com/questions/1523814/units-of-a-fourier-transform-fft-when-doing-spectral-analysis-of-a-signal
@@ -1225,57 +1524,21 @@ class Grid:
         # TODO: 把fdtd的fourier.py研究明白
         if field_axis is not None:
             field_axis = conversions.letter_to_number(field_axis)
-        if folder is None:
-            folder = grid.folder
-        if input_data is None:
-            for detector in grid._grid.detectors:
-                if detector.name == name_det or name_det is None:
-                    input_data = np.array([x for x in detector.detector_values()["%s" % field]])
-                    name_det = detector.name
-        if name_det is None:
-            name_det = "Input_data"
-        if input_data.ndim == 3:
-            if not index:
-                index = int(input_data.shape[1] / 2)
-            input_data = input_data[:, index, field_axis]
-        elif input_data.ndim == 5:
-            if not index_3d:
-                index_3d = [int(input_data.shape[0] / 2), int(input_data.shape[1] / 2), int(input_data.shape[2] / 2)]
-            input_data = input_data[:, index_3d[0], index_3d[1], index_3d[2], field_axis]
+        # spectrums = np.empty(self._grid.detectors.shape)
+        # names = np.empty(self._grid.detectors.shape)
+        for d in self._grid.detectors:
+            freqs, spectrum = self.visulize_single_detector(detector=d)
+            plt.plot(freqs, spectrum, linestyle='-', label=d.name)
+        source, __, spectrum_source = self.source_data()
+        plt.plot(freqs, spectrum_source, linestyle='-', label=source.name)
 
-        fr = fdtd.FrequencyRoutines(grid._grid, objs=input_data)
-        spectrum_freqs, spectrum = fr.FFT(
-            freq_window_tuple=[constants.c / (wl_end), constants.c / (wl_start)], )
-
-        # 绘制频谱
-        plt.plot(spectrum_freqs, spectrum)
-        plt.xlabel('frequency (Hz)')
-        plt.ylabel("spectrum")
-        plt.title("Spectrum")
-        file_name = "spectrum_%s%s_%s" % (field, chr(field_axis + 120), name_det)
-        plt.savefig(os.path.join(folder, f"{file_name}.png"))
+        plt.ylabel('%s%s' % (field, conversions.number_to_letter(field_axis)))
+        plt.xlabel("frequency (THz)")
+        plt.title("Spectrum of detectors")
+        plt.legend()
+        file_name = "Spectrum of detectors"
+        plt.savefig(os.path.join(self.folder, f"{file_name}.png"))
         plt.close()
-
-        # 绘制频率-幅度
-        # E = Aexp(-jwt) A 叫振幅amplitude 幅度,模magnitude = sqrt(real^2 + imag^2)
-        plt.plot(spectrum_freqs, np.abs(spectrum))
-        plt.xlabel('frequency (Hz)')
-        plt.ylabel("magnitude")
-        plt.title("Spectrum")
-        file_name = "f-magnitude_%s%s_%s" % (field, chr(field_axis + 120), name_det)
-        plt.savefig(os.path.join(folder, f"{file_name}.png"))
-        plt.close()
-
-        # 绘制波长-幅度
-        plt.plot(constants.c / (spectrum_freqs * (1e-6)), np.abs(spectrum))
-        plt.xlabel('wavelength (um)')
-        plt.ylabel("magnitude")
-        plt.title("Spectrum")
-        file_name = "wl-magnitude_%s%s_%s" % (field, chr(field_axis + 120), name_det)
-        plt.savefig(os.path.join(folder, f"{file_name}.png"))
-        plt.close()
-
-        return constants.c / (spectrum_freqs * (1e-6)), np.abs(spectrum)
 
     def slice_grid(self, grid=None, x_slice=[], y_slice=[], z_slice=[]):
         """切割grid，以切割后的grid创建grid_sliced
@@ -1311,27 +1574,25 @@ class Grid:
             dims_with_size_one = [conversions.letter_to_number(axis)]
         if not axis_index:
             axis_index = int(self._grid.inverse_permittivity.shape[dims_with_size_one[0]] / 2)
-        for source in self._grid.sources:
-            self.calculate_source_profile(source_name=source.name)
+        for s in self._grid.sources:
+            source, _, _ = self.source_data(source_name=s.name)
 
         if field_axis is None:
             try:
-                source = self._try_to_find_source()
                 field_axis = source.polarization
             except:
-                print("No source found in grid")
+                print("Grid.visualize: No source found in grid")
 
         self.save_fig()
         self.save_fig(show_energy=True)
         self.plot_n()
-        self.plot_field(grid=self, field=field, field_axis=field_axis, axis=axis, axis_index=axis_index, vmin=-1,
-                        vmax=1)
+        self.plot_field(grid=self, field=field, field_axis=field_axis, axis=axis, axis_index=axis_index)
+
+        self.visulize_detector(field_axis=field_axis, field=field)
 
         for detector in self._grid.detectors:
             self.detector_profile(detector_name=detector.name, field=field, field_axis=field_axis)
             self.plot_fieldtime(grid=self, field=field, field_axis=field_axis, name_det=detector.name)
-            self.compute_frequency_domain(grid=self, wl_start=1400e-9, wl_end=1700e-9, name_det=detector.name,
-                                          field=field, field_axis=field_axis)
             if isinstance(detector, fdtd.detectors.BlockDetector):
                 self.dB_map(grid=self, field=field, field_axis=field_axis)
-            self.calculate_Transmission(detector_name=detector.name, source_name=self._try_to_find_source().name)
+            # self.calculate_Transmission(detector_name=detector.name, source_name=self._try_to_find_source().name)

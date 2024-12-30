@@ -16,45 +16,55 @@ if __name__ == "__main__":
                 permittivity=background_index ** 2,
                 foldername="basic_ex")
 
-    # # set waveguide 设置器件参数
+    # set waveguide 设置器件参数
     waveguide = Waveguide(
-        xlength=200e-9, ylength=1, zlength=6e-6, refractive_index=index_Re_Si, name="waveguide", grid=grid
+        xlength=200e-9, ylength=1, zlength=7.5e-6, refractive_index=index_Re_Si, name="waveguide", grid=grid
     )
 
     # add waveguide to grid 往 grid 里添加器件
     grid.add_object(waveguide)
-    grid.del_object(waveguide)
+    # grid.del_object(waveguide)
     # set a line source with center wl at 1550nm 设置一个点光源，波长为1550nm，波形为连续正弦
     grid.set_source(source_type="linesource",
-
                     wavelength=1550e-9, name="source", x=1500e-9, y=0, z=1200e-9,
-                    xlength=400e-9, ylength=0, zlength=0, polarization="x")
+                    xlength=400e-9, ylength=0, zlength=0, polarization="x", pulse_type="gaussian")
     #
     # # # set a line detector 设置一个线监视器
-    # grid.set_detector(detector_type="linedetector",
-    #                   name="detector",
-    #                   x=75,
-    #                   y=0,
-    #                   z=300,
-    #                   xlength=400e-9,
-    #                   ylength=0,
-    #                   zlength=0
-    #                   )
-    #
-    # # We can plot the geometry and the index map now
-    # grid.save_fig()
-    # # plot the refractive index map on z=0绘制z=0截面折射率分布
-    # grid.plot_n()
-    #
-    # # run the FDTD simulation 运行仿真
-    grid.run()
+    grid.set_detector(detector_type="linedetector",
+                      name="detector1",
+                      x=1500e-9,
+                      y=0,
+                      z=1500e-9,
+                      xlength=400e-9,
+                      ylength=0,
+                      zlength=0
+                      )
+    grid.set_detector(detector_type="linedetector",
+                      name="detector2",
+                      x=1500e-9,
+                      y=0,
+                      z=7000e-9,
+                      xlength=400e-9,
+                      ylength=0,
+                      zlength=0
+                      )
 
-    # Save result of simulation 保存仿真结果
-    grid.save_simulation()
+    # We can plot the geometry and the index map now
+    grid.save_fig()
+    # plot the refractive index map on z=0绘制z=0截面折射率分布
+    grid.plot_n()
 
-    # Or you can read from a folder 也可以读取仿真结果
-    # grid = grid.read_simulation(folder=grid.folder)
+    # run the FDTD simulation 运行仿真
+    # grid.run(time=5000)
+    #
+    # # # Save result of simulation 保存仿真结果
+    # grid.save_simulation()
+    #
+    # # Or you can read from a folder 也可以读取仿真结果
+    grid = grid.read_simulation(folder=grid.folder)
     grid.visualize()
+
+    grid.calculate_Transmission(detector_name_1="detector1", detector_name_2="detector2")
     grid.plot_n()
     grid.plot_field(grid=grid, field="E", field_axis="x", axis="y")
     grid.plot_field(grid=grid, field="E", field_axis="y", axis="y")

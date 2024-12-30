@@ -96,11 +96,13 @@ class Grid:
             self.courant_number = float(courant_number)
 
         # timestep of the simulation
+        # original: self.time_step = self.courant_number * self.grid_spacing / const.c
+        self.time_step = self.courant_number * self.grid_spacing / const.c
+        # self.du = sqrt(self.grid_spacing_x ** 2 + self.grid_spacing_y ** 2 + self.grid_spacing_z ** 2) / sqrt(3)
         # self.time_step = self.courant_number / (const.c * sqrt((1 / self.grid_spacing_x) ** 2
         #                                                        + (1 / (self.grid_spacing_y)) ** 2
         #                                                        + (1 / (self.grid_spacing_z)) ** 2))
-        self.time_step = self.courant_number * self.grid_spacing / const.c
-
+        # self.time_step = self.courant_number * self.du / const.c
         # save electric and magnetic field
         self.E = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
         self.H = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
@@ -171,26 +173,27 @@ class Grid:
         """
         curl = bd.zeros(E.shape, dtype=E.dtype)
 
-        divide_x = self.time_step * const.c / self.courant_number / self.grid_spacing_x
-        divide_y = self.time_step * const.c / self.courant_number / self.grid_spacing_y
-        divide_z = self.time_step * const.c / self.courant_number / self.grid_spacing_z
-        curl[:, :-1, :, 0] += (E[:, 1:, :, 2] - E[:, :-1, :, 2]) * divide_y
-        curl[:, :, :-1, 0] -= (E[:, :, 1:, 1] - E[:, :, :-1, 1]) * divide_z
 
-        curl[:, :, :-1, 1] += (E[:, :, 1:, 0] - E[:, :, :-1, 0]) * divide_z
-        curl[:-1, :, :, 1] -= (E[1:, :, :, 2] - E[:-1, :, :, 2]) * divide_x
-
-        curl[:-1, :, :, 2] += (E[1:, :, :, 1] - E[:-1, :, :, 1]) * divide_x
-        curl[:, :-1, :, 2] -= (E[:, 1:, :, 0] - E[:, :-1, :, 0]) * divide_y
-
-        # curl[:, :-1, :, 0] += (E[:, 1:, :, 2] - E[:, :-1, :, 2])
-        # curl[:, :, :-1, 0] -= (E[:, :, 1:, 1] - E[:, :, :-1, 1])
+        # divide_x = self.time_step * const.c / self.courant_number / self.grid_spacing_x
+        # divide_y = self.time_step * const.c / self.courant_number / self.grid_spacing_y
+        # divide_z = self.time_step * const.c / self.courant_number / self.grid_spacing_z
+        # curl[:, :-1, :, 0] += (E[:, 1:, :, 2] - E[:, :-1, :, 2]) / self.grid_spacing_y
+        # curl[:, :, :-1, 0] -= (E[:, :, 1:, 1] - E[:, :, :-1, 1]) / self.grid_spacing_z
         #
-        # curl[:, :, :-1, 1] += (E[:, :, 1:, 0] - E[:, :, :-1, 0])
-        # curl[:-1, :, :, 1] -= (E[1:, :, :, 2] - E[:-1, :, :, 2])
+        # curl[:, :, :-1, 1] += (E[:, :, 1:, 0] - E[:, :, :-1, 0]) / self.grid_spacing_z
+        # curl[:-1, :, :, 1] -= (E[1:, :, :, 2] - E[:-1, :, :, 2]) / self.grid_spacing_x
         #
-        # curl[:-1, :, :, 2] += (E[1:, :, :, 1] - E[:-1, :, :, 1])
-        # curl[:, :-1, :, 2] -= (E[:, 1:, :, 0] - E[:, :-1, :, 0])
+        # curl[:-1, :, :, 2] += (E[1:, :, :, 1] - E[:-1, :, :, 1]) / self.grid_spacing_x
+        # curl[:, :-1, :, 2] -= (E[:, 1:, :, 0] - E[:, :-1, :, 0]) / self.grid_spacing_y
+
+        curl[:, :-1, :, 0] += (E[:, 1:, :, 2] - E[:, :-1, :, 2])
+        curl[:, :, :-1, 0] -= (E[:, :, 1:, 1] - E[:, :, :-1, 1])
+
+        curl[:, :, :-1, 1] += (E[:, :, 1:, 0] - E[:, :, :-1, 0])
+        curl[:-1, :, :, 1] -= (E[1:, :, :, 2] - E[:-1, :, :, 2])
+
+        curl[:-1, :, :, 2] += (E[1:, :, :, 1] - E[:-1, :, :, 1])
+        curl[:, :-1, :, 2] -= (E[:, 1:, :, 0] - E[:, :-1, :, 0])
 
         return curl
 
@@ -207,27 +210,31 @@ class Grid:
         """
         curl = bd.zeros(H.shape, dtype=H.dtype)
 
-        divide_x = self.time_step * const.c / self.courant_number / self.grid_spacing_x
-        divide_y = self.time_step * const.c / self.courant_number / self.grid_spacing_y
-        divide_z = self.time_step * const.c / self.courant_number / self.grid_spacing_z
+        # divide_x = self.time_step * const.c / self.courant_number / self.grid_spacing_x
+        # divide_y = self.time_step * const.c / self.courant_number / self.grid_spacing_y
+        # divide_z = self.time_step * const.c / self.courant_number / self.grid_spacing_z
 
-        curl[:, 1:, :, 0] += (H[:, 1:, :, 2] - H[:, :-1, :, 2]) * divide_y
-        curl[:, :, 1:, 0] -= (H[:, :, 1:, 1] - H[:, :, :-1, 1]) * divide_z
+        # divide_x = self.du / self.grid_spacing_x
+        # divide_y = self.du / self.grid_spacing_y
+        # divide_z = self.du / self.grid_spacing_z
 
-        curl[:, :, 1:, 1] += (H[:, :, 1:, 0] - H[:, :, :-1, 0]) * divide_z
-        curl[1:, :, :, 1] -= (H[1:, :, :, 2] - H[:-1, :, :, 2]) * divide_x
-
-        curl[1:, :, :, 2] += (H[1:, :, :, 1] - H[:-1, :, :, 1]) * divide_x
-        curl[:, 1:, :, 2] -= (H[:, 1:, :, 0] - H[:, :-1, :, 0]) * divide_y
-
-        # curl[:, 1:, :, 0] += (H[:, 1:, :, 2] - H[:, :-1, :, 2])
-        # curl[:, :, 1:, 0] -= (H[:, :, 1:, 1] - H[:, :, :-1, 1])
+        # curl[:, 1:, :, 0] += (H[:, 1:, :, 2] - H[:, :-1, :, 2]) / self.grid_spacing_y
+        # curl[:, :, 1:, 0] -= (H[:, :, 1:, 1] - H[:, :, :-1, 1]) / self.grid_spacing_z
         #
-        # curl[:, :, 1:, 1] += (H[:, :, 1:, 0] - H[:, :, :-1, 0])
-        # curl[1:, :, :, 1] -= (H[1:, :, :, 2] - H[:-1, :, :, 2])
+        # curl[:, :, 1:, 1] += (H[:, :, 1:, 0] - H[:, :, :-1, 0]) / self.grid_spacing_z
+        # curl[1:, :, :, 1] -= (H[1:, :, :, 2] - H[:-1, :, :, 2]) / self.grid_spacing_x
         #
-        # curl[1:, :, :, 2] += (H[1:, :, :, 1] - H[:-1, :, :, 1])
-        # curl[:, 1:, :, 2] -= (H[:, 1:, :, 0] - H[:, :-1, :, 0])
+        # curl[1:, :, :, 2] += (H[1:, :, :, 1] - H[:-1, :, :, 1]) / self.grid_spacing_x
+        # curl[:, 1:, :, 2] -= (H[:, 1:, :, 0] - H[:, :-1, :, 0]) / self.grid_spacing_y
+
+        curl[:, 1:, :, 0] += (H[:, 1:, :, 2] - H[:, :-1, :, 2])
+        curl[:, :, 1:, 0] -= (H[:, :, 1:, 1] - H[:, :, :-1, 1])
+
+        curl[:, :, 1:, 1] += (H[:, :, 1:, 0] - H[:, :, :-1, 0])
+        curl[1:, :, :, 1] -= (H[1:, :, :, 2] - H[:-1, :, :, 2])
+
+        curl[1:, :, :, 2] += (H[1:, :, :, 1] - H[:-1, :, :, 1])
+        curl[:, 1:, :, 2] -= (H[:, 1:, :, 0] - H[:, :-1, :, 0])
 
         return curl
 
@@ -304,7 +311,7 @@ class Grid:
         """get the total time passed"""
         return self.time_steps_passed * self.time_step
 
-    def run(self, total_time: Number, progress_bar: bool = True):
+    def run(self, total_time: Number=None, progress_bar: bool = True):
         """run an FDTD simulation.
 
         Args:
@@ -315,7 +322,8 @@ class Grid:
         """
         if isinstance(total_time, float):
             total_time /= self.time_step
-        time = range(0, int(total_time), 1)
+        self.total_time = int(total_time)
+        time = range(0, self.total_time, 1)
         if progress_bar:
             time = tqdm(time)
         for _ in time:
@@ -338,6 +346,7 @@ class Grid:
 
         curl = self.curl_H(self.H)
         # Before: self.E += self.courant_number * self.inverse_permittivity * curl
+        # self.E += self.time_step * self.inverse_permittivity * curl / sqrt(const.eps0)
         self.E += self.courant_number * self.inverse_permittivity * curl
 
         # update objects
@@ -367,6 +376,7 @@ class Grid:
 
         curl = self.curl_E(self.E)
         # Before: self.H -= self.courant_number * self.inverse_permeability * curl
+        # self.H -= self.time_step * self.inverse_permeability * curl / sqrt(const.mu0)
         self.H -= self.courant_number * self.inverse_permeability * curl
 
         # # update objects

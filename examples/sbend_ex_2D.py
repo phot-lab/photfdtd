@@ -74,10 +74,10 @@ if __name__ == "__main__":
 
     # 如果添加了监视器，还可以绘制某一点时域场变化曲线，这里选择index=30即监视器中心
     Grid.plot_fieldtime(folder=grid.folder, grid=grid, field_axis="z", index=10, name_det="detector")
-    grid.calculate_source_profile()
+    grid.source_data()
     # 绘制频谱
-    grid.calculate_source_profile()
+    grid.source_data()
     grid.detector_profile()
-    Grid.compute_frequency_domain(grid=grid, wl_start=1000e-9, wl_end=2000e-9, name_det="detector",
-                                  index=10, field_axis="x", field="E", folder=None)
+    Grid.visulize_detector(grid=grid, wl_start=1000e-9, wl_end=2000e-9, name_det="detector",
+                           index=10, field_axis="x", field="E", folder=None)
 
