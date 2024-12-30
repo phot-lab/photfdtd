@@ -173,7 +173,6 @@ class Grid:
         """
         curl = bd.zeros(E.shape, dtype=E.dtype)
 
-
         # divide_x = self.time_step * const.c / self.courant_number / self.grid_spacing_x
         # divide_y = self.time_step * const.c / self.courant_number / self.grid_spacing_y
         # divide_z = self.time_step * const.c / self.courant_number / self.grid_spacing_z
@@ -311,7 +310,7 @@ class Grid:
         """get the total time passed"""
         return self.time_steps_passed * self.time_step
 
-    def run(self, total_time: Number=None, progress_bar: bool = True):
+    def run(self, total_time: Number = None, progress_bar: bool = True):
         """run an FDTD simulation.
 
         Args:

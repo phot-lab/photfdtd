@@ -16,6 +16,7 @@ from .typing_ import ListOrSlice, Tuple, List
 from .grid import Grid
 from .backend import backend as bd
 from .constants import X, Y, Z, c
+from .conversions import simE_to_worldE, simH_to_worldH
 
 
 ## Detector
@@ -139,6 +140,16 @@ class LineDetector:
     def detector_values(self):
         """ outputs what detector detects """
         return {"E": self.E, "H": self.H}
+
+    @property
+    def real_E(self):
+        # 光源
+        # The source is using simE unit so t
+        return simE_to_worldE(np.array(self.E))
+
+    @property
+    def real_H(self):
+        return simH_to_worldH(np.array(self.H))
 
     @property
     def poynting(self) -> np.ndarray:
