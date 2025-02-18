@@ -3,8 +3,8 @@ import matplotlib.dates as mdates
 from datetime import datetime
 
 # 创建任务和对应的开始和结束日期
-tasks = ['Literature review and research design', 'Material experiments and characterization', 'FVM Simulation',
-         'Sample preparation and growth', 'Fabrication, tests and data analysis', 'Thesis writing and finalization']
+tasks = ['Literature Review and Research Design', 'Component Experiments', 'Chip Design and Simulation',
+         'Fabrication', 'Tests and Data Analysis', 'Thesis Writing and Finalization']
 start_dates = ['2025-09-01', '2026-2-01', '2026-12-01', '2027-4-01', '2027-12-01', '2028-08-01']
 end_dates = ['2026-2-01', '2026-12-01', '2027-4-01', '2027-12-01', '2028-08-01', '2029-05-01']
 
