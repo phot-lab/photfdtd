@@ -22,9 +22,17 @@ if __name__ == "__main__":
                       ylength=1, zlength=1,
                       name='detector1')
     grid.set_detector(detector_type='linedetector',
-                      x_start=12.3e-6, x_end=13.3e-6, y=0, z=3e-6,
+                      x_start=1.7e-6, x_end=2.7e-6, y=0, z=12e-6,
                       ylength=1, zlength=1,
                       name='detector2')
+    grid.set_detector(detector_type='linedetector',
+                      x_start=12.3e-6, x_end=13.3e-6, y=0, z=3e-6,
+                      ylength=1, zlength=1,
+                      name='detector3')
+    grid.set_detector(detector_type='linedetector',
+                      x_start=12.3e-6, x_end=13.3e-6, y=0, z=12e-6,
+                      ylength=1, zlength=1,
+                      name='detector4')
     grid.add_object(ring)
 
     grid.save_fig(axis="y", axis_index=6)
@@ -44,6 +52,8 @@ if __name__ == "__main__":
     grid.visualize()
     freqs, spectrum1 = grid.visulize_single_detector(name_det="detector1")
     freqs, spectrum2 = grid.visulize_single_detector(name_det="detector2")
+    freqs, spectrum3 = grid.visulize_single_detector(name_det="detector3")
+    freqs, spectrum4 = grid.visulize_single_detector(name_det="detector4")
 
     import matplotlib.pyplot as plt
     plt.plot(freqs,(spectrum2 / spectrum1) ** 2)
@@ -51,10 +61,27 @@ if __name__ == "__main__":
     plt.xlabel("frequency (THz)")
     plt.title("Transmission calculated by Ex^2")
     plt.legend()
-    file_name = "Transmission calculated by Ex^2"
+    file_name = "Transmission_detector_2"
     plt.savefig(f"{grid.folder}/{file_name}.png")
     plt.close()
-    # 由监视器数据绘制Ex场随时间变化的图像
-    # Grid.plot_fieldtime(grid=grid, field_axis="x", field="E", index=10, name_det="detector1")
+
+    plt.plot(freqs,(spectrum3 / spectrum1) ** 2)
+    plt.ylabel("Ex")
+    plt.xlabel("frequency (THz)")
+    plt.title("Transmission calculated by Ex^2")
+    plt.legend()
+    file_name = "Transmission_detector_3"
+    plt.savefig(f"{grid.folder}/{file_name}.png")
+    plt.close()
+
+    plt.plot(freqs,(spectrum4 / spectrum1) ** 2)
+    plt.ylabel("Ex")
+    plt.xlabel("frequency (THz)")
+    plt.title("Transmission calculated by Ex^2")
+    plt.legend()
+    file_name = "Transmission_detector_4"
+    plt.savefig(f"{grid.folder}/{file_name}.png")
+    plt.close()
+
 
 

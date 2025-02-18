@@ -24,6 +24,7 @@ from .typing_ import Tuple, Number, Tensorlike
 # relative
 from .backend import backend as bd
 from . import constants as const
+from .conversions import *
 
 
 ## Functions

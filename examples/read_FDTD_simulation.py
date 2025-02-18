@@ -18,14 +18,12 @@ if __name__ == "__main__":
     # end = 2141
     source_data = source_profile[:, 25, 0]
     #
-    detector_data = np.array([x for x in grid._grid.detectors[0].detector_values()["E"]])
+    detector_data = np.array(grid._grid.detectors[0].real_E)
     detector_data = detector_data[:, 13, 0]
     wl_start = 400e-9
     wl_end = 1800e-9
     # grid.calculate_Transmission(detector_data=detector_data, source_data=source_data, wl_start=wl_start, wl_end=wl_end)
-    Grid.visulize_detector(grid=grid, wl_start=wl_start, wl_end=wl_end, input_data=detector_data, index=5)
-    Grid.visulize_detector(grid=grid, wl_start=wl_start, wl_end=wl_end, input_data=source_data, index=5)
-    grid.calculate_Transmission(field_axis="x", wl_start=400e-9, wl_end=1800e-9)
+
 
 
 

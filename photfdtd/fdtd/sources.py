@@ -40,7 +40,8 @@ class PointSource:
             hanning_dt: float = 10.0,
             pulse_length: float = 39e-15,
             offset: float = 112e-15,
-            polarization: str = "z"
+            polarization: str = "z",
+            real_EH_unit: bool = True
     ):
         """Create a LineSource with a gaussian profile
 
@@ -57,10 +58,15 @@ class PointSource:
             offset: 脉冲中心时间 修改于23.5.14 单位s
             pulse_type: "gaussian"代表高斯脉冲 "hanning"代表汉宁脉冲 "none"或者其他任何输入代表不使用脉冲
             polarization: 电场偏振方向 "x" "y" "z"
+            real_EH_unit: use real unit for E and H?
         """
         self.grid = None
         self.period = period
         self.amplitude = amplitude
+        if real_EH_unit:
+            self.sim_amplitude = worldE_to_simE(amplitude)
+        else:
+            self.sim_amplitude = amplitude
         self.phase_shift = phase_shift
         self.name = name
         self.pulse_type = pulse_type
@@ -109,7 +115,7 @@ class PointSource:
         if self.pulse_type == "hanning":
             t1 = int(2 * pi / (self.frequency * self.hanning_dt / self.cycle))
             if q < t1:
-                src = self.amplitude * hanning(
+                src = self.sim_amplitude * hanning(
                     self.frequency, q * self.hanning_dt, self.cycle
                 )
             else:
@@ -121,7 +127,7 @@ class PointSource:
 
         # if not pulse
         else:
-            src = self.amplitude * sin(2 * pi * q / self.period + self.phase_shift)
+            src = self.sim_amplitude * sin(2 * pi * q / self.period + self.phase_shift)
         self._Epol = 'xyz'.index(self.polarization)
         # str.index(a)方法给出str中a的所在位置
         self.grid.E[self.x, self.y, self.z, self._Epol] += src
@@ -132,7 +138,7 @@ class PointSource:
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(period={self.period}, "
-            f"amplitude={self.amplitude}, phase_shift={self.phase_shift}, "
+            f"amplitude={self.sim_amplitude}, phase_shift={self.phase_shift}, "
             f"name={repr(self.name)})"
         )
 
@@ -161,6 +167,7 @@ class LineSource:
             offset: float = 112e-15,
             waveform: str = "plane",
             polarization: str = "z",
+            real_EH_unit: bool = True
     ):
         """Create a LineSource with a gaussian profile
         Args:
@@ -178,6 +185,10 @@ class LineSource:
         self.grid = None
         self.period = period
         self.amplitude = amplitude
+        if real_EH_unit:
+            self.sim_amplitude = worldE_to_simE(amplitude)
+        else:
+            self.sim_amplitude = amplitude
         self.phase_shift = phase_shift
         self.name = name
         self.waveform = waveform
@@ -233,7 +244,7 @@ class LineSource:
             self.profile = bd.exp(-(vect ** 2) / (2 * (0.5 * vect.max()) ** 2))  # 这是一个高斯分布
             # self.profile /= self.profile.sum()
         self.profile /= self.profile.max()  # 在计算高斯分布之后，代码将其归一化，确保分布的最大值为1。
-        self.profile *= self.amplitude
+        self.profile *= self.sim_amplitude
     def _handle_slices(
             self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ) -> Tuple[List, List, List]:
@@ -345,7 +356,7 @@ class LineSource:
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(period={self.period}, "
-            f"amplitude={self.amplitude}, phase_shift={self.phase_shift}, "
+            f"amplitude={self.sim_amplitude}, phase_shift={self.phase_shift}, "
             f"name={repr(self.name)})"
         )
 
@@ -369,6 +380,7 @@ class PlaneSource:
             phase_shift: float = 0.0,
             name: str = None,
             polarization: str = 'z',
+            real_EH_unit: bool = True
     ):
         """Create a PlaneSource.
 
@@ -383,6 +395,10 @@ class PlaneSource:
         self.grid = None
         self.period = period
         self.amplitude = amplitude
+        if real_EH_unit:
+            self.sim_amplitude = worldE_to_simE(amplitude)
+        else:
+            self.sim_amplitude = amplitude
         self.phase_shift = phase_shift
         self.name = name
         self.polarization = polarization
@@ -428,7 +444,7 @@ class PlaneSource:
         _zvec = bd.array(zvec, float)
 
         profile = bd.ones(_xvec.shape)
-        self.profile = self.amplitude * profile
+        self.profile = self.sim_amplitude * profile
 
     def _handle_slices(
             self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
@@ -533,7 +549,7 @@ class PlaneSource:
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(period={self.period}, "
-            f"amplitude={self.amplitude}, phase_shift={self.phase_shift}, "
+            f"amplitude={self.sim_amplitude}, phase_shift={self.phase_shift}, "
             f"name={repr(self.name)}, polarization={repr(self.polarization)})"
         )
 

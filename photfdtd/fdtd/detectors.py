@@ -162,6 +162,13 @@ class LineDetector:
         # * self.grid.grid_spacing_x * self.grid.grid_spacing_y
         return np.sum(self.poynting, axis=1, keepdims=True)
 
+    def real_E(self):
+        from .conversions import simE_to_worldE
+        return [simE_to_worldE(x) for x in self.detector_values()["E"]]
+
+    def real_H(self):
+        from .conversions import simH_to_worldH
+        return [simH_to_worldH(x) for x in self.detector_values()["H"]]
 
 
 

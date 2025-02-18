@@ -395,6 +395,8 @@ class Grid:
                     vect = found_source.profile * np.sin(2 * np.pi * q / found_source.period + found_source.phase_shift)
                 source_field[q, :, _Epol] = vect
 
+        # convert to world E
+        source_field = conversions.simE_to_worldE(source_field)
         # Spectrum
         fr = fdtd.FrequencyRoutines(self._grid, objs=source_field[:, int(size / 2), 0])
         spectrum_freqs, fourier = fr.FFT(
@@ -410,10 +412,10 @@ class Grid:
         fig, axes = plt.subplots(2, 2, figsize=(12, 6))  # 1行2列的子图
 
         # 左侧子图: 源 Profile 图
-        axes[0][0].plot(length * 1e6, found_source.profile)
+        axes[0][0].plot(length * 1e6, conversions.simE_to_worldE(found_source.profile))
         # axes[0][0].set_xticks()  # 每隔10个显示一个刻度
         axes[0][0].set_xlabel('um')
-        axes[0][0].set_ylabel("E")
+        axes[0][0].set_ylabel("E (V/m)")
         axes[0][0].set_title(f"Space distribution")
         axes[0][0].legend(["Source Profile"])
 
@@ -423,19 +425,19 @@ class Grid:
         axes[0][1].plot(time, source_field[:, int(size / 2), 2], label="Ez")
         # axes[0][1].set_xticks()  # 每隔10个显示一个刻度
         axes[0][1].set_xlabel('fs')
-        axes[0][1].set_ylabel("E")
+        axes[0][1].set_ylabel("E (V/m)")
         axes[0][1].set_title(f"Time Signal of {source_name}")
         axes[0][1].legend()
 
         # Spectrum
         axes[1][0].plot(spectrum_freqs * 1e-12, spectrum)
         axes[1][0].set_xlabel('frequency (THz)')
-        axes[1][0].set_ylabel("E")
+        axes[1][0].set_ylabel("E (V/m)")
         axes[1][0].set_title(f"Spectrum of {source_name}")
 
         axes[1][1].plot(constants.c / spectrum_freqs * 1e6, spectrum)
         axes[1][1].set_xlabel('wavelength (um)')
-        axes[1][1].set_ylabel("E")
+        axes[1][1].set_ylabel("E (V/m)")
         axes[1][1].set_title(f"Spectrum of {source_name}")
 
         plt.tight_layout()
@@ -733,7 +735,8 @@ class Grid:
             step: int = 5,
             axis="x",
             axis_number=0,
-            time=None
+            time=None,
+            save=True
             ):
         """
         @param time: int for timesteps or float for seconds
@@ -741,6 +744,7 @@ class Grid:
         @param axis_number:
         @param animate: 是否播放动画 %TODO: 完成它
         @param step: 每多少个时间步绘一次图
+        @param save: save the grid?
         """
         axis = axis.lower()
         if time is None:
@@ -752,6 +756,9 @@ class Grid:
             print("The total time for FDTD simulation is %i timesteps or %f fs." % (
                 time, time * self._grid.time_step * 1e15))
             self._grid.run(total_time=time)
+
+        if save:
+            self.save_simulation()
         # elif animate:
         #     for i in range(self._total_time):
         #         self._grid.step()
@@ -1361,7 +1368,12 @@ class Grid:
         data = None
         for detector in grid._grid.detectors:
             if detector.name == name_det:
-                data = np.array([x for x in detector.detector_values()["%s" % field]])
+                if field == "E":
+                    data = np.array(detector.real_E())
+                elif field == "H":
+                    data = np.array(detector.real_H())
+                else:
+                    raise ValueError("Parameter field should be either 'E' or 'H")
         if data is None:
             print("ValueError when using plot_fieldtime: No detector named '%s'" % name_det)
             return
@@ -1420,7 +1432,12 @@ class Grid:
                 if d.name == name_det:
                     detector = d
 
-        data = np.array([x for x in detector.detector_values()["%s" % field]])
+        if field == "E":
+            data = np.array(detector.real_E())
+        elif field == "H":
+            data = np.array(detector.real_H())
+        else:
+            raise ValueError("Parameter field should be either 'E' or 'H")
         if data is None:
             detector = self._grid.detectors[0]
             data = np.array([x for x in detector.detector_values()["%s" % field]])
