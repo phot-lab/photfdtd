@@ -175,21 +175,6 @@ class Grid:
         """
         curl = bd.zeros(E.shape, dtype=E.dtype)
 
-<<<<<<< Updated upstream
-        # divide_x = self.time_step * const.c / self.courant_number / self.grid_spacing_x
-        # divide_y = self.time_step * const.c / self.courant_number / self.grid_spacing_y
-        # divide_z = self.time_step * const.c / self.courant_number / self.grid_spacing_z
-        # curl[:, :-1, :, 0] += (E[:, 1:, :, 2] - E[:, :-1, :, 2]) / self.grid_spacing_y
-        # curl[:, :, :-1, 0] -= (E[:, :, 1:, 1] - E[:, :, :-1, 1]) / self.grid_spacing_z
-        #
-        # curl[:, :, :-1, 1] += (E[:, :, 1:, 0] - E[:, :, :-1, 0]) / self.grid_spacing_z
-        # curl[:-1, :, :, 1] -= (E[1:, :, :, 2] - E[:-1, :, :, 2]) / self.grid_spacing_x
-        #
-        # curl[:-1, :, :, 2] += (E[1:, :, :, 1] - E[:-1, :, :, 1]) / self.grid_spacing_x
-        # curl[:, :-1, :, 2] -= (E[:, 1:, :, 0] - E[:, :-1, :, 0]) / self.grid_spacing_y
-
-=======
->>>>>>> Stashed changes
         curl[:, :-1, :, 0] += (E[:, 1:, :, 2] - E[:, :-1, :, 2])
         curl[:, :, :-1, 0] -= (E[:, :, 1:, 1] - E[:, :, :-1, 1])
 
