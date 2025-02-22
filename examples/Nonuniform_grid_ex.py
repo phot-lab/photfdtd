@@ -11,10 +11,10 @@ if __name__ == "__main__":
     # # create the simulation region, which is a Grid object 新建一个 grid 对象
     grid = Grid(grid_xlength=3e-6, grid_ylength=1, grid_zlength=8e-6,
                 grid_spacing_x=20e-9,
-                grid_spacing_z=20e-9,
+                grid_spacing_z=30e-9,
                 grid_spacing_y=20e-9,
                 permittivity=background_index ** 2,
-                foldername="basic_ex")
+                foldername="Nonuniform_ex")
 
     # set waveguide 设置器件参数
     waveguide = Waveguide(
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     # set a line source with center wl at 1550nm 设置一个点光源，波长为1550nm，波形为连续正弦
     grid.set_source(source_type="linesource",
                     wavelength=1550e-9, name="source", x=1500e-9, y=0, z=1200e-9,
-                    xlength=400e-9, ylength=0, zlength=0, polarization="x", pulse_type="gaussian")
+                    xlength=400e-9, ylength=0, zlength=0, polarization="x", pulse_type="cw")
     #
     # # # set a line detector 设置一个线监视器
     grid.set_detector(detector_type="linedetector",
@@ -55,13 +55,13 @@ if __name__ == "__main__":
     grid.plot_n()
 
     # run the FDTD simulation 运行仿真
-    grid.run(time=5000)
+    grid.run(time=100e-15)
 
     # # Save result of simulation 保存仿真结果
     grid.save_simulation()
     #
     # Or you can read from a folder 也可以读取仿真结果
-    grid = grid.read_simulation(folder=grid.folder)
+    # grid = grid.read_simulation(folder=grid.folder)
     grid.visualize()
 
     grid.calculate_Transmission(detector_name_1="detector1", detector_name_2="detector2")

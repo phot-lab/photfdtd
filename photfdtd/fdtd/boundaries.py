@@ -10,7 +10,7 @@ Available Boundaries:
 
 # typing
 from .typing_ import Tensorlike, ListOrSlice, IntOrSlice
-
+from . import constants as const
 # relative
 from .grid import Grid
 from .backend import backend as bd
@@ -412,9 +412,14 @@ class PML(Boundary):
         Note:
             this method is called *after* the electric field is updated
         """
+        ### TODO: 要应用非均匀网格，这里是不是也得改
+        ### original:        self.grid.E[self.loc] += (
+        #     self.grid.courant_number
+        #     * self.grid.inverse_permittivity[self.loc]
+        #     * self.phi_E
+        # )
         self.grid.E[self.loc] += (
-            self.grid.courant_number
-            * self.grid.inverse_permittivity[self.loc]
+            const.c * self.grid.time_step * self.grid.inverse_permittivity[self.loc]
             * self.phi_E
         )
 
@@ -425,8 +430,7 @@ class PML(Boundary):
             this method is called *after* the magnetic field is updated
         """
         self.grid.H[self.loc] -= (
-            self.grid.courant_number
-            * self.grid.inverse_permeability[self.loc]
+            const.c * self.grid.time_step * self.grid.inverse_permittivity[self.loc]
             * self.phi_H
         )
 
@@ -447,17 +451,28 @@ class PML(Boundary):
 
         # TODO：检查应用不同空间步长时方程是否应该这么写
         # 暂时先让代码保持原来的样子
-        dx = 1
-        dy = 1
-        dz = 1
-        self.psi_Ex[:, 1:, :, 1] += (Hz[:, 1:, :] - Hz[:, :-1, :]) * c[:, 1:, :, 1] * dz / dy
-        self.psi_Ex[:, :, 1:, 2] += (Hy[:, :, 1:] - Hy[:, :, :-1]) * c[:, :, 1:, 2] * dy / dz
+        """
+        original:
+        self.psi_Ex[:, 1:, :, 1] += (Hz[:, 1:, :] - Hz[:, :-1, :]) * c[:, 1:, :, 1]
+        self.psi_Ex[:, :, 1:, 2] += (Hy[:, :, 1:] - Hy[:, :, :-1]) * c[:, :, 1:, 2]
 
-        self.psi_Ey[:, :, 1:, 2] += (Hx[:, :, 1:] - Hx[:, :, :-1]) * c[:, :, 1:, 2] * dx / dz
-        self.psi_Ey[1:, :, :, 0] += (Hz[1:, :, :] - Hz[:-1, :, :]) * c[1:, :, :, 0] * dz / dx
+        self.psi_Ey[:, :, 1:, 2] += (Hx[:, :, 1:] - Hx[:, :, :-1]) * c[:, :, 1:, 2]
+        self.psi_Ey[1:, :, :, 0] += (Hz[1:, :, :] - Hz[:-1, :, :]) * c[1:, :, :, 0]
 
-        self.psi_Ez[1:, :, :, 0] += (Hy[1:, :, :] - Hy[:-1, :, :]) * c[1:, :, :, 0] * dy / dx
-        self.psi_Ez[:, 1:, :, 1] += (Hx[:, 1:, :] - Hx[:, :-1, :]) * c[:, 1:, :, 1] * dx / dy
+        self.psi_Ez[1:, :, :, 0] += (Hy[1:, :, :] - Hy[:-1, :, :]) * c[1:, :, :, 0]
+        self.psi_Ez[:, 1:, :, 1] += (Hx[:, 1:, :] - Hx[:, :-1, :]) * c[:, 1:, :, 1]
+        """
+        dx = self.grid.grid_spacing_x
+        dy = self.grid.grid_spacing_y
+        dz = self.grid.grid_spacing_z
+        self.psi_Ex[:, 1:, :, 1] += (Hz[:, 1:, :] - Hz[:, :-1, :]) * c[:, 1:, :, 1] * 1 / dy
+        self.psi_Ex[:, :, 1:, 2] += (Hy[:, :, 1:] - Hy[:, :, :-1]) * c[:, :, 1:, 2] * 1 / dz
+
+        self.psi_Ey[:, :, 1:, 2] += (Hx[:, :, 1:] - Hx[:, :, :-1]) * c[:, :, 1:, 2] * 1 / dz
+        self.psi_Ey[1:, :, :, 0] += (Hz[1:, :, :] - Hz[:-1, :, :]) * c[1:, :, :, 0] * 1 / dx
+
+        self.psi_Ez[1:, :, :, 0] += (Hy[1:, :, :] - Hy[:-1, :, :]) * c[1:, :, :, 0] * 1 / dx
+        self.psi_Ez[:, 1:, :, 1] += (Hx[:, 1:, :] - Hx[:, :-1, :]) * c[:, 1:, :, 1] * 1 / dy
 
         self.phi_E[..., 0] = self.psi_Ex[..., 1] - self.psi_Ex[..., 2]
         self.phi_E[..., 1] = self.psi_Ey[..., 2] - self.psi_Ey[..., 0]
@@ -479,17 +494,28 @@ class PML(Boundary):
         Ez = self.grid.E[self.locz]
         # TODO：检查应用不同空间步长时方程是否应该这么写
         # 暂时先让代码保持原来的样子
-        dx = 1
-        dy = 1
-        dz = 1
-        self.psi_Hx[:, :-1, :, 1] += (Ez[:, 1:, :] - Ez[:, :-1, :]) * c[:, :-1, :, 1] * dz / dy
-        self.psi_Hx[:, :, :-1, 2] += (Ey[:, :, 1:] - Ey[:, :, :-1]) * c[:, :, :-1, 2] * dy / dz
+        """
+        original:
+        self.psi_Hx[:, :-1, :, 1] += (Ez[:, 1:, :] - Ez[:, :-1, :]) * c[:, :-1, :, 1]
+        self.psi_Hx[:, :, :-1, 2] += (Ey[:, :, 1:] - Ey[:, :, :-1]) * c[:, :, :-1, 2]
 
-        self.psi_Hy[:, :, :-1, 2] += (Ex[:, :, 1:] - Ex[:, :, :-1]) * c[:, :, :-1, 2] * dx / dz
-        self.psi_Hy[:-1, :, :, 0] += (Ez[1:, :, :] - Ez[:-1, :, :]) * c[:-1, :, :, 0] * dz / dx
+        self.psi_Hy[:, :, :-1, 2] += (Ex[:, :, 1:] - Ex[:, :, :-1]) * c[:, :, :-1, 2]
+        self.psi_Hy[:-1, :, :, 0] += (Ez[1:, :, :] - Ez[:-1, :, :]) * c[:-1, :, :, 0]
 
-        self.psi_Hz[:-1, :, :, 0] += (Ey[1:, :, :] - Ey[:-1, :, :]) * c[:-1, :, :, 0] * dy / dx
-        self.psi_Hz[:, :-1, :, 1] += (Ex[:, 1:, :] - Ex[:, :-1, :]) * c[:, :-1, :, 1] * dx / dy
+        self.psi_Hz[:-1, :, :, 0] += (Ey[1:, :, :] - Ey[:-1, :, :]) * c[:-1, :, :, 0]
+        self.psi_Hz[:, :-1, :, 1] += (Ex[:, 1:, :] - Ex[:, :-1, :]) * c[:, :-1, :, 1]
+        """
+        dx = self.grid.grid_spacing_x
+        dy = self.grid.grid_spacing_y
+        dz = self.grid.grid_spacing_z
+        self.psi_Hx[:, :-1, :, 1] += (Ez[:, 1:, :] - Ez[:, :-1, :]) * c[:, :-1, :, 1] * 1 / dy
+        self.psi_Hx[:, :, :-1, 2] += (Ey[:, :, 1:] - Ey[:, :, :-1]) * c[:, :, :-1, 2] * 1 / dz
+
+        self.psi_Hy[:, :, :-1, 2] += (Ex[:, :, 1:] - Ex[:, :, :-1]) * c[:, :, :-1, 2] * 1 / dz
+        self.psi_Hy[:-1, :, :, 0] += (Ez[1:, :, :] - Ez[:-1, :, :]) * c[:-1, :, :, 0] * 1 / dx
+
+        self.psi_Hz[:-1, :, :, 0] += (Ey[1:, :, :] - Ey[:-1, :, :]) * c[:-1, :, :, 0] * 1 / dx
+        self.psi_Hz[:, :-1, :, 1] += (Ex[:, 1:, :] - Ex[:, :-1, :]) * c[:, :-1, :, 1] * 1 / dy
 
         self.phi_H[..., 0] = self.psi_Hx[..., 1] - self.psi_Hx[..., 2]
         self.phi_H[..., 1] = self.psi_Hy[..., 2] - self.psi_Hy[..., 0]

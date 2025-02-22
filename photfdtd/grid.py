@@ -248,6 +248,7 @@ class Grid:
             else:
                 raise ValueError("please set wavelength or period for the source")
 
+        ###
         if self.flag_PML_not_set:
             self.set_PML((period * constants.c) / 2)
 

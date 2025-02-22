@@ -125,6 +125,9 @@ class NumpyBackend(Backend):
     max = staticmethod(numpy.max)
     """ max element in array """
 
+    sqrt = staticmethod(numpy.sqrt)
+    """ max element in array """
+
     stack = staticmethod(numpy.stack)
     """ stack multiple arrays """
 

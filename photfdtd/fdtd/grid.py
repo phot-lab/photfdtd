@@ -64,6 +64,7 @@ class Grid:
                 will be derived from this number using the CFL-condition.
         """
         # save the grid spacing
+        # Currently self.grid_spacing
         self.grid_spacing = float(grid_spacing)
         if grid_spacing_x is None:
             self.grid_spacing_x = self.grid_spacing
@@ -98,12 +99,10 @@ class Grid:
 
         # timestep of the simulation
         # original: self.time_step = self.courant_number * self.grid_spacing / const.c
-        self.time_step = self.courant_number * self.grid_spacing / const.c
-        # self.du = sqrt(self.grid_spacing_x ** 2 + self.grid_spacing_y ** 2 + self.grid_spacing_z ** 2) / sqrt(3)
-        # self.time_step = self.courant_number / (const.c * sqrt((1 / self.grid_spacing_x) ** 2
-        #                                                        + (1 / (self.grid_spacing_y)) ** 2
-        #                                                        + (1 / (self.grid_spacing_z)) ** 2))
-        # self.time_step = self.courant_number * self.du / const.c
+        # self.time_step = 0.99 / (const.c * sqrt(1 / grid_spacing_x ** 2 + 1 / grid_spacing_y ** 2 + 1 / grid_spacing_z ** 2))
+        self.time_step = 0.99 / (
+                    const.c * sqrt(int(self.Nx > 1) / grid_spacing_x ** 2 + int(self.Ny > 1) / grid_spacing_y ** 2 + int(self.Nz > 1) / grid_spacing_z ** 2))
+        # self.time_step = self.courant_number * self.grid_spacing / const.c
         # save electric and magnetic field
         self.E = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
         self.H = bd.zeros((self.Nx, self.Ny, self.Nz, 3))

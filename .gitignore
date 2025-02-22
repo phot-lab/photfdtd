@@ -48,3 +48,5 @@ examples/mode_solver/test_multi_core_fiber/
 examples/mode_solver/
 
 examples/transmission_ex/
+
+examples/Nonuniform_ex/
