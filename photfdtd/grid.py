@@ -10,6 +10,8 @@ from .index import Index
 import photfdtd.fdtd.constants as constants
 import photfdtd.fdtd.conversions as conversions
 from dataclasses import dataclass
+from typing import Optional
+
 
 @dataclass
 class Subregion:
@@ -27,7 +29,8 @@ class Grid:
             grid_spacing_z: float = None,
             subregions: list = None,
             permittivity=1.0, permeability=1.0, courant_number=None, foldername=" ",
-            folder=None
+            folder=None,
+            set_PML: bool = True
     ) -> None:
         """
         Args:
@@ -60,12 +63,22 @@ class Grid:
                                          grid_spacing=grid_spacing_y)[0]
         grid_zlength = self._handle_unit(lengths=[grid_zlength],
                                          grid_spacing=grid_spacing_z)[0]
+        if folder is not None:
+            self.folder = folder
+        else:
+            current_dir = os.getcwd()
+            self.folder = os.path.join(current_dir, foldername)
+        makedirs(self.folder, exist_ok=True)
 
         self.x_coordinates = np.full(grid_xlength, grid_spacing_x)
         self.y_coordinates = np.full(grid_ylength, grid_spacing_y)
         self.z_coordinates = np.full(grid_zlength, grid_spacing_z)
 
-        self.add_subregion(subregions=subregions)
+        if subregions is not None:
+            grid_xlength, grid_ylength, grid_zlength = self.add_subregion(subregions=subregions,
+                                                                      grid_spacing_x=grid_spacing_x,
+                                                                      grid_spacing_y=grid_spacing_y,
+                                                                      grid_spacing_z=grid_spacing_z)
         grid = fdtd.Grid(shape=(grid_xlength, grid_ylength, grid_zlength),
                          grid_spacing=grid_spacing,
                          grid_spacing_x=grid_spacing_x,
@@ -73,7 +86,8 @@ class Grid:
                          grid_spacing_z=grid_spacing_z,
                          permittivity=permittivity,
                          permeability=permeability,
-                         courant_number=courant_number
+                         courant_number=courant_number,
+                         folder=self.folder
                          )
 
         self._grid_xlength = grid_xlength
@@ -83,15 +97,10 @@ class Grid:
         self._grid = grid
 
 
-        if folder is not None:
-            self.folder = folder
-        else:
-            current_dir = os.getcwd()
-            self.folder = os.path.join(current_dir, foldername)
-        makedirs(self.folder, exist_ok=True)
 
         self.background_index = np.sqrt(permittivity * permeability)
-        self.flag_PML_not_set = True
+
+        self.flag_PML_not_set = True if set_PML else False
 
     def _handle_unit(self, lengths, grid_spacing=None):
         if grid_spacing is None:
@@ -134,35 +143,36 @@ class Grid:
     def add_subregion(self,
                       subregions: list = None,
                       direction='x',
-                      cell_size=1e-3,
-                      region_start=27e-3,
-                      region_end=33e-3):
+                      grid_spacing_x=None,
+                      grid_spacing_y=None,
+                      grid_spacing_z=None):
+        pass
         for subregion in subregions:
             cell_size = subregion.cell_size
             region_start = subregion.region_start
             region_end = subregion.region_end
             if direction == "x":
-                start_coordinates = round(region_start / self._grid.grid_spacing_x)
-                end_coordinates = round(region_end / self._grid.grid_spacing_x)
+                start_coordinates = round(region_start / grid_spacing_x)
+                end_coordinates = round(region_end / grid_spacing_x)
                 subregion_x_coordinates = np.full(int((region_end - region_start) / cell_size), cell_size)
-                self._grid.x_coordinates = np.concatenate([self._grid.x_coordinates[:start_coordinates],
-                                                           subregion_x_coordinates,
-                                                           self._grid.x_coordinates[end_coordinates:]])
+                self.x_coordinates = np.concatenate([self.x_coordinates[:start_coordinates],
+                                                     subregion_x_coordinates,
+                                                     self.x_coordinates[end_coordinates:]])
             if direction == "y":
-                start_coordinates = round(region_start / self._grid.grid_spacing_y)
-                end_coordinates = round(region_end / self._grid.grid_spacing_y)
+                start_coordinates = round(region_start / grid_spacing_y)
+                end_coordinates = round(region_end / grid_spacing_y)
                 subregion_y_coordinates = np.full(int((region_end - region_start) / cell_size), cell_size)
-                self._grid.y_coordinates = np.concatenate([self._grid.y_coordinates[:start_coordinates],
-                                                           subregion_y_coordinates,
-                                                           self._grid.y_coordinates[end_coordinates:]])
+                self.y_coordinates = np.concatenate([self.y_coordinates[:start_coordinates],
+                                                     subregion_y_coordinates,
+                                                     self.y_coordinates[end_coordinates:]])
             if direction == "z":
-                start_coordinates = round(region_start / self._grid.grid_spacing_z)
-                end_coordinates = round(region_end / self._grid.grid_spacing_z)
+                start_coordinates = round(region_start / grid_spacing_z)
+                end_coordinates = round(region_end / grid_spacing_z)
                 subregion_z_coordinates = np.full(int((region_end - region_start) / cell_size), cell_size)
-                self._grid.z_coordinates = np.concatenate([self._grid.z_coordinates[:start_coordinates],
-                                                           subregion_z_coordinates,
-                                                           self._grid.z_coordinates[end_coordinates:]])
-        pass
+                self.z_coordinates = np.concatenate([self.z_coordinates[:start_coordinates],
+                                                     subregion_z_coordinates,
+                                                     self.z_coordinates[end_coordinates:]])
+        return len(self.x_coordinates), len(self.y_coordinates), len(self.z_coordinates)
 
     def add_object(self, object: Waveguide):
 
@@ -181,7 +191,7 @@ class Grid:
                                 priority_matrix=internal_object.priority_matrix)
 
     def del_object(self, object: Waveguide):
-        #TODO: unfinished
+        # TODO: unfinished, no use
         for internal_object in object._internal_objects:
 
             if internal_object == 0:
@@ -204,7 +214,6 @@ class Grid:
                 pml_width_x=None,
                 pml_width_y=None,
                 pml_width_z=None):
-        # TODO: 删除PML
         if pml_width is not None:
             pml_width_x = pml_width if pml_width_x is None else pml_width_x
             pml_width_y = pml_width if pml_width_y is None else pml_width_y
@@ -256,7 +265,6 @@ class Grid:
             axis: str = "y"
     ):
         """
-        TODO: cycle是什么？
         @param source_type: 光源种类：点或线或面 "pointsource", "linesource", "planesource"
         @param wavelength: 波长(m)
         @param period:周期
@@ -264,7 +272,7 @@ class Grid:
         @param phase_shift: 相移
         @param name: 名称
         @param waveform: default to "gaussian" 波形 "plane":平面波 "gaussian": 高斯波
-        @param cycle: 汉宁窗脉冲的周期（仅使用汉宁hanning脉冲时有用）
+        @param cycle: number of cycles of Hanning window pulse汉宁窗脉冲的周期数（仅使用汉宁hanning脉冲时有用）
         @param hanning_dt: 汉宁窗宽度（仅使用汉宁hanning脉冲时有用）
         @param polarization: 偏振
         @param pulse_type: 脉冲类型 "gaussian" 或 "hanning" 或 "CW"
@@ -393,8 +401,8 @@ class Grid:
             raise Exception("No source found in Grid.")
 
     def source_data(self,
-                    time: int or float = None,
-                    source_name: str = None):
+                    time: Optional[int] or Optional[float] = None,
+                    source_name: Optional[str] = None):
         if time is None:
             if self._grid.time_steps_passed != 0:
                 time = self._grid.time_steps_passed
@@ -416,7 +424,7 @@ class Grid:
         else:
             found_source = self._try_to_find_source()
             source_name = found_source.name
-        # TODO: 考虑其他方向，consider other directions
+        # TODO: pointsource and planesource
 
         if isinstance(found_source, fdtd.LineSource):
             print("This is a Linesource")
@@ -606,6 +614,8 @@ class Grid:
             raise Exception("No detector found in Grid.")
 
     def detector_profile(self, detector_name: str = None, field: str = "E", field_axis: str = "x", timesteps: int = -1):
+        # 某一时刻的监视器场强分布，并保存为图片。没什么用
+        # The field profile of a detector at a certain timestep, and save it as a picture. Quite useless.
         # TODO: block detector
 
         if detector_name is not None:
@@ -655,10 +665,10 @@ class Grid:
         @param axis_index: index of axis
         @param axis_number: an outdated version of axis_index
         @param time: only for method run() 绘制哪个时刻的场图（用户用不到，仅供run()使用
-        @param animate: 是否播放动画 #TODO: 这个参数的作用？
+        @param animate: 是否播放动画。这个参数应该只有在notebook里有用 This parameter is only useful in Jupyter Notebook
+        #TODO: How to animate? 该如何播放动画？
         :
         """
-        # TODO: grid.visualize函数还有animate等功能，尚待加入
         if not axis:
             # Tell which dimension to draw automatically
             dims_with_size_one = [i for i, size in enumerate(self._grid.inverse_permittivity.shape) if size == 1]
@@ -789,7 +799,7 @@ class Grid:
         @param time: int for timesteps or float for seconds
         @param axis: 与save_fig()相同
         @param axis_number:
-        @param animate: 是否播放动画 %TODO: 完成它
+        @param animate: 是否播放动画 ffmpeg required
         @param step: 每多少个时间步绘一次图
         @param save: save the grid?
         """
@@ -797,74 +807,72 @@ class Grid:
         if time is None:
             time = self._calculate_time()
 
-        if not animate:
-            if not isinstance(time, int):
-                time = self._grid._handle_time(time)
-            print("The total time for FDTD simulation is %i timesteps or %f fs." % (
-                time, time * self._grid.time_step * 1e15))
-            self._grid.run(total_time=time)
+        self._grid.animate = animate
+
+        if not isinstance(time, int):
+            time = self._grid._handle_time(time)
+        print("The total time for FDTD simulation is %i timesteps or %f fs." % (
+            time, time * self._grid.time_step * 1e15))
+        self._grid.run(total_time=time)
 
         if save:
             self.save_simulation()
-        # elif animate:
-        #     for i in range(self._total_time):
-        #         self._grid.step()
-        #         if (i + 1) % step == 0:
-        #             if axis == "x":
-        #                 self.visualize(x=axis_number, showEnergy=True, show=False, save=True, time=i)
-        #             elif axis == "y":
-        #                 self.visualize(y=axis_number, showEnergy=True, show=False, save=True, time=i)
-        #             elif axis == "z":
-        #                 self.visualize(z=axis_number, showEnergy=True, show=False, save=True, time=i)
-        #             else:
-        #                 continue
+        if animate:
+            self.animate()
 
     def animate(self,
-                axis: str = "z",
-                number: int = 0):
-        # TODO: 完成它，让正则表达式能识别完整地址
-        pass
+                folder_path=None,
+                output_video_path=None,
+                fps=10):
+        """
+        使用 FFmpeg 将指定文件夹下的图片按文件名中的数字顺序生成视频。
+        FFmpeg is required to generate video from images in the specified folder.
+        Args:
+            folder_path (str): 图片文件夹路径。
+            output_video_path (str): 输出视频文件路径。
+            fps (int): 视频帧率，默认为10。
+        """
+        import subprocess
         import re
-        from PIL import Image
-        import imageio
+        # 获取文件夹下的所有文件名
+        if not folder_path:
+            folder_path = self.folder + "/frames"
+        if not output_video_path:
+            output_video_path = self.folder + "/video.mp4"
+        file_names = os.listdir(folder_path)
 
-        # 文件夹路径
-        folder_path = self.folder
+        # 定义提取数字的函数
+        def extract_number(file_name):
+            match = re.search(r'E_(\d+)\.png', file_name)
+            return int(match.group(1)) if match else float('inf')
 
-        # 用户定义的 "z" 字符串和 "z=" 后面的数字
-        z_str = "z"  # 用户定义的 "z" 字符串
-        z_equals_value = 0  # 用户定义的 "z=" 后面的数字
+        # 按文件名中的数字排序
+        sorted_file_names = sorted(file_names, key=extract_number)
 
-        # 定义正则表达式模式，匹配文件名中的 "file_z=" 和 "total_time=" 后面的数字
-        pattern = re.compile(fr'file_{z_str}={z_equals_value}, total_time=(\d+).png')
+        # 生成图片列表文件
+        list_file_path = "image_list.txt"
+        with open(list_file_path, "w") as f:
+            for file_name in sorted_file_names:
+                if file_name.startswith("E_") and file_name.endswith(".png"):
+                    f.write(f"file '{os.path.join(folder_path, file_name)}'\n")
 
-        # 获取文件夹中所有图片文件
-        image_files = [os.path.join(folder_path, file) for file in os.listdir(folder_path)]
+        # 构建 FFmpeg 命令
+        command = [
+            "ffmpeg",
+            "-r", str(fps),
+            "-f", "concat",
+            "-safe", "0",
+            "-i", list_file_path,
+            "-c:v", "libx264",
+            "-pix_fmt", "yuv420p",
+            output_video_path
+        ]
 
-        # 过滤出满足用户定义条件的图片文件，并按 "total_time" 后面的数字从大到小排序
-        # filtered_images = sorted([file for file in image_files if pattern.match(file)],
-        #                          key=lambda x: int(pattern.match(x).group(1)), reverse=True)
-        filtered_images = sorted([file for file in image_files if pattern.match(os.path.basename(file))],
-                                 key=lambda x: int(pattern.match(x).group(1)), reverse=True)
+        # 执行 FFmpeg 命令
+        subprocess.run(command)
 
-        print(self.folder)
-        print(filtered_images)
-        # 创建一个图像列表
-        images = []
-
-        # 逐个读取筛选后的图片文件并添加到图像列表中
-        for file_path in filtered_images:
-            img = imageio.imread(file_path)
-            images.append(img)
-
-        output_file = 'output_animation.mp4'
-
-        # 使用 get_writer() 函数创建视频写入对象，设置帧之间的持续时间（秒）
-        with imageio.get_writer(output_file, fps=10) as writer:
-            for img in images:
-                writer.append_data(img)
-
-        print(f'动画已保存为 {output_file}')
+        # 删除图片列表文件
+        os.remove(list_file_path)
 
     def calculate_Transmission(self,
                                detector_name_1: str = None,

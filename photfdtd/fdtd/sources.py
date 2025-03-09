@@ -77,6 +77,7 @@ class PointSource:
         self.pulse_length = pulse_length
         self.polarization = polarization
 
+
     def _register_grid(self, grid: Grid, x: Number, y: Number, z: Number):
         """Register a grid for the source.
 

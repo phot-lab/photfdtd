@@ -38,8 +38,12 @@ if __name__ == "__main__":
     grid.save_fig()
     grid.plot_n()
     #
-    # grid.run(time=1000e-15, save=True)
-    grid = Grid.read_simulation(grid.folder)
+    grid.run(animate=True, time=10000)
+
+    # Save result of simulation 保存仿真结果
+    grid.save_simulation()
+    grid.animate(folder_path=grid.folder+"/frames", output_video_path=grid.folder+"/video.mp4")
+
     grid.visualize()
     # grid.save_fig(axis="y", axis_number=0, show_energy=True)
     # # 绘制仿真结束时刻空间场分布

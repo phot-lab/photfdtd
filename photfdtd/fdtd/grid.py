@@ -14,6 +14,7 @@ from subprocess import check_call, CalledProcessError
 from glob import glob
 from datetime import datetime
 
+import numpy as np
 # 3rd party
 from tqdm import tqdm
 from numpy import savez, sqrt
@@ -25,6 +26,13 @@ from .typing_ import Tuple, Number, Tensorlike
 from .backend import backend as bd
 from . import constants as const
 from .conversions import *
+
+# plot
+import matplotlib
+
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
 
 ## Functions
@@ -51,6 +59,7 @@ class Grid:
             permittivity: float = 1.0,
             permeability: float = 1.0,
             courant_number: float = None,
+            folder: str = None,
     ):
         """
         Args:
@@ -101,7 +110,8 @@ class Grid:
         # self.time_step = 0.99 / (const.c * sqrt(1 / grid_spacing_x ** 2 + 1 / grid_spacing_y ** 2 + 1 /
         # grid_spacing_z ** 2))
         self.time_step = 0.99 / (
-                    const.c * sqrt(int(self.Nx > 1) / grid_spacing_x ** 2 + int(self.Ny > 1) / grid_spacing_y ** 2 + int(self.Nz > 1) / grid_spacing_z ** 2))
+                const.c * sqrt(int(self.Nx > 1) / grid_spacing_x ** 2 + int(self.Ny > 1) / grid_spacing_y ** 2 + int(
+            self.Nz > 1) / grid_spacing_z ** 2))
         # self.time_step = self.courant_number * self.grid_spacing / const.c
         # save electric and magnetic field
         self.E = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
@@ -141,7 +151,7 @@ class Grid:
         self.objects = []
 
         # folder path to store the simulation
-        self.folder = None
+        self.folder = folder
 
     def _handle_distance(self, distance: Number, axis: "x") -> int:
         """transform a distance to an integer number of gridpoints"""
@@ -184,6 +194,7 @@ class Grid:
         curl[:, :-1, :, 2] -= (E[:, 1:, :, 0] - E[:, :-1, :, 0])
 
         return curl
+
     def curl_E_with_nonuniform_grid(self, E: Tensorlike) -> Tensorlike:
         """Transforms an E-type field into an H-type field by performing a curl
         operation
@@ -208,6 +219,7 @@ class Grid:
         curl[:, :-1, :, 2] -= (E[:, 1:, :, 0] - E[:, :-1, :, 0]) / self.grid_spacing_y
 
         return curl
+
     def curl_H(self, H: Tensorlike) -> Tensorlike:
         """Transforms an H-type field into an E-type field by performing a curl
         operation
@@ -347,13 +359,50 @@ class Grid:
         for _ in time:
             self.step()
 
-    def step(self):
+    def step(self, num_frames=100):
         """do a single FDTD step by first updating the electric field and then
         updating the magnetic field
         """
         self.update_E()
         self.update_H()
+        if self.animate and self.time_steps_passed % int(self.total_time / num_frames) == 0:
+            self.save_frame()
+
         self.time_steps_passed += 1
+
+    def save_frame(self):
+        # TODO: for 3d simulation
+        """save frames for animation"""
+        if not os.path.exists(self.folder + "/frames"):
+            os.makedirs(self.folder + "/frames")
+            self.folder_frames = self.folder + "/frames"
+        if "self._Epol" not in locals():
+            self._Epol = 'xyz'.index(self.sources[0].polarization)
+        if "self.max_abs" not in locals():
+            self.max_abs = np.max(np.abs(self.E[:, :, :, self._Epol]))
+
+        fig, ax = plt.subplots()
+
+        if self.Nx == 1:
+            im = ax.imshow(np.transpose(self.E[0, :, :, self._Epol]), cmap="RdBu", interpolation="nearest", aspect="auto",
+                           origin="lower", vmin=-self.max_abs, vmax=self.max_abs)
+            ax.set_xlabel("y")
+            ax.set_ylabel("z")
+        elif self.Ny == 1:
+            im = ax.imshow(np.transpose(self.E[:, 0, :, self._Epol]), cmap="RdBu", interpolation="nearest", aspect="auto",
+                           origin="lower", vmin=-self.max_abs, vmax=self.max_abs)
+            ax.set_xlabel("x")
+            ax.set_ylabel("z")
+        elif self.Nz == 1:
+            im = ax.imshow(np.transpose(self.E[:, :, 0, self._Epol]), cmap="RdBu", interpolation="nearest", aspect="auto",
+                           origin="lower", vmin=-self.max_abs, vmax=self.max_abs)
+            ax.set_xlabel("x")
+            ax.set_ylabel("y")
+
+        plt.colorbar(im)
+        plt.title(f"{self.time_steps_passed}")
+        plt.savefig(f"{self.folder}/frames/E_{self.time_steps_passed}.png")
+        plt.close(fig)  # 自动关闭图形
 
     def update_E(self):
         """update the electric field by using the curl of the magnetic field"""
@@ -544,12 +593,14 @@ class Grid:
         Note:
             this function requires ``ffmpeg`` to be available in your path.
         """
-        if self.folder is None:
+        print(f"self.folder is {self.folder}")
+        frame_folder = path.join(self.folder, "frames")
+        if frame_folder is None:
             raise Exception(
                 "Save location not initialized. Please read about 'fdtd.Grid.saveSimulation()' or try running 'grid.saveSimulation()'."
             )
         cwd = path.abspath(os.getcwd())
-        chdir(self.folder)
+        chdir(frame_folder)
         try:
             check_call(
                 [
@@ -574,7 +625,7 @@ class Grid:
             for file_name in glob("*.png"):
                 remove(file_name)
         video_path = path.abspath(
-            path.join(self.folder, f"fdtd_sim_video_{self.full_sim_name}.mp4")
+            path.join(frame_folder, f"fdtd_sim_video_{self.full_sim_name}.mp4")
         )
         chdir(cwd)
         return video_path
