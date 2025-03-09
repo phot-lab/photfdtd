@@ -11,9 +11,8 @@ if __name__ == "__main__":
     m = 5  # 输出端口数
     grid_spacing = 100e-9  # 空间步长
 
-    grid = Grid(grid_xlength=14e-6, grid_ylength=1, grid_zlength=75e-6, grid_spacing=grid_spacing,
-                foldername="test_star",
-                permittivity=1. ** 2)
+    grid = Grid(grid_xlength=14e-6, grid_ylength=1, grid_zlength=75e-6, grid_spacing=grid_spacing, permittivity=1. ** 2,
+                foldername="test_star")
 
     star = Mmi(
         xlength=10e-6,

@@ -9,8 +9,7 @@ if __name__ == "__main__":
     background_index = 1.4447
 
     grid = Grid(grid_xlength=6e-6, grid_ylength=1, grid_zlength=10e-6, grid_spacing=grid_spacing,
-                foldername="test_mmi_2D",
-                permittivity=background_index ** 2)
+                permittivity=background_index ** 2, foldername="test_mmi_2D")
 
     mmi = Mmi(
         xlength=2e-6,

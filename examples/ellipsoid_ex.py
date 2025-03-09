@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=40e-6, grid_ylength=40e-6, grid_zlength=40e-6, grid_spacing=200e-9,
-                foldername="test_ellipsoid", permittivity=background_index ** 2)
+                permittivity=background_index ** 2, foldername="test_ellipsoid")
     fiber = Ellipsoid(length=40e-6, a=10e-6, b=5e-6, refractive_index=1.4555,
                   name='fiber', axis='x', grid=grid)
 

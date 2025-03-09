@@ -12,8 +12,7 @@ if __name__ == "__main__":
 
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=200, grid_ylength=200, grid_zlength=1, grid_spacing=200e-9,
-                foldername="test_Hexagonal_PC",
-                permittivity=background_index ** 2)
+                permittivity=background_index ** 2, foldername="test_Hexagonal_PC")
 
     # 往 grid 里添加器件
     grid.add_object(pc)

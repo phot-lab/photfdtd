@@ -5,10 +5,8 @@ if __name__ == "__main__":
     background_index = 1.0
     index = Index(material="Si", wavelength=1.55)
     
-    grid = Grid(grid_xlength=200, grid_ylength=200, grid_zlength=100,
-                grid_spacing=20e-9,
-                permittivity=background_index ** 2,
-                foldername="test_rotation")
+    grid = Grid(grid_xlength=200, grid_ylength=200, grid_zlength=100, grid_spacing=20e-9,
+                permittivity=background_index ** 2, foldername="test_rotation")
 
     # set waveguide设置器件参数
     waveguide = Waveguide(

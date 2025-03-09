@@ -27,12 +27,8 @@ if __name__ == "__main__":
     # )
 
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=50, grid_ylength=50, grid_zlength=50, grid_spacing=20e-9, total_time=300,
-                foldername="test_visualization",
-                pml_width_x=5,
-                pml_width_y=5,
-                pml_width_z=5,
-                permittivity=background_index ** 2, )
+    grid = Grid(grid_xlength=50, grid_ylength=50, grid_zlength=50, grid_spacing=20e-9,
+                permittivity=background_index ** 2, foldername="test_visualization")
 
     # 往 grid 里添加器件
     grid.add_object(waveguide0)

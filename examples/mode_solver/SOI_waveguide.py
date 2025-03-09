@@ -5,8 +5,7 @@ if __name__ == "__main__":
 
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=4e-6, grid_ylength=1.5e-6, grid_zlength=1, grid_spacing=10e-9,
-                permittivity=background_index ** 2,
-                foldername="waveguide_result")
+                permittivity=background_index ** 2, foldername="waveguide_result")
 
     # 设置器件参数
     waveguide = Waveguide(

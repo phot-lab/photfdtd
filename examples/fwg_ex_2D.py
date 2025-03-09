@@ -8,8 +8,7 @@ if __name__ == "__main__":
 
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=200, grid_ylength=1, grid_zlength=200, grid_spacing=20e-9,
-                foldername="test_fwg_2D",
-                permittivity=background_index ** 2, )
+                permittivity=background_index ** 2, foldername="test_fwg_2D")
 
     # 设置器件参数
     fwg = FWG(outer_radius=2e-6, ylength=1 * 20e-9, refractive_index=n_Si, name="fwg",

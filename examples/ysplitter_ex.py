@@ -7,7 +7,7 @@ if __name__ == "__main__":
 
     # 设置仿真空间
     grid = Grid(grid_xlength=3e-6, grid_ylength=1.5e-6, grid_zlength=3.5e-6, grid_spacing=20e-9,
-                foldername="test_ysplitter", permittivity=background_index ** 2)
+                permittivity=background_index ** 2, foldername="test_ysplitter")
 
     # 设置Y分支波导的各个参数
     ysplitter = Ysplitter(direction=1, width=0.2e-6,

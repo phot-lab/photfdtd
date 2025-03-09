@@ -1,4 +1,4 @@
-from photfdtd import Waveguide, Grid, Solve, Index
+from photfdtd import Waveguide, Grid, Subregion, Index
 
 if __name__ == "__main__":
     # This example shows a 2D simulation of a basic straight waveguide 本示例展示了一个基础矩形波导的二维仿真
@@ -8,19 +8,25 @@ if __name__ == "__main__":
     index_Si = Index(material="Si")
     index_Re_Si, index_Im_Si = index_Si.get_refractive_index(wavelength=1.55e-6)
 
+    subregions = [
+        Subregion(direction='x', cell_size=20e-9, region_start=2e-6, region_end=2.5e-6),
+        # Subregion(direction='y', cell_size=1e-3, region_start=7e-3, region_end=13e-3),
+        # Subregion(direction='x', cell_size=1e-3, region_start=-2e-3, region_end=4e-3),
+    ]
+
     # # create the simulation region, which is a Grid object 新建一个 grid 对象
-    grid = Grid(grid_xlength=3e-6, grid_ylength=1, grid_zlength=8e-6,
-                grid_spacing_x=20e-9,
-                grid_spacing_z=30e-9,
-                grid_spacing_y=20e-9,
-                permittivity=background_index ** 2,
+    grid = Grid(grid_xlength=3e-6, grid_ylength=1, grid_zlength=8e-6, grid_spacing_x=20e-9, grid_spacing_y=20e-9,
+                grid_spacing_z=30e-9, subregions=subregions, permittivity=background_index ** 2,
                 foldername="Nonuniform_ex")
 
     # set waveguide 设置器件参数
     waveguide = Waveguide(
         xlength=400e-9, ylength=1, zlength=7.5e-6, refractive_index=index_Re_Si, name="waveguide", grid=grid
     )
-
+    grid.add_subregion(direction='x',
+                       cell_size=20e-9,
+                       region_start=2e-6,
+                       region_end=2.5e-6)
     # add waveguide to grid 往 grid 里添加器件
     grid.add_object(waveguide)
     # grid.del_object(waveguide)

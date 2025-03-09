@@ -28,10 +28,8 @@ if __name__ == "__main__":
         background_index=background_index
     )
 
-    grid = Grid(grid_xlength=120, grid_ylength=80, grid_zlength=30, grid_spacing=20e-9, total_time=500,
-                pml_width_x=10,
-                pml_width_y=5, pml_width_z=1, foldername="test_mmi",
-                permittivity=background_index ** 2)
+    grid = Grid(grid_xlength=120, grid_ylength=80, grid_zlength=30, grid_spacing=20e-9,
+                permittivity=background_index ** 2, foldername="test_mmi")
 
     # for i in range(mmi.n):
     #     grid.set_source(

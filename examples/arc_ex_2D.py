@@ -6,8 +6,7 @@ if __name__ == "__main__":
     background_index = 1.4447
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=6e-6, grid_ylength=1, grid_zlength=6e-6, grid_spacing=20e-9,
-                foldername="test_arc_2D",
-                permittivity=background_index ** 2, )
+                permittivity=background_index ** 2, foldername="test_arc_2D")
 
     # 设置器件参数
     arc = Arc(outer_radius=2e-6, ylength=1, width=0.4e-6, refractive_index=3.47, name="arc", angle_phi=0, angle_psi=90,

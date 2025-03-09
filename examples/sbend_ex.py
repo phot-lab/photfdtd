@@ -14,12 +14,7 @@ if __name__ == "__main__":
 
     # 设置 grid 参数
     grid = Grid(grid_xlength=200, grid_ylength=150, grid_zlength=25, grid_spacing=20e-9,
-                total_time=600,
-                pml_width_x=20,
-                pml_width_y=10,
-                pml_width_z=1,
-                foldername="test_sbend",
-                permittivity=background_index ** 2)
+                permittivity=background_index ** 2, foldername="test_sbend")
 
     # 设置光源
     grid.set_source(source_type="planesource",

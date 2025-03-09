@@ -5,7 +5,7 @@ from .arc import Arc
 from .directional_coupler import DirectionalCoupler
 from .ring import Ring
 from .mmi import Mmi
-from .grid import Grid
+from .grid import Grid, Subregion
 from .solve import Solve
 from .analyse import Analyse
 from .index import Index

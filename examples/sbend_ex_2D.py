@@ -7,9 +7,7 @@ if __name__ == "__main__":
 
     # 设置 grid 参数
     grid = Grid(grid_xlength=200 * 20e-9, grid_ylength=1, grid_zlength=8000e-9, grid_spacing=20e-9,
-                foldername="test_sbend_2D",
-                permittivity=background_index ** 2,
-                )
+                permittivity=background_index ** 2, foldername="test_sbend_2D")
 
     # 设置波导参数
     sbend = Sbend(

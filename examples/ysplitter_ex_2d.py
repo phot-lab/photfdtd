@@ -7,7 +7,7 @@ if __name__ == "__main__":
 
     # 设置 grid 参数
     grid = Grid(grid_xlength=6e-6, grid_ylength=1, grid_zlength=7e-6, grid_spacing=20e-9,
-                foldername="test_ysplitter_2D", permittivity=background_index ** 2)
+                permittivity=background_index ** 2, foldername="test_ysplitter_2D")
 
     # 设置器件参数
     ysplitter = Ysplitter(xlength=200, ylength=1, zlength=250, direction=1, width=20,

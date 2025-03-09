@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=25e-6, grid_ylength=25e-6, grid_zlength=1, grid_spacing=250e-9,
-                foldername="few_mode_fiber_result", permittivity=background_index ** 2)
+                permittivity=background_index ** 2, foldername="few_mode_fiber_result")
     fiber = Fiber(length=1, radius=[6.5e-6], refractive_index=[core_index],
                   name='fiber', axis='z', grid=grid)
 

@@ -6,10 +6,8 @@ if __name__ == "__main__":
     # 设置背景折射率
     background_index = 1.0
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=400, grid_ylength=150, grid_zlength=1,
-                grid_spacing=20e-9,
-                permittivity=background_index ** 2,
-                foldername="blockdetector_ex")
+    grid = Grid(grid_xlength=400, grid_ylength=150, grid_zlength=1, grid_spacing=20e-9,
+                permittivity=background_index ** 2, foldername="blockdetector_ex")
     # 设置器件参数
     waveguide = Waveguide(
         grid=grid,

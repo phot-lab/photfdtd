@@ -9,10 +9,8 @@ if __name__ == "__main__":
     index_Re_Si, index_Im_Si = index_Si.get_refractive_index(wavelength=1.55e-6)
 
     # create the simulation region, which is a Grid object 新建一个 grid 对象
-    grid = Grid(grid_xlength=3e-6, grid_ylength=1, grid_zlength=8e-6,
-                grid_spacing=20e-9,
-                permittivity=background_index ** 2,
-                foldername="basic_ex")
+    grid = Grid(grid_xlength=3e-6, grid_ylength=1, grid_zlength=8e-6, grid_spacing=20e-9,
+                permittivity=background_index ** 2, foldername="basic_ex")
 
     # set waveguide 设置器件参数
     waveguide = Waveguide(

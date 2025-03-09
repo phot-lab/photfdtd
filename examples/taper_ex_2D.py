@@ -6,7 +6,7 @@ if __name__ == "__main__":
 
     # 设置 grid 参数
     grid = Grid(grid_xlength=4e-6, grid_ylength=1, grid_zlength=8e-6, grid_spacing=20e-9,
-                foldername="test_taper_2D", permittivity=background_index ** 2)
+                permittivity=background_index ** 2, foldername="test_taper_2D")
 
     # 设置器件参数
     taper = Taper(xlength=2000e-9, width=1000e-9, ylength=1, zlength=6000e-9, name="taper", refractive_index=3.47,

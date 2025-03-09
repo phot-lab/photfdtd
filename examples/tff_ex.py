@@ -7,8 +7,7 @@ if __name__ == "__main__":
     background_index = 1.0
     #
     grid = Grid(grid_xlength=6e-6, grid_ylength=1, grid_zlength=10e-6, grid_spacing=grid_spacing,
-                foldername="test_tff_gaussian",
-                permittivity=background_index ** 2)
+                permittivity=background_index ** 2, foldername="test_tff_gaussian")
 
     # 制作一个11层厚，650nm波长的增返膜
     tff = TFF(

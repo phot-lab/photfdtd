@@ -4,10 +4,8 @@ if __name__ == "__main__":
     background_index = 1.0
 
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=60, grid_ylength=60, grid_zlength=60,
-                grid_spacing=20e-9,
-                permittivity=background_index ** 2,
-                foldername="test_waveguide")
+    grid = Grid(grid_xlength=60, grid_ylength=60, grid_zlength=60, grid_spacing=20e-9,
+                permittivity=background_index ** 2, foldername="test_waveguide")
 
     # 设置器件参数
     waveguide = Waveguide(

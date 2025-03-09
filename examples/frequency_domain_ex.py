@@ -22,9 +22,7 @@ if __name__ == "__main__":
         background_index=background_index
     )
 
-    grid = Grid(grid_xlength=200, grid_ylength=200, grid_zlength=1, grid_spacing=50e-9, total_time=1000,
-                pml_width_x=20,
-                pml_width_y=20, pml_width_z=0,
+    grid = Grid(grid_xlength=200, grid_ylength=200, grid_zlength=1, grid_spacing=50e-9,
                 permittivity=background_index ** 2, foldername="test_frequency_domain")
 
     grid.set_source(

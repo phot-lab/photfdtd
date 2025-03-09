@@ -4,8 +4,7 @@ if __name__ == "__main__":
     background_index = 1.5
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=200, grid_ylength=20, grid_zlength=200, grid_spacing=20e-9,
-                foldername="test_arc",
-                permittivity=background_index ** 2, )
+                permittivity=background_index ** 2, foldername="test_arc")
 
     # 设置器件参数
     # waveguide1 = Waveguide(

@@ -5,8 +5,8 @@ if __name__ == "__main__":
     background_index = 1.4447
 
     # 设置 grid 参数
-    grid = Grid(grid_ylength=4e-6, grid_xlength=4e-6, grid_zlength=4e-6, grid_spacing=20e-9,
-                foldername="test_taper", permittivity=background_index ** 2)
+    grid = Grid(grid_xlength=4e-6, grid_ylength=4e-6, grid_zlength=4e-6, grid_spacing=20e-9,
+                permittivity=background_index ** 2, foldername="test_taper")
 
     # 设置器件参数
     taper = Taper(xlength=2000e-9, width=6, ylength=500e-9, zlength=20, name="taper", refractive_index=3.47, grid=grid)

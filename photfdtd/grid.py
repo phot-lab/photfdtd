@@ -9,6 +9,14 @@ from .analyse import Analyse
 from .index import Index
 import photfdtd.fdtd.constants as constants
 import photfdtd.fdtd.conversions as conversions
+from dataclasses import dataclass
+
+@dataclass
+class Subregion:
+    direction: str
+    cell_size: float
+    region_start: float
+    region_end: float
 
 
 class Grid:
@@ -17,9 +25,7 @@ class Grid:
             grid_spacing_x: float = None,
             grid_spacing_y: float = None,
             grid_spacing_z: float = None,
-            # total_time=1,
-            # pml_width_x=0,
-            # pml_width_y=0, pml_width_z=0, 
+            subregions: list = None,
             permittivity=1.0, permeability=1.0, courant_number=None, foldername=" ",
             folder=None
     ) -> None:
@@ -54,6 +60,12 @@ class Grid:
                                          grid_spacing=grid_spacing_y)[0]
         grid_zlength = self._handle_unit(lengths=[grid_zlength],
                                          grid_spacing=grid_spacing_z)[0]
+
+        self.x_coordinates = np.full(grid_xlength, grid_spacing_x)
+        self.y_coordinates = np.full(grid_ylength, grid_spacing_y)
+        self.z_coordinates = np.full(grid_zlength, grid_spacing_z)
+
+        self.add_subregion(subregions=subregions)
         grid = fdtd.Grid(shape=(grid_xlength, grid_ylength, grid_zlength),
                          grid_spacing=grid_spacing,
                          grid_spacing_x=grid_spacing_x,
@@ -69,6 +81,7 @@ class Grid:
         self._grid_zlength = grid_zlength
         # self._total_time = total_time
         self._grid = grid
+
 
         if folder is not None:
             self.folder = folder
@@ -117,6 +130,39 @@ class Grid:
         if max(z_start, z_end) > self._grid_zlength or min(z_start, z_end) < 0:
             raise ValueError("Z range of %s (%i, %i) has exceeded the simulation region (0, %i)!"
                              % (name, z_start, z_end, self._grid_zlength))
+
+    def add_subregion(self,
+                      subregions: list = None,
+                      direction='x',
+                      cell_size=1e-3,
+                      region_start=27e-3,
+                      region_end=33e-3):
+        for subregion in subregions:
+            cell_size = subregion.cell_size
+            region_start = subregion.region_start
+            region_end = subregion.region_end
+            if direction == "x":
+                start_coordinates = round(region_start / self._grid.grid_spacing_x)
+                end_coordinates = round(region_end / self._grid.grid_spacing_x)
+                subregion_x_coordinates = np.full(int((region_end - region_start) / cell_size), cell_size)
+                self._grid.x_coordinates = np.concatenate([self._grid.x_coordinates[:start_coordinates],
+                                                           subregion_x_coordinates,
+                                                           self._grid.x_coordinates[end_coordinates:]])
+            if direction == "y":
+                start_coordinates = round(region_start / self._grid.grid_spacing_y)
+                end_coordinates = round(region_end / self._grid.grid_spacing_y)
+                subregion_y_coordinates = np.full(int((region_end - region_start) / cell_size), cell_size)
+                self._grid.y_coordinates = np.concatenate([self._grid.y_coordinates[:start_coordinates],
+                                                           subregion_y_coordinates,
+                                                           self._grid.y_coordinates[end_coordinates:]])
+            if direction == "z":
+                start_coordinates = round(region_start / self._grid.grid_spacing_z)
+                end_coordinates = round(region_end / self._grid.grid_spacing_z)
+                subregion_z_coordinates = np.full(int((region_end - region_start) / cell_size), cell_size)
+                self._grid.z_coordinates = np.concatenate([self._grid.z_coordinates[:start_coordinates],
+                                                           subregion_z_coordinates,
+                                                           self._grid.z_coordinates[end_coordinates:]])
+        pass
 
     def add_object(self, object: Waveguide):
 
@@ -1571,9 +1617,8 @@ class Grid:
             grid = self
 
         grid_sliced = Grid(grid_xlength=x_slice[1] - x_slice[0], grid_ylength=y_slice[1] - y_slice[0],
-                           grid_zlength=z_slice[1] - z_slice[0],
-                           grid_spacing=grid._grid.grid_spacing, foldername="%s_sliced_grid" % grid.folder,
-                           permittivity=self.background_index ** 2)
+                           grid_zlength=z_slice[1] - z_slice[0], grid_spacing=grid._grid.grid_spacing,
+                           permittivity=self.background_index ** 2, foldername="%s_sliced_grid" % grid.folder)
         grid_sliced._grid.inverse_permittivity = grid._grid.inverse_permittivity[x_slice[0]:x_slice[1],
                                                  y_slice[0]:y_slice[1], z_slice[0]:z_slice[1]]
 

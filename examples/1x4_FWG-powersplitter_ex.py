@@ -10,8 +10,7 @@ if __name__ == "__main__":
     number = 18
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=400, grid_ylength=300, grid_zlength=1, grid_spacing=20e-9,
-                foldername="test_1x4_fwg",
-                permittivity=background_index ** 2, )
+                permittivity=background_index ** 2, foldername="test_1x4_fwg")
     fwg1 = FWG(outer_radius=187 + (number - 14) * 11, zlength=1, x=90, y=150, z=0, width=6, refractive_index=n_Si,
                name="fwg1",
                grid=grid, angle_psi=28, angle_phi=-28, gap=5, number=number)

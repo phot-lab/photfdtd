@@ -97,9 +97,9 @@ class Grid:
         else:
             self.courant_number = float(courant_number)
 
-        # timestep of the simulation
-        # original: self.time_step = self.courant_number * self.grid_spacing / const.c
-        # self.time_step = 0.99 / (const.c * sqrt(1 / grid_spacing_x ** 2 + 1 / grid_spacing_y ** 2 + 1 / grid_spacing_z ** 2))
+        # timestep of the simulation original: self.time_step = self.courant_number * self.grid_spacing / const.c
+        # self.time_step = 0.99 / (const.c * sqrt(1 / grid_spacing_x ** 2 + 1 / grid_spacing_y ** 2 + 1 /
+        # grid_spacing_z ** 2))
         self.time_step = 0.99 / (
                     const.c * sqrt(int(self.Nx > 1) / grid_spacing_x ** 2 + int(self.Ny > 1) / grid_spacing_y ** 2 + int(self.Nz > 1) / grid_spacing_z ** 2))
         # self.time_step = self.courant_number * self.grid_spacing / const.c
@@ -184,7 +184,7 @@ class Grid:
         curl[:, :-1, :, 2] -= (E[:, 1:, :, 0] - E[:, :-1, :, 0])
 
         return curl
-    def curl_E_test(self, E: Tensorlike) -> Tensorlike:
+    def curl_E_with_nonuniform_grid(self, E: Tensorlike) -> Tensorlike:
         """Transforms an E-type field into an H-type field by performing a curl
         operation
 
@@ -198,10 +198,6 @@ class Grid:
         """
         curl = bd.zeros(E.shape, dtype=E.dtype)
 
-
-        # divide_x = self.time_step * const.c / self.courant_number / self.grid_spacing_x
-        # divide_y = self.time_step * const.c / self.courant_number / self.grid_spacing_y
-        # divide_z = self.time_step * const.c / self.courant_number / self.grid_spacing_z
         curl[:, :-1, :, 0] += (E[:, 1:, :, 2] - E[:, :-1, :, 2]) / self.grid_spacing_y
         curl[:, :, :-1, 0] -= (E[:, :, 1:, 1] - E[:, :, :-1, 1]) / self.grid_spacing_z
 
@@ -210,15 +206,6 @@ class Grid:
 
         curl[:-1, :, :, 2] += (E[1:, :, :, 1] - E[:-1, :, :, 1]) / self.grid_spacing_x
         curl[:, :-1, :, 2] -= (E[:, 1:, :, 0] - E[:, :-1, :, 0]) / self.grid_spacing_y
-
-        # curl[:, :-1, :, 0] += (E[:, 1:, :, 2] - E[:, :-1, :, 2])
-        # curl[:, :, :-1, 0] -= (E[:, :, 1:, 1] - E[:, :, :-1, 1])
-        #
-        # curl[:, :, :-1, 1] += (E[:, :, 1:, 0] - E[:, :, :-1, 0])
-        # curl[:-1, :, :, 1] -= (E[1:, :, :, 2] - E[:-1, :, :, 2])
-        #
-        # curl[:-1, :, :, 2] += (E[1:, :, :, 1] - E[:-1, :, :, 1])
-        # curl[:, :-1, :, 2] -= (E[:, 1:, :, 0] - E[:, :-1, :, 0])
 
         return curl
     def curl_H(self, H: Tensorlike) -> Tensorlike:
@@ -245,7 +232,7 @@ class Grid:
 
         return curl
 
-    def curl_H_test(self, H: Tensorlike) -> Tensorlike:
+    def curl_H_with_nonuniform_grid(self, H: Tensorlike) -> Tensorlike:
         """Transforms an H-type field into an E-type field by performing a curl
         operation
 
@@ -258,14 +245,6 @@ class Grid:
         """
         curl = bd.zeros(H.shape, dtype=H.dtype)
 
-        # divide_x = self.time_step * const.c / self.courant_number / self.grid_spacing_x
-        # divide_y = self.time_step * const.c / self.courant_number / self.grid_spacing_y
-        # divide_z = self.time_step * const.c / self.courant_number / self.grid_spacing_z
-
-        # divide_x = self.du / self.grid_spacing_x
-        # divide_y = self.du / self.grid_spacing_y
-        # divide_z = self.du / self.grid_spacing_z
-
         curl[:, 1:, :, 0] += (H[:, 1:, :, 2] - H[:, :-1, :, 2]) / self.grid_spacing_y
         curl[:, :, 1:, 0] -= (H[:, :, 1:, 1] - H[:, :, :-1, 1]) / self.grid_spacing_z
 
@@ -274,15 +253,6 @@ class Grid:
 
         curl[1:, :, :, 2] += (H[1:, :, :, 1] - H[:-1, :, :, 1]) / self.grid_spacing_x
         curl[:, 1:, :, 2] -= (H[:, 1:, :, 0] - H[:, :-1, :, 0]) / self.grid_spacing_y
-
-        # curl[:, 1:, :, 0] += (H[:, 1:, :, 2] - H[:, :-1, :, 2])
-        # curl[:, :, 1:, 0] -= (H[:, :, 1:, 1] - H[:, :, :-1, 1])
-        #
-        # curl[:, :, 1:, 1] += (H[:, :, 1:, 0] - H[:, :, :-1, 0])
-        # curl[1:, :, :, 1] -= (H[1:, :, :, 2] - H[:-1, :, :, 2])
-        #
-        # curl[1:, :, :, 2] += (H[1:, :, :, 1] - H[:-1, :, :, 1])
-        # curl[:, 1:, :, 2] -= (H[:, 1:, :, 0] - H[:, :-1, :, 0])
 
         return curl
 
@@ -392,7 +362,7 @@ class Grid:
         for boundary in self.boundaries:
             boundary.update_phi_E(dx=self.grid_spacing_x, dy=self.grid_spacing_y, dz=self.grid_spacing_z)
 
-        curl = self.curl_H_test(self.H)
+        curl = self.curl_H_with_nonuniform_grid(self.H)
         # Before: self.E += self.courant_number * self.inverse_permittivity * curl
         self.E += const.c * self.time_step * self.inverse_permittivity * curl
 
@@ -421,7 +391,7 @@ class Grid:
         for boundary in self.boundaries:
             boundary.update_phi_H(dx=self.grid_spacing_x, dy=self.grid_spacing_y, dz=self.grid_spacing_z)
 
-        curl = self.curl_E_test(self.E)
+        curl = self.curl_E_with_nonuniform_grid(self.E)
         # Before: self.H -= self.courant_number * self.inverse_permeability * curl
         # self.H -= self.time_step * self.inverse_permeability * curl / sqrt(const.mu0)
         self.H -= const.c * self.time_step * self.inverse_permeability * curl

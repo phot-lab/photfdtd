@@ -21,9 +21,7 @@ if __name__ == "__main__":
         background_index=background_index
     )
 
-    grid = Grid(grid_xlength=200, grid_ylength=100, grid_zlength=25, grid_spacing=20e-9, total_time=1000,
-                pml_width_x=20,
-                pml_width_y=8, pml_width_z=1,
+    grid = Grid(grid_xlength=200, grid_ylength=100, grid_zlength=25, grid_spacing=20e-9,
                 permittivity=background_index ** 2, foldername="test_dc")
 
     grid.set_source(source_type="planesource", period=1550e-9 / 299792458, waveform=False, x=25, y=80, z=12, xlength=0,
