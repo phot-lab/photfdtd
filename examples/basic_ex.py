@@ -51,7 +51,7 @@ if __name__ == "__main__":
     grid.plot_n()
 
     # run the FDTD simulation 运行仿真
-    grid.run(animate=True, save=True)
+    grid.run(animate=True, save=True, interval=20)
 
     # # Or you can read from a folder 也可以读取仿真结果
     grid = grid.read_simulation(folder=grid.folder)

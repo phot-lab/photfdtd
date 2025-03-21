@@ -341,7 +341,7 @@ class Grid:
         """get the total time passed"""
         return self.time_steps_passed * self.time_step
 
-    def run(self, total_time: Number = None, progress_bar: bool = True):
+    def run(self, total_time: Number = None, progress_bar: bool = True, interval: int = 100):
         """run an FDTD simulation.
 
         Args:
@@ -356,52 +356,58 @@ class Grid:
         time = range(0, self.total_time, 1)
         if progress_bar:
             time = tqdm(time)
+        if self.animate:
+            if os.path.exists(self.folder + "/frames"):
+                for file_name in os.listdir(self.folder + "/frames"):
+                    os.remove(self.folder + "/frames/" + file_name)
+            else:
+                os.makedirs(self.folder + "/frames")
+            self.folder_frames = self.folder + "/frames"
         for _ in time:
-            self.step()
+            self.step(interval=interval)
 
-    def step(self, num_frames=100):
+    def step(self, interval=100):
         """do a single FDTD step by first updating the electric field and then
         updating the magnetic field
         """
         self.update_E()
         self.update_H()
-        if self.animate and self.time_steps_passed % int(self.total_time / num_frames) == 0:
+        if self.animate and self.time_steps_passed % interval == 0:
             self.save_frame()
-
         self.time_steps_passed += 1
 
     def save_frame(self):
         # TODO: for 3d simulation
         """save frames for animation"""
-        if not os.path.exists(self.folder + "/frames"):
-            os.makedirs(self.folder + "/frames")
-            self.folder_frames = self.folder + "/frames"
+
         if "self._Epol" not in locals():
             self._Epol = 'xyz'.index(self.sources[0].polarization)
         if "self.max_abs" not in locals():
-            self.max_abs = np.max(np.abs(self.E[:, :, :, self._Epol]))
+            # self.max_abs = 1
+            self.max_abs = np.max(simE_to_worldE(np.abs(self.E[:, :, :, self._Epol])))
 
         fig, ax = plt.subplots()
 
         if self.Nx == 1:
-            im = ax.imshow(np.transpose(self.E[0, :, :, self._Epol]), cmap="RdBu", interpolation="nearest", aspect="auto",
+            im = ax.imshow(simE_to_worldE(np.transpose(self.E[0, :, :, self._Epol])), cmap="RdBu", interpolation="nearest", aspect="auto",
                            origin="lower", vmin=-self.max_abs, vmax=self.max_abs)
             ax.set_xlabel("y")
             ax.set_ylabel("z")
         elif self.Ny == 1:
-            im = ax.imshow(np.transpose(self.E[:, 0, :, self._Epol]), cmap="RdBu", interpolation="nearest", aspect="auto",
+            im = ax.imshow(simE_to_worldE(np.transpose(self.E[:, 0, :, self._Epol])), cmap="RdBu", interpolation="nearest", aspect="auto",
                            origin="lower", vmin=-self.max_abs, vmax=self.max_abs)
             ax.set_xlabel("x")
             ax.set_ylabel("z")
         elif self.Nz == 1:
-            im = ax.imshow(np.transpose(self.E[:, :, 0, self._Epol]), cmap="RdBu", interpolation="nearest", aspect="auto",
+            im = ax.imshow(simE_to_worldE(np.transpose(self.E[:, :, 0, self._Epol])), cmap="RdBu", interpolation="nearest", aspect="auto",
                            origin="lower", vmin=-self.max_abs, vmax=self.max_abs)
             ax.set_xlabel("x")
             ax.set_ylabel("y")
 
-        plt.colorbar(im)
-        plt.title(f"{self.time_steps_passed}")
-        plt.savefig(f"{self.folder}/frames/E_{self.time_steps_passed}.png")
+        cbar = plt.colorbar(im)
+        cbar.set_label(f"E{number_to_letter(self._Epol)} V/m")
+        plt.title(f"{self.time_steps_passed} time steps")
+        plt.savefig(f"{self.folder_frames}/E_{self.time_steps_passed}.png")
         plt.close(fig)  # 自动关闭图形
 
     def update_E(self):

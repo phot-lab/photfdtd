@@ -18,10 +18,6 @@ class Waveguide:
     priority: the priority of the waveguide( high index indicates high priority)
     """
 
-    # TODO: fdtd包绘制场的代码很有问题，在3d仿真时不能正确显示
-    # TODO: z方向空间步长单独设置？
-    # TODO: 如何保存整个仿真而不仅仅是监视器数据？
-    # TODO: 在波导被添加进grid后，x,y,z仍然会从中心坐标变成角点坐标，如何修复这一点？
     def __init__(
             self,
             xlength: int or float = 200,
@@ -148,7 +144,6 @@ class Waveguide:
 
     def _rotate_(self, angle: float = None, center: list = None, angle_unit: bool = True, axis: str = None):
         """
-        # TODO: 这个函数可以用。但也许在矩阵中描点连线也可以？
         Rotate a waveguide around the z-axis on x-y plane
         @param angle_unit: bool, default to True. False if using radian unit
         @param angle: Angle of rotation with respect to the positive direction of the x-axis

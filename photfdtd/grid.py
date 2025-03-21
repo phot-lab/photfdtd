@@ -37,12 +37,12 @@ class Grid:
             grid_xlength (int or float): xlength of Simulation Region, SI unit(m) if float or grid_spacing unit if int
             grid_ylength (int or float): ylength of Simulation Region, SI unit(m) if float or grid_spacing unit if int
             grid_zlength (int or float): zlength of Simulation Region, SI unit(m) if float or grid_spacing unit if int
-            grid_spacing (float): fdtd算法的空间步长（yee元胞的网格宽度）. 单位为m
-            grid_spacing_x (float, optional):
-            grid_spacing_y (float, optional):
-            grid_spacing_z (float, optional):
-            permeability (float, optional): 环境相对磁导率 1.0
-            permittivity (float, optional): 环境相对介电常数 1.0
+            grid_spacing_x (float, optional): grid spacing in x direction, SI unit(m)
+            grid_spacing_y (float, optional): grid spacing in y direction, SI unit(m)
+            grid_spacing_z (float, optional): grid spacing in z direction, SI unit(m)
+            grid_spacing (float): grid spacing in general, SI unit(m)
+            permeability (float, optional): magnetic relative permeability of the background,环境相对磁导率 1.0
+            permittivity (float, optional): electrical relative permittivity of the background,环境相对介电常数 1.0
             (refractive_index ** 2 = permeability * permittivity, 对大部分材料permeability=1.0)
             courant_number: 科朗数 默认为None
             foldername: 文件夹名称, 若其不存在将在目录下创建该文件夹
@@ -76,9 +76,9 @@ class Grid:
 
         if subregions is not None:
             grid_xlength, grid_ylength, grid_zlength = self.add_subregion(subregions=subregions,
-                                                                      grid_spacing_x=grid_spacing_x,
-                                                                      grid_spacing_y=grid_spacing_y,
-                                                                      grid_spacing_z=grid_spacing_z)
+                                                                          grid_spacing_x=grid_spacing_x,
+                                                                          grid_spacing_y=grid_spacing_y,
+                                                                          grid_spacing_z=grid_spacing_z)
         grid = fdtd.Grid(shape=(grid_xlength, grid_ylength, grid_zlength),
                          grid_spacing=grid_spacing,
                          grid_spacing_x=grid_spacing_x,
@@ -95,8 +95,6 @@ class Grid:
         self._grid_zlength = grid_zlength
         # self._total_time = total_time
         self._grid = grid
-
-
 
         self.background_index = np.sqrt(permittivity * permeability)
 
@@ -146,16 +144,16 @@ class Grid:
                       grid_spacing_x=None,
                       grid_spacing_y=None,
                       grid_spacing_z=None):
-        pass
+        # subregions中每个方向仅允许有一个subregion
         for subregion in subregions:
             cell_size = subregion.cell_size
             region_start = subregion.region_start
             region_end = subregion.region_end
             if direction == "x":
-                start_coordinates = round(region_start / grid_spacing_x)
-                end_coordinates = round(region_end / grid_spacing_x)
+                self.start_coordinates = round(region_start / grid_spacing_x)
+                self.end_coordinates = round(region_end / grid_spacing_x)
                 subregion_x_coordinates = np.full(int((region_end - region_start) / cell_size), cell_size)
-                self.x_coordinates = np.concatenate([self.x_coordinates[:start_coordinates],
+                self.x_coordinates = np.concatenate([self.x_coordinates[:self.start_coordinates],
                                                      subregion_x_coordinates,
                                                      self.x_coordinates[end_coordinates:]])
             if direction == "y":
@@ -172,7 +170,28 @@ class Grid:
                 self.z_coordinates = np.concatenate([self.z_coordinates[:start_coordinates],
                                                      subregion_z_coordinates,
                                                      self.z_coordinates[end_coordinates:]])
+        self.subregion_added = True
         return len(self.x_coordinates), len(self.y_coordinates), len(self.z_coordinates)
+
+    # def handle_subregion(self, array, subregions: list = None):
+    #     import scipy.ndimage
+    #     def _zoom(array, axis, start, end, new_len):
+    #
+    #         zoom_factor = new_len / (end - start)  # 2 倍缩放
+    #         if axis == 0:
+    #             zoom = (zoom_factor, 1, 1)
+    #         elif axis == 1:
+    #             zoom = (1, zoom_factor, 1)
+    #         elif axis == 2:
+    #             zoom = (1, 1, zoom_factor)
+    #         # 对选中的部分进行缩放
+    #         zoomed_part = scipy.ndimage.zoom(array[:, start:end, :], zoom, order=0)
+    #         return np.concatenate([array[:, :start, :], zoomed_part, array[:, end:, :]], axis=1)
+    #     _zoom(array, axis=0, start=0, end=10, new_len=20)
+    #     _zoom(array, axis=1, start=0, end=10, new_len=20)
+    #     _zoom(array, axis=2, start=0, end=10, new_len=20)
+    #
+    #     pass
 
     def add_object(self, object: Waveguide):
 
@@ -377,17 +396,20 @@ class Grid:
                 self._check_parameters(x, x, y, y + ylength, z, z + zlength, name=name)
                 self._grid[x: x, y: y + ylength, z: z + zlength] = \
                     fdtd.PlaneSource(period=period, amplitude=amplitude, phase_shift=phase_shift, name=name,
-                                     polarization=polarization)
+                                     waveform=waveform, polarization=polarization, pulse_type=pulse_type,
+                                     pulse_length=pulse_length, offset=offset, axis=axis)
             elif axis == "y":
                 self._check_parameters(x, x + xlength, y, y, z, z + zlength, name=name)
                 self._grid[x: x + xlength, y: y, z: z + zlength] = \
                     fdtd.PlaneSource(period=period, amplitude=amplitude, phase_shift=phase_shift, name=name,
-                                     polarization=polarization)
+                                     waveform=waveform, polarization=polarization, pulse_type=pulse_type,
+                                     pulse_length=pulse_length, offset=offset, axis=axis)
             elif axis == "z":
                 self._check_parameters(x, x + xlength, y, y + ylength, z, z, name=name)
                 self._grid[x: x + xlength, y: y + ylength, z: z] = \
                     fdtd.PlaneSource(period=period, amplitude=amplitude, phase_shift=phase_shift, name=name,
-                                     polarization=polarization)
+                                     waveform=waveform, polarization=polarization, pulse_type=pulse_type,
+                                     pulse_length=pulse_length, offset=offset, axis=axis)
 
         else:
             raise ValueError("Invalid source type.")
@@ -424,60 +446,124 @@ class Grid:
         else:
             found_source = self._try_to_find_source()
             source_name = found_source.name
-        # TODO: pointsource and planesource
+        # TODO: y和z分量
 
         if isinstance(found_source, fdtd.LineSource):
             print("This is a Linesource")
+            source_profile = found_source.profile
             size = len(found_source.profile)
             source_field = np.zeros((time, size, 3))
-            _Epol = 'xyz'.index(found_source.polarization)
-            for q in range(time):
-                if found_source.pulse_type == "hanning":
-                    t1 = int(2 * np.pi / (found_source.frequency * found_source.pulse_length / found_source.cycle))
-                    if q < t1:
-                        vect = found_source.profile * fdtd.waveforms.hanning(
-                            found_source.frequency, q * found_source.pulse_length, found_source.cycle
-                        )
-                    else:
-                        # src = - self.grid.E[self.x, self.y, self.z, 2]
-                        vect = found_source.profile * 0
-                elif found_source.pulse_type == "gaussian":
-                    vect = found_source.profile * fdtd.waveforms.pulse_oscillation(frequency=found_source.frequency,
-                                                                                   t=q * found_source.grid.time_step,
-                                                                                   pulselength=found_source.pulse_length,
-                                                                                   offset=found_source.offset)
+        elif isinstance(found_source, fdtd.PointSource):
+            print("This is a Pointsource")
+            source_profile = found_source.sim_amplitude
+            size = 1
+            source_field = np.zeros((time, size, 3))
+        elif isinstance(found_source, fdtd.PlaneSource):
+            print("This is a Planesource")
+            # TODO: To be finished
+            source_profile = found_source.profile
+            shape = found_source.profile.shape
+            source_field = np.zeros((time, shape[0], shape[1], shape[2], 3))
+
+        _Epol = 'xyz'.index(found_source.polarization)
+        for q in range(time):
+            if found_source.pulse_type == "hanning":
+                t1 = int(2 * np.pi / (found_source.frequency * found_source.pulse_length / found_source.cycle))
+                if q < t1:
+                    vect = source_profile * fdtd.waveforms.hanning(
+                        found_source.frequency, q * found_source.pulse_length, found_source.cycle
+                    )
                 else:
-                    vect = found_source.profile * np.sin(2 * np.pi * q / found_source.period + found_source.phase_shift)
+                    # src = - self.grid.E[self.x, self.y, self.z, 2]
+                    vect = source_profile * 0
+            elif found_source.pulse_type == "gaussian":
+                vect = source_profile * fdtd.waveforms.pulse_oscillation(frequency=found_source.frequency,
+                                                                         t=q * found_source.grid.time_step,
+                                                                         pulselength=found_source.pulse_length,
+                                                                         offset=found_source.offset)
+            else:
+                vect = source_profile * np.sin(2 * np.pi * q / found_source.period + found_source.phase_shift)
+            if isinstance(found_source, fdtd.PlaneSource):
+                source_field[q, :, :, :, _Epol] = vect
+            else:
                 source_field[q, :, _Epol] = vect
 
         # convert to world E
         source_field = conversions.simE_to_worldE(source_field)
         # Spectrum
-        fr = fdtd.FrequencyRoutines(self._grid, objs=source_field[:, int(size / 2), 0])
+        if isinstance(found_source, fdtd.PlaneSource):
+            fr = fdtd.FrequencyRoutines(self._grid, objs=source_field[:, int(shape[0] / 2), int(shape[1] / 2),
+                                                         int(shape[2] / 2),
+                                                         _Epol])
+        else:
+            fr = fdtd.FrequencyRoutines(self._grid, objs=source_field[:, int(size / 2),
+                                                         _Epol])
+        # TODO: 为什么是2*bandwidth
         spectrum_freqs, fourier = fr.FFT(
             freq_window_tuple=[found_source.frequency - 2 * found_source.bandwidth,
                                found_source.frequency + 2 * found_source.bandwidth], )
         spectrum = abs(fourier)
 
         # time
-        length = np.linspace(0, len(found_source.profile), len(found_source.profile)) * self._grid.grid_spacing_x
         time = np.linspace(0, len(source_field), len(source_field)) * self._grid.time_step * 1e15
 
         # 创建一个画布，包含两个子图
         fig, axes = plt.subplots(2, 2, figsize=(12, 6))  # 1行2列的子图
 
-        # 左侧子图: 源 Profile 图
-        axes[0][0].plot(length * 1e6, conversions.simE_to_worldE(found_source.profile))
-        # axes[0][0].set_xticks()  # 每隔10个显示一个刻度
-        axes[0][0].set_xlabel('um')
-        axes[0][0].set_ylabel("E (V/m)")
-        axes[0][0].set_title(f"Space distribution")
-        axes[0][0].legend(["Source Profile"])
+        # 左侧子图: 源 Profile (space distribution)图
+        if isinstance(found_source, fdtd.PointSource):
+            axes[0][0].clear()  # 清空当前子图
+            axes[0][0].axis("off")  # 关闭坐标轴
+            axes[0][0].text(0.5, 0.5, "Space distribution is unavailable for point source",
+                            ha="center", va="center", fontsize=12)  # 居中显示文本
+        elif isinstance(found_source, fdtd.LineSource):
+            length = np.linspace(0, len(found_source.profile), len(found_source.profile)) * self._grid.grid_spacing_x
+            axes[0][0].plot(length * 1e6, conversions.simE_to_worldE(found_source.profile))
+            # axes[0][0].set_xticks()  # 每隔10个显示一个刻度
+            axes[0][0].set_xlabel('um')
+            axes[0][0].set_ylabel("E (V/m)")
+            axes[0][0].set_title(f"Space distribution")
+            axes[0][0].legend(["Source Profile"])
+        elif isinstance(found_source, fdtd.PlaneSource):
+            # 选择方向
+            shape = source_profile.shape
+
+            # 找到 shape 中值为 1 的维度
+            squeeze_axis = np.where(np.array(shape) == 1)[0]
+
+            if len(squeeze_axis) == 1:  # 确保只有一个维度为 1
+                source_profile_2d = np.squeeze(conversions.simE_to_worldE(source_profile), axis=squeeze_axis[0])
+            else:
+                raise ValueError("No single dimension found, or more than one dimension is 1")
+
+            # 绘制 2D 颜色图
+            im = axes[0][0].imshow(source_profile_2d, cmap="viridis", aspect="auto", origin="lower")
+            # 添加颜色条
+            plt.colorbar(im, ax=axes[0][0])
+            # 设置标题和标签
+            axes[0][0].set_title("Space distribution")
+            if found_source.axis == "x":
+                axes[0][0].set_xlabel("Y")
+                axes[0][0].set_ylabel("Z")
+            if found_source.axis == "y":
+                axes[0][0].set_xlabel("X")
+                axes[0][0].set_ylabel("Z")
+            if found_source.axis == "z":
+                axes[0][0].set_xlabel("X")
+                axes[0][0].set_ylabel("Y")
 
         # 右侧子图: Time Signal 图
-        axes[0][1].plot(time, source_field[:, int(size / 2), 0], label="Ex")
-        axes[0][1].plot(time, source_field[:, int(size / 2), 1], label="Ey")
-        axes[0][1].plot(time, source_field[:, int(size / 2), 2], label="Ez")
+        if isinstance(found_source, fdtd.PlaneSource):
+            axes[0][1].plot(time, source_field[:, int(shape[0] / 2), int(shape[1] / 2), int(shape[2] / 2), 0],
+                            label="Ex")
+            axes[0][1].plot(time, source_field[:, int(shape[0] / 2), int(shape[1] / 2), int(shape[2] / 2), 1],
+                            label="Ey")
+            axes[0][1].plot(time, source_field[:, int(shape[0] / 2), int(shape[1] / 2), int(shape[2] / 2), 2],
+                            label="Ez")
+        else:
+            axes[0][1].plot(time, source_field[:, int(size / 2), 0], label="Ex")
+            axes[0][1].plot(time, source_field[:, int(size / 2), 1], label="Ey")
+            axes[0][1].plot(time, source_field[:, int(size / 2), 2], label="Ez")
         # axes[0][1].set_xticks()  # 每隔10个显示一个刻度
         axes[0][1].set_xlabel('fs')
         axes[0][1].set_ylabel("E (V/m)")
@@ -793,7 +879,8 @@ class Grid:
             axis="x",
             axis_number=0,
             time=None,
-            save=True
+            save=True,
+            interval=100
             ):
         """
         @param time: int for timesteps or float for seconds
@@ -813,7 +900,7 @@ class Grid:
             time = self._grid._handle_time(time)
         print("The total time for FDTD simulation is %i timesteps or %f fs." % (
             time, time * self._grid.time_step * 1e15))
-        self._grid.run(total_time=time)
+        self._grid.run(total_time=time, interval=interval)
 
         if save:
             self.save_simulation()
@@ -1659,11 +1746,12 @@ class Grid:
         self.plot_n()
         self.plot_field(grid=self, field=field, field_axis=field_axis, axis=axis, axis_index=axis_index)
 
-        self.visulize_detector(field_axis=field_axis, field=field)
+        if self._grid.detectors:  # 检查是否为空
+            self.visulize_detector(field_axis=field_axis, field=field)
 
-        for detector in self._grid.detectors:
-            self.detector_profile(detector_name=detector.name, field=field, field_axis=field_axis)
-            self.plot_fieldtime(grid=self, field=field, field_axis=field_axis, name_det=detector.name)
-            if isinstance(detector, fdtd.detectors.BlockDetector):
-                self.dB_map(grid=self, field=field, field_axis=field_axis)
-            # self.calculate_Transmission(detector_name=detector.name, source_name=self._try_to_find_source().name)
+            for detector in self._grid.detectors:
+                self.detector_profile(detector_name=detector.name, field=field, field_axis=field_axis)
+                self.plot_fieldtime(grid=self, field=field, field_axis=field_axis, name_det=detector.name)
+                if isinstance(detector, fdtd.detectors.BlockDetector):
+                    self.dB_map(grid=self, field=field, field_axis=field_axis)
+                # self.calculate_Transmission(detector_name=detector.name, source_name=self._try_to_find_source().name)
