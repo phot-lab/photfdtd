@@ -39,12 +39,17 @@ def worldE_to_simE(input):
     return sqrt(const.eps0) * input
 
 
+
 def simH_to_worldH(input):
     return input / sqrt(const.mu0)
 
 
+
+
 def worldH_to_simH(input):
-    return sqrt(const.mu0) * input
+    return sqrt(const.eps0) * input
+
+
 
 
 def letter_to_number(input):

@@ -74,6 +74,7 @@ class Grid:
         """
         # save the grid spacing
         # Currently self.grid_spacing
+        self.background_index = permittivity ** 0.5
         self.grid_spacing = float(grid_spacing)
         if grid_spacing_x is None:
             self.grid_spacing_x = self.grid_spacing
@@ -363,6 +364,8 @@ class Grid:
             else:
                 os.makedirs(self.folder + "/frames")
             self.folder_frames = self.folder + "/frames"
+        for det in self.detectors:
+            det.__init_h5file__()
         for _ in time:
             self.step(interval=interval)
 
@@ -376,7 +379,7 @@ class Grid:
             self.save_frame()
         self.time_steps_passed += 1
 
-    def save_frame(self):
+    def save_frame(self, axis="y", axis_index=0):
         # TODO: for 3d simulation
         """save frames for animation"""
 
@@ -387,19 +390,27 @@ class Grid:
             self.max_abs = np.max(simE_to_worldE(np.abs(self.E[:, :, :, self._Epol])))
 
         fig, ax = plt.subplots()
-
         if self.Nx == 1:
-            im = ax.imshow(simE_to_worldE(np.transpose(self.E[0, :, :, self._Epol])), cmap="RdBu", interpolation="nearest", aspect="auto",
+            axis = "x"
+        elif self.Ny == 1:
+            axis = "y"
+        elif self.Nz == 1:
+            axis = "z"
+        else:
+            # 3d仿真，自动绘制grid中心面上的场分布。3D simulation, plot the field distribution on the center plane of the grid.
+            axis_index = int(self.E.shape[letter_to_number(axis)] / 2)
+        if axis == "x":
+            im = ax.imshow(simE_to_worldE(np.transpose(self.E[axis_index, :, :, self._Epol])), cmap="RdBu", interpolation="nearest", aspect="auto",
                            origin="lower", vmin=-self.max_abs, vmax=self.max_abs)
             ax.set_xlabel("y")
             ax.set_ylabel("z")
-        elif self.Ny == 1:
-            im = ax.imshow(simE_to_worldE(np.transpose(self.E[:, 0, :, self._Epol])), cmap="RdBu", interpolation="nearest", aspect="auto",
+        elif axis == "y":
+            im = ax.imshow(simE_to_worldE(np.transpose(self.E[:, axis_index, :, self._Epol])), cmap="RdBu", interpolation="nearest", aspect="auto",
                            origin="lower", vmin=-self.max_abs, vmax=self.max_abs)
             ax.set_xlabel("x")
             ax.set_ylabel("z")
-        elif self.Nz == 1:
-            im = ax.imshow(simE_to_worldE(np.transpose(self.E[:, :, 0, self._Epol])), cmap="RdBu", interpolation="nearest", aspect="auto",
+        elif axis == "z":
+            im = ax.imshow(simE_to_worldE(np.transpose(self.E[:, :, axis_index, self._Epol])), cmap="RdBu", interpolation="nearest", aspect="auto",
                            origin="lower", vmin=-self.max_abs, vmax=self.max_abs)
             ax.set_xlabel("x")
             ax.set_ylabel("y")

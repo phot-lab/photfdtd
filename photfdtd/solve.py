@@ -50,6 +50,15 @@ class Solve:
             self.n = self.geometry[:, index, :, :]
         elif axis == 'z':
             self.n = self.geometry[:, :, index, :]
+        if self.axis =="z":
+            self.dx = self.grid.grid_spacing_x * 1e6
+            self.dy = self.grid.grid_spacing_y * 1e6
+        elif self.axis =="y":
+            self.dx = self.grid.grid_spacing_x * 1e6
+            self.dy = self.grid.grid_spacing_z * 1e6
+        elif self.axis =="x":
+            self.dx = self.grid.grid_spacing_z * 1e6
+            self.dy = self.grid.grid_spacing_y * 1e6
         else:
             raise ValueError('Parameter "axis" should be x, y or z! ')
 
@@ -68,7 +77,7 @@ class Solve:
         # It's quite important to transpose n
         self.n = np.transpose(self.n, [1, 0, 2])
         plt.imshow(self.n[:, :, 0], cmap=cm.jet, origin="lower",
-                   extent=[0, self.x * self.grid.grid_spacing * 1e6, 0, self.y * self.grid.grid_spacing * 1e6])
+                   extent=[0, self.x *self.dx, 0, self.y * self.dy])
         # plt.axis("tight")
         plt.clim([np.amin(self.n), np.amax(self.n)])
         # plt.xlim((0, self.n.shape[0] * self.grid.grid_spacing * 1e6))
@@ -124,32 +133,37 @@ class Solve:
             neff = np.max(self.n)
         self.lam = lam * 10 ** 6
         self.k = 2 * np.pi / self.lam
-        PML_with = int(np.round(lam / self.grid.grid_spacing / 4))
+        PML_width_x = lam / 4
+        PML_width_y = lam / 4
         if x_boundary_low == "pml" and not x_thickness_low:
-            x_thickness_low = PML_with
+            x_thickness_low = PML_width_x
         if x_boundary_high == "pml" and not x_thickness_high:
-            x_thickness_high = PML_with
+            x_thickness_high = PML_width_x
         if y_boundary_low == "pml" and not y_thickness_low:
-            y_thickness_low = PML_with
+            y_thickness_low = PML_width_y
         if y_boundary_high == "pml" and not y_thickness_high:
-            y_thickness_high = PML_with
-        if self.axis == "x":
-            x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high = \
-                self.grid._handle_distance(x_thickness_low, "y"), self.grid._handle_distance(x_thickness_high, "y"), \
-                self.grid._handle_distance(y_thickness_low, "z"), self.grid._handle_distance(y_thickness_high, "z"),
-        if self.axis == "y":
-            x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high = \
-                self.grid._handle_distance(x_thickness_low, "x"), self.grid._handle_distance(x_thickness_high, "x"), \
-                self.grid._handle_distance(y_thickness_low, "z"), self.grid._handle_distance(y_thickness_high, "z"),
-        if self.axis == "z":
-            x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high = \
-                self.grid._handle_distance(x_thickness_low, "x"), self.grid._handle_distance(x_thickness_high, "x"), \
-                self.grid._handle_distance(y_thickness_low, "y"), self.grid._handle_distance(y_thickness_high, "y"),
-        print(x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high)
+            y_thickness_high = PML_width_y
+        try:
+            if self.axis == "x":
+                x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high = \
+                    self.grid._handle_distance(x_thickness_low, "y"), self.grid._handle_distance(x_thickness_high, "y"), \
+                    self.grid._handle_distance(y_thickness_low, "z"), self.grid._handle_distance(y_thickness_high, "z"),
+            if self.axis == "y":
+                x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high = \
+                    self.grid._handle_distance(x_thickness_low, "x"), self.grid._handle_distance(x_thickness_high, "x"), \
+                    self.grid._handle_distance(y_thickness_low, "z"), self.grid._handle_distance(y_thickness_high, "z"),
+            if self.axis == "z":
+                x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high = \
+                    self.grid._handle_distance(x_thickness_low, "x"), self.grid._handle_distance(x_thickness_high, "x"), \
+                    self.grid._handle_distance(y_thickness_low, "y"), self.grid._handle_distance(y_thickness_high, "y"),
+        except:
+            pass
+
         # Calculate modes
         # FIXME: 检查pml边界的四个方向是否有问题
         # Note the units in philsol are in um
-        P, matrices = ps.eigen_build(self.k, self.n, self.grid.grid_spacing * 1e6, self.grid.grid_spacing * 1e6,
+
+        P, matrices = ps.eigen_build(self.k, self.n, self.dx, self.dy,
                                      x_boundary_low=x_boundary_low, y_boundary_low=y_boundary_low,
                                      x_thickness_low=x_thickness_low,
                                      y_thickness_low=y_thickness_low, x_boundary_high=x_boundary_high,
@@ -167,7 +181,7 @@ class Solve:
             # if abs(self.beta[i].imag * self.lam / (2 * np.pi)) > 1e-5:
             #     flag_deleted.append(i)
             #     neigs -= 1
-            if abs(self.beta[i].real * self.lam / (2 * np.pi)) < self.grid.background_index:
+            if abs(self.beta[i].real * self.lam / (2 * np.pi)) < self.grid.background_index or abs(self.beta[i].imag * self.lam / (2 * np.pi)) > 1e-5:
                 flag_deleted.append(i)
                 neigs -= 1
 
@@ -227,7 +241,7 @@ class Solve:
         Hy = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Hy]
         Hz = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Hz]
 
-        dic = {"number_of_modes": neigs, "axis": self.axis,"grid_spacing": self.grid.grid_spacing, "lam": lam,
+        dic = {"number_of_modes": neigs, "axis": self.axis,"grid_spacing_x": self.dx, "grid_spacing_y": self.dy, "lam": lam,
                "effective_index": self.effective_index,  "Ex": Ey, "Ey": Ex, "Ez": Ez, "Hx": Hy, "Hy": Hx,
                "Hz": Hz}
 
@@ -248,7 +262,9 @@ class Solve:
         '''
         axis = data["axis"]
         effective_index = data["effective_index"]
-        grid_spacing = data["grid_spacing"]
+        # the unit of dx and dy is um
+        dx = data["grid_spacing_x"]
+        dy = data["grid_spacing_y"]
         lam = data["lam"]
         # plot mode figures
         for j in ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz"):
@@ -265,8 +281,8 @@ class Solve:
 
                 plt.imshow(plot_matrix, cmap=cm.jet, origin="lower",
                            # 由于做了转置，所以这里要交换x， y
-                           extent=[0, plot_matrix.shape[1] * grid_spacing * 1e6,
-                                   0, plot_matrix.shape[0] * grid_spacing * 1e6])
+                           extent=[0, plot_matrix.shape[1] * dx,
+                                   0, plot_matrix.shape[0] * dy])
                 # plt.axis("tight")
                 plt.clim([np.amin(plot_matrix), np.amax(plot_matrix)])
                 plt.colorbar()
@@ -289,15 +305,15 @@ class Solve:
         # Draw E/H intensity
         # https://innovationspace.ansys.com/forum/forums/topic/e-intensity-and-ex-component-definition/
         for i in range(data["number_of_modes"]):
-            E_intensity = data["Ex"][i] ** 2 + data["Ey"][i] ** 2 + data["Ez"][i] ** 2
-            H_intensity = data["Hx"][i] ** 2 + data["Hy"][i] ** 2 + data["Hz"][i] ** 2
+            E_intensity = data["Ex"][i].real ** 2 + data["Ey"][i].real ** 2 + data["Ez"][i].real ** 2
+            H_intensity = data["Hx"][i].real ** 2 + data["Hy"][i].real ** 2 + data["Hz"][i].real ** 2
             E_intensity = np.transpose(E_intensity)
             H_intensity = np.transpose(H_intensity)
             plt.figure()
             plt.imshow(E_intensity, cmap=cm.jet, origin="lower",
                        # 由于做了转置，所以这里要交换x， y
-                       extent=[0, E_intensity.shape[1] * grid_spacing * 1e6,
-                               0, E_intensity.shape[0] * grid_spacing * 1e6])
+                       extent=[0, E_intensity.shape[1] * dx,
+                               0, E_intensity.shape[0] * dy])
             plt.clim([np.amin(E_intensity), np.amax(E_intensity)])
             plt.colorbar()
             if axis == "x":
@@ -317,8 +333,8 @@ class Solve:
             plt.figure()
             plt.imshow(H_intensity, cmap=cm.jet, origin="lower",
                        # 由于做了转置，所以这里要交换x， y
-                       extent=[0, H_intensity.shape[1] * grid_spacing * 1e6,
-                               0, H_intensity.shape[0] * grid_spacing * 1e6])
+                       extent=[0, H_intensity.shape[1] * dx,
+                               0, H_intensity.shape[0] * dy])
             plt.clim([np.amin(H_intensity), np.amax(H_intensity)])
             plt.colorbar()
             if axis == "x":
@@ -393,7 +409,7 @@ class Solve:
         elif index:
             # 字典是可变对象，在函数内部修改dic会同时修改函数外的dic
             data = {}
-            for i in ("number_of_modes", "axis", "grid_spacing", "lam"):
+            for i in ("number_of_modes", "axis", "grid_spacing_x", "grid_spacing_y", "lam"):
                 data[i] = dic[i]
             for i in ("effective_index", "Ex", "Ey", "Ez", "Hx", "Hy", "Hz"):
                 data[i] = dic[i][index]

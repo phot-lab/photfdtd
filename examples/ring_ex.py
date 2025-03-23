@@ -43,10 +43,10 @@ if __name__ == "__main__":
 
     grid.calculate_Transmission(detector_name_1="detector1", detector_name_2="detector2")
     grid.visualize()
-    freqs, spectrum1 = grid.visulize_single_detector(name_det="detector1")
-    freqs, spectrum2 = grid.visulize_single_detector(name_det="detector2")
-    freqs, spectrum3 = grid.visulize_single_detector(name_det="detector3")
-    freqs, spectrum4 = grid.visulize_single_detector(name_det="detector4")
+    freqs, spectrum1 = grid.visualize_single_detector(name_det="detector1")
+    freqs, spectrum2 = grid.visualize_single_detector(name_det="detector2")
+    freqs, spectrum3 = grid.visualize_single_detector(name_det="detector3")
+    freqs, spectrum4 = grid.visualize_single_detector(name_det="detector4")
 
     import matplotlib.pyplot as plt
     plt.plot(freqs,(spectrum2 / spectrum1) ** 2)

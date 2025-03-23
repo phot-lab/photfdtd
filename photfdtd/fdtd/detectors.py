@@ -17,6 +17,7 @@ from .grid import Grid
 from .backend import backend as bd
 from .constants import X, Y, Z, c
 from .conversions import simE_to_worldE, simH_to_worldH
+import h5py
 
 
 ## Detector
@@ -36,7 +37,7 @@ class LineDetector:
         self.name = name
 
     def _register_grid(
-        self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+            self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
         """Register a grid to the detector
 
@@ -62,9 +63,26 @@ class LineDetector:
                 )
 
         self.x, self.y, self.z = self._handle_slices(x, y, z)
+        # 这样写的话线监视器必须平行于轴
 
+    def __init_h5file__(self):
+        if self.x[-1] - self.x[0] != 0:
+            l = self.x[-1] - self.x[0] + 1
+        elif self.y[-1] - self.y[0] != 0:
+            l = self.y[-1] - self.y[0] + 1
+        else:
+            l = self.z[-1] - self.z[0] + 1
+        self.flag_per_thousand_dt = 0
+        with h5py.File(self.grid.folder + f"//{self.name}_E.h5", "w") as f:
+            f.create_dataset(
+                "E", shape=(self.grid.total_time, l, 3), dtype="float32"
+            )
+        with h5py.File(self.grid.folder + f"//{self.name}_H.h5", "w") as f:
+            f.create_dataset(
+                "H", shape=(self.grid.total_time, l, 3), dtype="float32"
+            )
     def _handle_slices(
-        self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+            self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ) -> Tuple[List, List, List]:
         """Convert slices in the grid to lists
 
@@ -120,11 +138,58 @@ class LineDetector:
         E = self.grid.E[self.x, self.y, self.z]
         self.E.append(E)
 
+        # Newly added
+        if (self.grid.time_steps_passed != 0 and (
+                self.grid.time_steps_passed + 1) % 1000 == 0) or (self.grid.time_steps_passed + 1) == self.grid.total_time:
+            self.flag_per_thousand_dt += 1
+
+            # 计算当前批次的起始和结束索引
+            start_idx = (self.flag_per_thousand_dt - 1) * 1000
+            end_idx = min(self.grid.time_steps_passed, self.flag_per_thousand_dt * 1000)
+
+            with h5py.File(self.grid.folder + f"//{self.name}_E.h5", "a") as f:
+                dset = f["E"]
+                # 存储数据，确保不会超出 E 的实际大小
+                dset[start_idx:end_idx] = self.real_E()[:end_idx - start_idx]
+            print(f"Detector {self.name} saved E data from {start_idx} to {end_idx}")
+            self.E = []
+
+    # def detect_E_new(self):
+    #     """ detect and save as h5py file at the same time, not saving in RAM """
+    #     E = self.grid.E[self.x, self.y, self.z]
+    #     with h5py.File(self.grid.folder + f"//{self.name}_E.h5", "a") as f:
+    #         dset = f["E"]
+    #         dset.resize(self.grid.time_steps_passed + 1, axis=0)  # 扩展 q 维度
+    #         dset[self.grid.time_steps_passed] = E  # 存储新的时间步数据
+
     def detect_H(self):
         """ detect the magnetic field at a certain location in the grid """
         # TODO: there is a performance bottleneck here (indexing with lists)
         H = self.grid.H[self.x, self.y, self.z]
         self.H.append(H)
+
+        # Newly added
+        if (self.grid.time_steps_passed != 0 and (
+                self.grid.time_steps_passed + 1) % 1000 == 0) or (self.grid.time_steps_passed + 1) == self.grid.total_time:
+
+            # 计算当前批次的起始和结束索引
+            start_idx = (self.flag_per_thousand_dt - 1) * 1000
+            end_idx = min(self.grid.time_steps_passed, self.flag_per_thousand_dt * 1000)
+
+            with h5py.File(self.grid.folder + f"//{self.name}_H.h5", "a") as f:
+                dset = f["H"]
+                # 存储数据，确保不会超出 H 的实际大小
+                dset[start_idx:end_idx] = self.real_H()[:end_idx - start_idx]
+            print(f"Detector {self.name} saved H data from {start_idx} to {end_idx}")
+            self.H = []
+
+    # def detect_H_new(self):
+    #     """ detect and save as h5py file at the same time, not saving in RAM """
+    #     H = self.grid.H[self.x, self.y, self.z]
+    #     with h5py.File(self.grid.folder + f"//{self.name}_H.h5", "a") as f:
+    #         dset = f["H"]
+    #         dset.resize(self.grid.time_steps_passed + 1, axis=0)  # 扩展 q 维度
+    #         dset[self.grid.time_steps_passed] = H  # 存储新的时间步数据
 
     def __repr__(self):
         return f"{self.__class__.__name__}(name={repr(self.name)})"
@@ -155,6 +220,7 @@ class LineDetector:
     def poynting(self) -> np.ndarray:
         # 似乎乘以H的共轭或非共轭都一样（因为H不是复数？）
         return c * np.cross(self.E, self.H, axis=-1)
+
     @property
     def flux(self) -> np.ndarray:
         # energy flux (power)
@@ -164,15 +230,16 @@ class LineDetector:
 
     def real_E(self):
         from .conversions import simE_to_worldE
-        return [simE_to_worldE(x) for x in self.detector_values()["E"]]
+        if isinstance(self.E, list):
+            self.E = np.array(self.E, dtype=float)
+        return simE_to_worldE(self.E)
+
 
     def real_H(self):
         from .conversions import simH_to_worldH
-        return [simH_to_worldH(x) for x in self.detector_values()["H"]]
-
-
-
-
+        if isinstance(self.H, list):
+            self.H = np.array(self.H, dtype=float)
+        return simH_to_worldH(self.H)
 
 
 # is the "detector" paradigm necessary? Can we just flag a segment of the base mesh to be
@@ -184,7 +251,7 @@ class BlockDetector:
 
     """ Basic copy of LineDetector code, changed detect functions """
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, axis="y"):
         """Create a block detector
 
         Args:
@@ -194,10 +261,11 @@ class BlockDetector:
         self.grid = None
         self.E = []
         self.H = []
+        self.axis = axis
         self.name = name
 
     def _register_grid(
-        self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+            self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
         """Register a grid to the detector
 
@@ -224,8 +292,18 @@ class BlockDetector:
 
         self.x, self.y, self.z = self._handle_slices(x, y, z)
 
+    def __init_h5file__(self):
+        self.flag_per_thousand_dt = 0
+        with h5py.File(self.grid.folder + f"//{self.name}_E.h5", "w") as f:
+            f.create_dataset(
+                "E", shape=(self.grid.total_time, len(self.x), len(self.y), len(self.z), 3), dtype="float32"
+            )
+        with h5py.File(self.grid.folder + f"//{self.name}_H.h5", "w") as f:
+            f.create_dataset(
+                "H", shape=(self.grid.total_time, len(self.x), len(self.y), len(self.z), 3), dtype="float32"
+            )
     def _handle_slices(
-        self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+            self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ) -> Tuple[List, List, List]:
         """Convert slices in the grid to lists
 
@@ -287,6 +365,22 @@ class BlockDetector:
         # E = self.grid.E[self.x, self.y, self.z]
         self.E.append(E)
 
+        # Newly added
+        if (self.grid.time_steps_passed != 0 and (
+                self.grid.time_steps_passed + 1) % 1000 == 0) or (self.grid.time_steps_passed + 1) == self.grid.total_time:
+            self.flag_per_thousand_dt += 1
+
+            # 计算当前批次的起始和结束索引
+            start_idx = (self.flag_per_thousand_dt - 1) * 1000
+            end_idx = min(self.grid.time_steps_passed, self.flag_per_thousand_dt * 1000)
+
+            with h5py.File(self.grid.folder + f"//{self.name}_E.h5", "a") as f:
+                dset = f["E"]
+                # 存储数据，确保不会超出 E 的实际大小
+                dset[start_idx:end_idx] = self.real_E()[:end_idx - start_idx]
+            print(f"Detector {self.name} saved E data from {start_idx} to {end_idx}")
+            self.E = []
+
     def detect_H(self):
         """ detect the magnetic field at a certain location in the grid """
         # TODO: there is a performance bottleneck here (indexing with lists)
@@ -299,6 +393,22 @@ class BlockDetector:
                     H[i][j].append(self.grid.H[row, col, [pillar]][0])
         # H = self.grid.H[self.x, self.y, self.z]
         self.H.append(H)
+
+        # Newly added
+        if (self.grid.time_steps_passed != 0 and (
+                self.grid.time_steps_passed + 1) % 1000 == 0) or (self.grid.time_steps_passed + 1) == self.grid.total_time:
+
+            # 计算当前批次的起始和结束索引
+            start_idx = (self.flag_per_thousand_dt - 1) * 1000
+            end_idx = min(self.grid.time_steps_passed, self.flag_per_thousand_dt * 1000)
+
+            with h5py.File(self.grid.folder + f"//{self.name}_H.h5", "a") as f:
+                dset = f["H"]
+                # 存储数据，确保不会超出 H 的实际大小
+                dset[start_idx:end_idx] = self.real_H()[:end_idx - start_idx]
+            print(f"Detector {self.name} saved H data from {start_idx} to {end_idx}")
+            print(f"{self.grid.time_steps_passed} time steps passed")
+            self.H = []
 
     def __repr__(self):
         return f"{self.__class__.__name__}(name={repr(self.name)})"
@@ -314,6 +424,19 @@ class BlockDetector:
     def detector_values(self):
         """ outputs what detector detects """
         return {"E": self.E, "H": self.H}
+
+    def real_E(self):
+        from .conversions import simE_to_worldE
+        if isinstance(self.E, list):
+            self.E = np.array(self.E, dtype=float)
+        return simE_to_worldE(self.E)
+
+
+    def real_H(self):
+        from .conversions import simH_to_worldH
+        if isinstance(self.H, list):
+            self.H = np.array(self.H, dtype=float)
+        return simH_to_worldH(self.H)
 
 
 ## CurrentDetector
@@ -356,7 +479,7 @@ class CurrentDetector:
         self.name = name
 
     def _register_grid(
-        self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+            self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
         """Register a grid to the detector
 
@@ -385,7 +508,7 @@ class CurrentDetector:
         self.x, self.y, self.z = self._handle_slices(x, y, z)
 
     def _handle_slices(
-        self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+            self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ) -> Tuple[List, List, List]:
         """Convert slices in the grid to lists
 
@@ -477,21 +600,21 @@ class CurrentDetector:
         # option for unit factor here? Units will get very complicated otherwise
 
         current_vector_1 = (
-            (self.grid.H[px, py - 1, pz, X]) - (self.grid.H[px, py, pz, X])
-        ) * self.grid.grid_spacing
+                                   (self.grid.H[px, py - 1, pz, X]) - (self.grid.H[px, py, pz, X])
+                           ) * self.grid.grid_spacing
         current_vector_2 = (
-            (self.grid.H[px, py, pz, Y]) - (self.grid.H[px - 1, py, pz, Y])
-        ) * self.grid.grid_spacing
+                                   (self.grid.H[px, py, pz, Y]) - (self.grid.H[px - 1, py, pz, Y])
+                           ) * self.grid.grid_spacing
 
         current_1 = current_vector_1 + current_vector_2
         # current_1 = float(current.cpu())
 
         current_vector_1 = (
-            (self.grid.H[px, py - 1, pz - 1, X]) - (self.grid.H[px, py, pz - 1, X])
-        ) * self.grid.grid_spacing
+                                   (self.grid.H[px, py - 1, pz - 1, X]) - (self.grid.H[px, py, pz - 1, X])
+                           ) * self.grid.grid_spacing
         current_vector_2 += (
-            (self.grid.H[px, py, pz - 1, Y]) - (self.grid.H[px - 1, py, pz - 1, Y])
-        ) * self.grid.grid_spacing
+                                    (self.grid.H[px, py, pz - 1, Y]) - (self.grid.H[px - 1, py, pz - 1, Y])
+                            ) * self.grid.grid_spacing
         # current_2 = float(current_2.cpu())
         current_2 = current_vector_1 + current_vector_2
 

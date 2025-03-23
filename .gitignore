@@ -50,3 +50,7 @@ examples/mode_solver/
 examples/transmission_ex/
 
 examples/Nonuniform_ex/
+
+examples/planesource_ex/
+
+examples/pointsource_ex/

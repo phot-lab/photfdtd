@@ -26,23 +26,30 @@ if __name__ == "__main__":
                     xlength=400e-9, ylength=0, zlength=0, polarization="x", pulse_type="gaussian")
     #
     # # # set a line detector 设置一个线监视器
-    grid.set_detector(detector_type="linedetector",
-                      name="detector1",
-                      x=1500e-9,
-                      y=0,
-                      z=1500e-9,
-                      xlength=400e-9,
+    # grid.set_detector(detector_type="linedetector",
+    #                   name="detector1",
+    #                   x=1500e-9,
+    #                   y=0,
+    #                   z=1500e-9,
+    #                   xlength=400e-9,
+    #                   ylength=0,
+    #                   zlength=0
+    #                   )
+    # grid.set_detector(detector_type="linedetector",
+    #                   name="detector2",
+    #                   x=1500e-9,
+    #                   y=0,
+    #                   z=7000e-9,
+    #                   xlength=400e-9,
+    #                   ylength=0,
+    #                   zlength=0
+    #                   )
+    grid.set_detector(detector_type="blockdetector",
+                      name="detector3",
+                      axis="y",
+                      xlength=1e-6,
                       ylength=0,
-                      zlength=0
-                      )
-    grid.set_detector(detector_type="linedetector",
-                      name="detector2",
-                      x=1500e-9,
-                      y=0,
-                      z=7000e-9,
-                      xlength=400e-9,
-                      ylength=0,
-                      zlength=0
+                      zlength=2e-6,
                       )
 
     # We can plot the geometry and the index map now
@@ -51,7 +58,7 @@ if __name__ == "__main__":
     grid.plot_n()
 
     # run the FDTD simulation 运行仿真
-    grid.run(animate=True, save=True, interval=20)
+    # grid.run(animate=False, save=True, interval=20)
 
     # # Or you can read from a folder 也可以读取仿真结果
     grid = grid.read_simulation(folder=grid.folder)

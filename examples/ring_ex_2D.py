@@ -10,8 +10,8 @@ if __name__ == "__main__":
     grid = Grid(grid_xlength=15e-6, grid_ylength=1, grid_zlength=15e-6, grid_spacing=50e-9, permittivity=1 ** 2,
                 foldername="test_ring_2D")
 
-    ring = Ring(outer_radius=5e-6, ylength=1, width_s=400e-9, width_r=400e-9, length=0, length_s=15e-6,
-                gap=50e-9, name="ring", refractive_index=index_Re_Si, grid=grid)
+    ring = Ring(outer_radius=5e-6, ylength=1, width_s=400e-9, width_r=400e-9, length=2e-6, length_s=15e-6,
+                gap=20e-9, name="ring", refractive_index=index_Re_Si, grid=grid)
     grid.set_PML(pml_width=1.5e-6)
     grid.set_source(source_type="linesource", wavelength=1570e-9, pulse_type="gaussian",waveform="gaussian",
                     x_start=2e-6, x_end=2.4e-6, y=0, z=2e-6,
@@ -38,12 +38,7 @@ if __name__ == "__main__":
     grid.save_fig()
     grid.plot_n()
     #
-    grid.run(animate=True, time=10000)
-
-    # Save result of simulation 保存仿真结果
-    grid.save_simulation()
-    grid.animate(folder_path=grid.folder+"/frames", output_video_path=grid.folder+"/video.mp4")
-
+    grid.run(animate=True, time=3000, save=True, interval=20)
     grid.visualize()
     # grid.save_fig(axis="y", axis_number=0, show_energy=True)
     # # 绘制仿真结束时刻空间场分布
@@ -51,10 +46,10 @@ if __name__ == "__main__":
     # Grid.plot_fieldtime(grid=grid, field_axis="x", field="E", index=5, name_det="detector1")
     # grid.detector_profile()
     # grid.calculate_source_profile()
-    freqs, spectrum1 = grid.visulize_single_detector(name_det="detector1")
-    freqs, spectrum2 = grid.visulize_single_detector(name_det="detector2")
-    freqs, spectrum3 = grid.visulize_single_detector(name_det="detector3")
-    freqs, spectrum4 = grid.visulize_single_detector(name_det="detector4")
+    freqs, spectrum1 = grid.visualize_single_detector(name_det="detector1")
+    freqs, spectrum2 = grid.visualize_single_detector(name_det="detector2")
+    freqs, spectrum3 = grid.visualize_single_detector(name_det="detector3")
+    freqs, spectrum4 = grid.visualize_single_detector(name_det="detector4")
 
     import matplotlib.pyplot as plt
 
