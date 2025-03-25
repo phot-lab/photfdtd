@@ -244,13 +244,13 @@ class Grid:
                                         grid_spacing=self._grid.grid_spacing_y)[0]
         pml_width_z = self._handle_unit([pml_width_z],
                                         grid_spacing=self._grid.grid_spacing_z)[0]
-        if self._grid_xlength != 1 and pml_width_x > 0:
+        if self._grid_xlength != 1 and pml_width_x is not None and pml_width_x > 0:
             self._grid[0:pml_width_x, :, :] = fdtd.PML(name="pml_xlow")
             self._grid[-pml_width_x:, :, :] = fdtd.PML(name="pml_xhigh")
-        if self._grid_ylength != 1 and pml_width_y > 0:
+        if self._grid_ylength != 1 and pml_width_y is not None and pml_width_y > 0:
             self._grid[:, 0:pml_width_y, :] = fdtd.PML(name="pml_ylow")
             self._grid[:, -pml_width_y:, :] = fdtd.PML(name="pml_yhigh")
-        if self._grid_zlength != 1 and pml_width_z > 0:
+        if self._grid_zlength != 1 and pml_width_z is not None and pml_width_z > 0:
             self._grid[:, :, 0:pml_width_z] = fdtd.PML(name="pml_zlow")
             self._grid[:, :, -pml_width_z:] = fdtd.PML(name="pml_zhigh")
         self.flag_PML_not_set = False
@@ -503,6 +503,7 @@ class Grid:
         spectrum_freqs, fourier = fr.FFT(
             freq_window_tuple=[found_source.frequency - 2 * found_source.bandwidth,
                                found_source.frequency + 2 * found_source.bandwidth], )
+
         spectrum = abs(fourier)
 
         # time
@@ -1266,7 +1267,7 @@ class Grid:
         import pickle
         # Serialize the class instance
         saved_grid = pickle.dumps(self)
-        savez(path.join(self.folder, "detector_readings"), serialized_instance=saved_grid)
+        savez(path.join(self.folder, "saved_grid"), serialized_instance=saved_grid)
         # dic = {}
         # for detector in self._grid.detectors:
         #     dic[detector.name + " (E)"] = np.array([x for x in detector.detector_values()["E"]])
@@ -1279,7 +1280,7 @@ class Grid:
         # dic["grid"] = self
         #
         # # 保存detector_readings_sweep.npz文件
-        # savez(path.join(self.folder, "detector_readings"), **dic)
+        # savez(path.join(self.folder, "saved_grid"), **dic)
 
     @staticmethod
     def read_simulation(folder: str = None):
@@ -1291,10 +1292,12 @@ class Grid:
             raise Exception("Please indicate the folder where your grid has been saved")
         import pickle
         if not folder.endswith(".npz"):
-            folder = folder + "\detector_readings.npz"
-
-        readings = np.load(folder, allow_pickle=True)
-
+            folder_npz = folder + "\saved_grid.npz"
+        try:
+            readings = np.load(folder_npz, allow_pickle=True)
+        except:
+            folder_npz = folder + "\detector_readings.npz"
+            readings = np.load(folder_npz, allow_pickle=True)
         return pickle.loads(readings['serialized_instance'])
 
     @staticmethod

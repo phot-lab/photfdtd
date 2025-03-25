@@ -7,41 +7,44 @@ if __name__ == "__main__":
     index_SiO2 = Index(material="SiO2")
     index_Re_SiO2, index_Im_SiO2 = index_SiO2.get_refractive_index(wavelength=1.55e-6)
 
-    grid = Grid(grid_xlength=15e-6, grid_ylength=2.5e-6, grid_zlength=20e-6, grid_spacing=40e-9, permittivity=1 ** 2,
-                foldername="test_ring")
-    grid.set_PML(pml_width_y=0.8e-6, pml_width_x=0.8e-6, pml_width_z=0.8e-6)
-    ring = Ring(outer_radius=5e-6, ylength=0.22e-6, width_s=400e-9, width_r=400e-9, length=4e-6, length_s=20e-6,
-                gap=40e-9, name="ring", refractive_index=index_Re_Si, grid=grid)
+    grid = Grid(grid_xlength=11e-6, grid_ylength=1e-6, grid_zlength=10e-6, grid_spacing=20e-9, permittivity=1 ** 2,
+                foldername="test_ring_0325")
+    grid.set_PML(pml_width_y=0e-6, pml_width_x=0.8e-6, pml_width_z=0.8e-6)
+    ring = Ring(outer_radius=3.3e-6, ylength=0.18e-6, width_s=400e-9, width_r=400e-9, length=0e-6, length_s=10e-6,
+                gap=100e-9, name="ring", refractive_index=index_Re_Si, grid=grid)
+    substrate = Waveguide(xlength=11e-6, ylength=0.41e-6,zlength=10e-6,y=0.205e-6, refractive_index=index_Re_SiO2, grid=grid)
 
-    grid.set_source(source_type="linesource", wavelength=1550e-9, pulse_type="gaussian",waveform="gaussian",
-                    x_start=2.1e-6, x_end=2.5e-6, z=2e-6,
-                    ylength=1, zlength=1, polarization="x")
+    grid.set_source(source_type="planesource", wavelength=1550e-9, pulse_type="gaussian",waveform="gaussian",
+                    axis="z", x=1.9e-6, z=0.9e-6,
+                    xlength=0.4e-6,ylength=0.4e-6, zlength=0, polarization="x")
 
     grid.set_detector(detector_type='linedetector',
-                      x_start=1.7e-6, x_end=2.7e-6, z=3e-6,
+                      x_start=1.7e-6, x_end=2.1e-6, z=1.0e-6,
                       ylength=1, zlength=1,
                       name='detector1')
     grid.set_detector(detector_type='linedetector',
-                      x_start=1.7e-6, x_end=2.7e-6, z=15e-6,
+                      x_start=1.7e-6, x_end=2.1e-6, z=9e-6,
                       ylength=1, zlength=1,
                       name='detector2')
     grid.set_detector(detector_type='linedetector',
-                      x_start=12.3e-6, x_end=13.3e-6, z=3e-6,
+                      x_start=8.9e-6, x_end=9.3e-6, z=1e-6,
                       ylength=1, zlength=1,
                       name='detector3')
     grid.set_detector(detector_type='linedetector',
-                      x_start=12.3e-6, x_end=13.3e-6, z=15e-6,
+                      x_start=8.9e-6, x_end=9.3e-6, z=9e-6,
                       ylength=1, zlength=1,
                       name='detector4')
     grid.add_object(ring)
+    grid.add_object(substrate)
     print(grid._grid.time_step)
-    grid.save_fig(axis_index=31)
-    grid.plot_n(axis_index=31)
+    grid.save_fig()
+    grid.plot_n()
+    grid.plot_n(axis="z", axis_index=220)
     #
-    # grid.run(animate=True, time=10000, save=True, interval=20)
+    grid.run(animate=True, time=10000, save=True, interval=20)
     # grid.animate()
     # grid = grid.read_simulation(grid.folder)
-    grid._grid.time_steps_passed = 10000
+
     grid.visualize()
     # grid.save_fig(axis="y", axis_number=0, show_energy=True)
     # # 绘制仿真结束时刻空间场分布

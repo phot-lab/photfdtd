@@ -7,14 +7,14 @@ if __name__ == "__main__":
     index_SiO2 = Index(material="SiO2")
     index_Re_SiO2, index_Im_SiO2 = index_SiO2.get_refractive_index(wavelength=1.55e-6)
 
-    grid = Grid(grid_xlength=15e-6, grid_ylength=1, grid_zlength=15e-6, grid_spacing=50e-9, permittivity=1 ** 2,
+    grid = Grid(grid_xlength=15e-6, grid_ylength=1, grid_zlength=20e-6, grid_spacing=50e-9, permittivity=1 ** 2,
                 foldername="test_ring_2D")
 
-    ring = Ring(outer_radius=5e-6, ylength=1, width_s=400e-9, width_r=400e-9, length=2e-6, length_s=15e-6,
-                gap=20e-9, name="ring", refractive_index=index_Re_Si, grid=grid)
-    grid.set_PML(pml_width=1.5e-6)
+    ring = Ring(outer_radius=5e-6, ylength=1, width_s=400e-9, width_r=400e-9, length=4e-6, length_s=20e-6,
+                gap=40e-9, name="ring", refractive_index=index_Re_Si, grid=grid)
+
     grid.set_source(source_type="linesource", wavelength=1570e-9, pulse_type="gaussian",waveform="gaussian",
-                    x_start=2e-6, x_end=2.4e-6, y=0, z=2e-6,
+                    x_start=2.1e-6, x_end=2.5e-6, y=0, z=2e-6,
                     ylength=1, zlength=1, polarization="x")
 
     grid.set_detector(detector_type='linedetector',
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     grid.save_fig()
     grid.plot_n()
     #
-    grid.run(animate=True, time=3000, save=True, interval=20)
+    # grid.run(animate=True, time=10000, save=True, interval=20)
     grid.visualize()
     # grid.save_fig(axis="y", axis_number=0, show_energy=True)
     # # 绘制仿真结束时刻空间场分布
