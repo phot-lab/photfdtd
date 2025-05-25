@@ -1,5 +1,6 @@
 import numpy as np
 from .fiber import Fiber
+
 class HC_ARF:
     """
     单层空芯反谐振光纤
@@ -9,6 +10,7 @@ class HC_ARF:
     D: 光纤纤芯直径
     d: 毛细管直径
     t: 毛细管壁厚
+    w: 外包层厚度
     refractive_index: 包层折射率
     axis: 'x', 'y', 'z' 光纤沿哪个轴
     """
@@ -20,12 +22,12 @@ class HC_ARF:
                  D: int or float = None,
                  d: int or float = None,
                  t: int or float = None,
+                 w: int or float = None,
                  refractive_index: float = None,
                  axis: str = "z",
                  name: str = "hc_arf",
                  grid=None,
                  priority: int = 1) -> None:
-
         # 自动选择仿真区域中心
         self.x = x if x is not None else int(grid._grid_xlength / 2)
         self.y = y if y is not None else int(grid._grid_ylength / 2)
@@ -35,6 +37,7 @@ class HC_ARF:
         self.D = D
         self.d = d
         self.t = t
+        self.w=w
         self.refractive_index = refractive_index
         self.axis = axis
         self.grid = grid
@@ -55,17 +58,31 @@ class HC_ARF:
         for i in range(self.N):
             angle_increment = 2 * np.pi / self.N
             angle = i * angle_increment
-            x0, y0, z0 = self.x, self.y, self.z
-            r = (self.D + self.d) / 2+self.t  # 计算毛细管的半径
 
-            x1 = x0 + r * np.cos(angle)  # 计算毛细管的 X 坐标
-            y1 = y0 + r * np.sin(angle)  # 计算毛细管的 Y 坐标
-            z1 = z0  # Z 坐标保持不变
+            x0, y0, z0 = self.x, self.y, self.z
+            r = (self.D + self.d) / 2 + self.t  # 计算毛细管的半径
+            r = self.grid._handle_unit([r], grid_spacing=self.grid._grid.grid_spacing)[0]  # 转换成网格单位
+
+            # 根据轴选择方向进行坐标计算
+            if self.axis == 'z':
+                x1 = int(x0 + r * np.cos(angle))  # 计算毛细管的 X 坐标
+                y1 = int(y0 + r * np.sin(angle))  # 计算毛细管的 Y 坐标
+                z1 = z0  # 计算毛细管的 Z 坐标
+
+            elif self.axis == 'y':
+                x1 = int(x0 + r * np.cos(angle))  # 计算毛细管的 X 坐标
+                y1 = y0  # 计算毛细管的 Y 坐标
+                z1 = int(z0 + r * np.sin(angle))  # 计算毛细管的 Z 坐标
+
+            elif self.axis == 'x':
+                x1 = x0  # 计算毛细管的 X 坐标
+                y1 = int(y0 + r * np.cos(angle))  # 计算毛细管的 Y 坐标
+                z1 = int(z0 + r * np.sin(angle))  # 计算毛细管的 Z 坐标
 
             # 创建光纤对象并添加到 fiber_inner 列表中
             fiber = Fiber(length=1, x=x1, y=y1, z=z1,
                           radius=[self.d / 2, (self.d + self.t) / 2],
-                          refractive_index=[1.01, self.refractive_index],
+                          refractive_index=[1.0001, self.refractive_index],
                           name=f"fiber{i+1}", axis=self.axis,
                           grid=self.grid, priority=self.priority)
             self.fiber_inner.append(fiber)
@@ -75,9 +92,10 @@ class HC_ARF:
 
     def _add_fiber_outer(self):
         """创建外包层对象"""
+        #最外层包层厚度不确定
         fiber_outer = Fiber(length=1, x=self.x, y=self.y, z=self.z,
-                            radius=[(self.D / 2 + self.d+2*self.t), 62.5e-6],
-                            refractive_index=[1.01, self.refractive_index],
+                            radius=[(self.D / 2 + self.d + 2 * self.t), (self.D / 2 + self.d + 2 * self.t+self.w)],
+                            refractive_index=[1.0001, self.refractive_index],
                             name='fiber_outer', axis=self.axis,
                             grid=self.grid, priority=self.priority)
 
