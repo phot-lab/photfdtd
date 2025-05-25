@@ -155,9 +155,9 @@ class Waveguide:
         matrix = self.permittivity
         shape = matrix.shape
         if center:
-            center[0] = self.grid._handle_unit(center[0], grid_spacing=self.grid._grid.grid_spacing_x)[0]
-            center[1] = self.grid._handle_unit(center[1], grid_spacing=self.grid._grid.grid_spacing_y)[0]
-            center[2] = self.grid._handle_unit(center[2], grid_spacing=self.grid._grid.grid_spacing_z)[0]
+            center[0] = self.grid._handle_unit([center[0]], grid_spacing=self.grid._grid.grid_spacing_x)[0]
+            center[1] = self.grid._handle_unit([center[1]], grid_spacing=self.grid._grid.grid_spacing_y)[0]
+            center[2] = self.grid._handle_unit([center[2]], grid_spacing=self.grid._grid.grid_spacing_z)[0]
             center = [center[0] - self.x, center[1] - self.y, center[2] - self.z]
         elif center is None:
             # 这里的center是波导原点坐标系，输入的center也是

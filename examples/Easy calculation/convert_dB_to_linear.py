@@ -20,7 +20,7 @@ def db_to_linear(dB):
 
 
 # Example usage
-P_linear = 0.375  # Example power in linear scale
+P_linear = (0.420/0.946) ** 2  # Example power in linear scale
 P_db = linear_to_db(P_linear)
 print(f"{P_linear} linear scale is {P_db:.2f} dB")
 

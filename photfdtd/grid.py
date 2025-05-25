@@ -523,7 +523,7 @@ class Grid:
             axes[0][0].plot(length * 1e6, conversions.simE_to_worldE(found_source.profile))
             # axes[0][0].set_xticks()  # 每隔10个显示一个刻度
             axes[0][0].set_xlabel('um')
-            axes[0][0].set_ylabel("E (V/m)")
+            axes[0][0].set_ylabel(f"E{conversions.number_to_letter(_Epol)} (V/m)")
             axes[0][0].set_title(f"Space distribution")
             axes[0][0].legend(["Source Profile"])
         elif isinstance(found_source, fdtd.PlaneSource):
@@ -575,12 +575,12 @@ class Grid:
         # Spectrum
         axes[1][0].plot(spectrum_freqs * 1e-12, spectrum)
         axes[1][0].set_xlabel('frequency (THz)')
-        axes[1][0].set_ylabel("E (V/m)")
+        axes[1][0].set_ylabel(f"|E{conversions.number_to_letter(_Epol)}| (V/m)")
         axes[1][0].set_title(f"Spectrum of {source_name}")
 
         axes[1][1].plot(constants.c / spectrum_freqs * 1e6, spectrum)
         axes[1][1].set_xlabel('wavelength (um)')
-        axes[1][1].set_ylabel("E (V/m)")
+        axes[1][1].set_ylabel(f"|E{conversions.number_to_letter(_Epol)}| (V/m)")
         axes[1][1].set_title(f"Spectrum of {source_name}")
 
         plt.tight_layout()
@@ -954,7 +954,10 @@ class Grid:
         subprocess.run(command)
 
         # 删除图片列表文件
-        os.remove(list_file_path)
+        try:
+            os.remove(list_file_path)
+        except:
+            print(f"Unalbe to remove {list_file_path}")
 
     def calculate_Transmission(self,
                                detector_name_1: str = None,
@@ -1003,13 +1006,13 @@ class Grid:
             for i in range(P1[0].shape[0]):
                 fr = fdtd.FrequencyRoutines(self._grid, objs=P1[:, i])
                 spectrum_freqs_1, fourier = fr.FFT(
-                    freq_window_tuple=[source.frequency - 2 * source.bandwidth,
-                                       source.frequency + 2 * source.bandwidth], )
+                    freq_window_tuple=[source.frequency - source.bandwidth,
+                                       source.frequency + source.bandwidth], )
                 F1[i] = abs(fourier)
                 fr = fdtd.FrequencyRoutines(self._grid, objs=P2[:, i])
                 spectrum_freqs_2, fourier = fr.FFT(
-                    freq_window_tuple=[source.frequency - 2 * source.bandwidth,
-                                       source.frequency + 2 * source.bandwidth], )
+                    freq_window_tuple=[source.frequency - source.bandwidth,
+                                       source.frequency + source.bandwidth], )
                 F2[i] = abs(fourier)
             spectrum_1 = np.sum(F1, axis=0, keepdims=True)
             spectrum_2 = np.sum(F2, axis=0, keepdims=True)
@@ -1022,12 +1025,12 @@ class Grid:
                     flux_2 = detector.flux[:, 0, 2]
             fr_1 = fdtd.FrequencyRoutines(grid._grid, objs=flux_1)
             spectrum_freqs_1, fourier_1 = fr_1.FFT(
-                freq_window_tuple=[source.frequency - 2 * source.bandwidth,
-                                   source.frequency + 2 * source.bandwidth], )
+                freq_window_tuple=[source.frequency - source.bandwidth,
+                                   source.frequency + source.bandwidth], )
             fr_2 = fdtd.FrequencyRoutines(grid._grid, objs=flux_2)
             spectrum_freqs_2, fourier_2 = fr_2.FFT(
-                freq_window_tuple=[source.frequency - 2 * source.bandwidth,
-                                   source.frequency + 2 * source.bandwidth], )
+                freq_window_tuple=[source.frequency - source.bandwidth,
+                                   source.frequency + source.bandwidth], )
 
             spectrum_1, spectrum_2 = abs(fourier_1), abs(fourier_2)
             Transmission = spectrum_2 / spectrum_1
@@ -1130,13 +1133,13 @@ class Grid:
         source = self._try_to_find_source()
         fr_1 = fdtd.FrequencyRoutines(grid._grid, objs=flux_1)
         spectrum_freqs_1, fourier_1 = fr_1.FFT(
-            freq_window_tuple=[source.frequency - 2 * source.bandwidth,
-                               source.frequency + 2 * source.bandwidth], )
+            freq_window_tuple=[source.frequency - source.bandwidth,
+                               source.frequency + source.bandwidth], )
 
         fr_2 = fdtd.FrequencyRoutines(grid._grid, objs=flux_2)
         spectrum_freqs_2, fourier_2 = fr_2.FFT(
-            freq_window_tuple=[source.frequency - 2 * source.bandwidth,
-                               source.frequency + 2 * source.bandwidth], )
+            freq_window_tuple=[source.frequency - source.bandwidth,
+                               source.frequency + source.bandwidth], )
 
         spectrum_1, spectrum_2 = abs(fourier_1), abs(fourier_2)
 
@@ -1608,10 +1611,13 @@ class Grid:
                 if d.name == name_det:
                     detector = d
 
+        if name_det is None:
+            name_det = detector.name
+
         if field == "E":
-            data = self.read_detector(detector.name)[0]
+            data = self.read_detector(name_det)[0]
         elif field == "H":
-            data = self.read_detector(detector.name)[1]
+            data = self.read_detector(name_det)[1]
         # if field == "E":
         #     data = np.array(detector.real_E())
         # elif field == "H":
@@ -1639,8 +1645,8 @@ class Grid:
         source = self._try_to_find_source()
         fr = fdtd.FrequencyRoutines(self._grid, objs=indexed_data)
         spectrum_freqs, fourier = fr.FFT(
-            freq_window_tuple=[source.frequency - 2 * source.bandwidth,
-                               source.frequency + 2 * source.bandwidth], )
+            freq_window_tuple=[source.frequency - source.bandwidth,
+                               source.frequency + source.bandwidth], )
         spectrum = abs(fourier)
 
         ### 试试ufdtd书中的方法，对空间中每个点的电场分别傅里叶变换
@@ -1649,8 +1655,8 @@ class Grid:
         #     for j in range(3):
         #         fr = fdtd.FrequencyRoutines(self._grid, objs=data[:, i, j])
         #         spectrum_freqs, fourier = fr.FFT(
-        #             freq_window_tuple=[source.frequency - 2 * source.bandwidth,
-        #                             source.frequency + 2 * source.bandwidth], )
+        #             freq_window_tuple=[source.frequency - source.bandwidth,
+        #                             source.frequency + source.bandwidth], )
         #         F[i, j] = abs(fourier)
         ###
 
@@ -1668,8 +1674,8 @@ class Grid:
             axes[0][0].plot(length * 1e6, data[time_step_max_field, :, field_axis])
             # axes[0][0].set_xticks()  # 每隔10个显示一个刻度
             axes[0][0].set_xlabel('um')
-            axes[0][0].set_ylabel("E")
-            axes[0][0].set_title(f"Space distribution of {detector.name} at {time_step_max_field * 1e15} fs")
+            axes[0][0].set_ylabel("E (V/m)")
+            axes[0][0].set_title(f"Space distribution of {name_det} at {time_step_max_field * self._grid.time_step * 1e15} fs")
             axes[0][0].legend(["Detector profile"])
         elif data.ndim == 5:
             # 绘制 2D 颜色图
@@ -1688,7 +1694,7 @@ class Grid:
                 axes[0][0].set_xlabel("X")
                 axes[0][0].set_ylabel("Y")
             # axes[0][0].set_xticks()  # 每隔10个显示一个刻度
-            axes[0][0].set_title(f"Space distribution of {detector.name} at {time_step_max_field * 1e15} fs")
+            axes[0][0].set_title(f"Space distribution of {name_det} at {time_step_max_field * self._grid.time_step * 1e15} fs")
             axes[0][0].legend(["Detector profile"])
 
 
@@ -1702,24 +1708,24 @@ class Grid:
             axes[0][1].plot(time, data[:, index_3d[0], index_3d[1], index_3d[2], 1], label="Ey")
             axes[0][1].plot(time, data[:, index_3d[0], index_3d[1], index_3d[2], 2], label="Ez")
         axes[0][1].set_xlabel('fs')
-        axes[0][1].set_ylabel("E")
-        axes[0][1].set_title(f"Time Signal of {detector.name}")
+        axes[0][1].set_ylabel("E (V/m)")
+        axes[0][1].set_title(f"Time Signal of {name_det}")
         axes[0][1].legend()
 
         # Spectrum
         axes[1][0].plot(spectrum_freqs * 1e-12, spectrum)
         axes[1][0].set_xlabel('frequency (THz)')
-        axes[1][0].set_ylabel("E")
-        axes[1][0].set_title(f"Spectrum of {detector.name}")
+        axes[1][0].set_ylabel(f"|E{conversions.number_to_letter(field_axis)}| (V/m)")
+        axes[1][0].set_title(f"Spectrum of {name_det}")
 
         axes[1][1].plot(constants.c / spectrum_freqs * 1e6, spectrum)
         axes[1][1].set_xlabel('wavelength (um)')
-        axes[1][1].set_ylabel("E")
-        axes[1][1].set_title(f"Spectrum of {detector.name}")
+        axes[1][1].set_ylabel(f"|E{conversions.number_to_letter(field_axis)}| (V/m)")
+        axes[1][1].set_title(f"Spectrum of {name_det}")
 
         plt.tight_layout()
 
-        file_name = f"{detector.name} profile"
+        file_name = f"{name_det} profile"
         plt.savefig(os.path.join(self.folder, f"{file_name}.png"))
 
         plt.close()

@@ -1,6 +1,6 @@
 # PhotFDTD
 
-PhotFDTD/Pyphot passive, with [fdtd](https://github.com/flaport/fdtd) and [phisol](https://github.com/philmain28/philsol) as the underlying codes, realizes 3D time domain simulation of optical transmission and 2D mode computation for optical transmission, along with packaged waveguides and dozens of user-friendly examples.
+PhotFDTD/Pyphot passive, with [fdtd](https://github.com/flaport/fdtd) and [philsol](https://github.com/philmain28/philsol) as the underlying codes, realizes 3D time domain simulation of optical transmission and 2D mode computation for optical transmission, along with packaged waveguides and dozens of user-friendly examples.
 
 PhotFDTD/Pyphot passive，以[fdtd](https://github.com/flaport/fdtd) 和[phisol](https://github.com/philmain28/philsol)为底层代码，实现了光传输的三维时域仿真和二维模式计算，同时提供了已经封装好的波导和数十个方便使用者的示例。
 

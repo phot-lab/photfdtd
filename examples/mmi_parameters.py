@@ -5,12 +5,12 @@ nf = 3.47  # 折射率（论文里为nr）
 lambda0 = 1550e-9  # 入射光波长
 pi = np.pi
 k0 = 2 * pi / lambda0
-Wm = 10e-6  # 多模波导宽度 单位m
+Wm = 2e-6  # 多模波导宽度 单位m
 grid_spacing = 155e-9
 c0 = 299792458
 
 # TE Mode，对于TE模，sigma = 0 ，对于TM模，sigma = 1
-sigma = 1
+sigma = 0
 We = Wm + (lambda0 / pi) * ((ns / nf) ** (2 * sigma)) * ((nf ** 2 - ns ** 2) ** (-1 / 2))  # 多模波导有效宽度
 print("多模波导有效宽度We = ", We)
 beta = np.zeros(5)

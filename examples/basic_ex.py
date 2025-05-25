@@ -3,18 +3,18 @@ from photfdtd import Waveguide, Grid, Solve, Index
 if __name__ == "__main__":
     # This example shows a 2D simulation of a basic straight waveguide 本示例展示了一个基础矩形波导的二维仿真
     # set background index设置背景折射率
-    background_index = 1.4447
+    background_index = 1
 
     index_Si = Index(material="Si")
     index_Re_Si, index_Im_Si = index_Si.get_refractive_index(wavelength=1.55e-6)
 
     # # create the simulation region, which is a Grid object 新建一个 grid 对象
-    grid = Grid(grid_xlength=3e-6, grid_ylength=1, grid_zlength=8e-6, grid_spacing=20e-9,
+    grid = Grid(grid_xlength=4e-6, grid_ylength=1, grid_zlength=4e-6, grid_spacing=20e-9,
                 permittivity=background_index ** 2, foldername="basic_ex")
 
     # set waveguide 设置器件参数
     waveguide = Waveguide(
-        xlength=400e-9, ylength=1, zlength=7.5e-6, refractive_index=index_Re_Si, name="waveguide", grid=grid
+        xlength=400e-9, ylength=1, zlength=4e-6, refractive_index=index_Re_Si, name="waveguide", grid=grid
     )
 
     # add waveguide to grid 往 grid 里添加器件
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # grid.del_object(waveguide)
     # set a line source with center wl at 1550nm 设置一个点光源，波长为1550nm，波形为连续正弦
     grid.set_source(source_type="linesource",
-                    wavelength=1550e-9, name="source", x=1500e-9, y=0, z=1200e-9,
+                    wavelength=1550e-9, name="source", x=1500e-9, y=0, z=1200e-9, pulse_length=3e-15,
                     xlength=400e-9, ylength=0, zlength=0, polarization="x", pulse_type="gaussian")
     #
     # # # set a line detector 设置一个线监视器
@@ -58,10 +58,11 @@ if __name__ == "__main__":
     grid.plot_n()
 
     # run the FDTD simulation 运行仿真
-    grid.run(animate=False, save=True, interval=20)
+    # grid.run(animate=False, save=True, interval=20)
 
     # # Or you can read from a folder 也可以读取仿真结果
-    grid = grid.read_simulation(folder=grid.folder)
+    grid._grid.time_steps_passed = 3000
+    # grid = grid.read_simulation(folder=grid.folder)
     grid.visualize()
 
     grid.calculate_Transmission(detector_name_1="detector1", detector_name_2="detector2")

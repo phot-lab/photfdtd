@@ -2,7 +2,7 @@ import numpy as np
 import photfdtd.fdtd.constants as constants
 
 n = 3.5  # 请输入材料的折射率
-L = 5e-6 * 2 * np.pi + 2 * 4e-6  # m
+L = 3.1e-6 * 2 * np.pi + 0 * 4e-6  # m
 f = 20  # Hz
 c = constants.c  # 单位m/s
 dimension = 2

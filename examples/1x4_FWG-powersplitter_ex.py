@@ -65,17 +65,8 @@ if __name__ == "__main__":
                     xlength=1, ylength=20, zlength=1, polarization="z")
     grid.save_fig(axis="z", axis_number=0)
 
-    solve = Solve(grid=grid,
-                  axis='z',
-                  index=0,
-                  filepath=grid.folder
-                  )
-
-    # 绘制任一截面
-    solve.plot()
-
     grid.run(time=3000)
-
+    grid.visualize()
     # grid.save_fig(axis="z",
     #               axis_number=0,
     #               show_geometry=False)

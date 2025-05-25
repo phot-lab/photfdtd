@@ -8,15 +8,15 @@ if __name__ == "__main__":
     index_Re_SiO2, index_Im_SiO2 = index_SiO2.get_refractive_index(wavelength=1.55e-6)
 
     grid = Grid(grid_xlength=11e-6, grid_ylength=1e-6, grid_zlength=10e-6, grid_spacing=20e-9, permittivity=1 ** 2,
-                foldername="test_ring_0325")
+                foldername="test_ring_0401_linesource")
     grid.set_PML(pml_width_y=0e-6, pml_width_x=0.8e-6, pml_width_z=0.8e-6)
     ring = Ring(outer_radius=3.3e-6, ylength=0.18e-6, width_s=400e-9, width_r=400e-9, length=0e-6, length_s=10e-6,
                 gap=100e-9, name="ring", refractive_index=index_Re_Si, grid=grid)
     substrate = Waveguide(xlength=11e-6, ylength=0.41e-6,zlength=10e-6,y=0.205e-6, refractive_index=index_Re_SiO2, grid=grid)
 
-    grid.set_source(source_type="planesource", wavelength=1550e-9, pulse_type="gaussian",waveform="gaussian",
-                    axis="z", x=1.9e-6, z=0.9e-6,
-                    xlength=0.4e-6, ylength=0.4e-6, zlength=0, polarization="x")
+    grid.set_source(source_type="linesource", wavelength=1550e-9, pulse_type="gaussian",waveform="gaussian",
+                    x_start=1.7e-6,x_end=2.1e-6,
+                    xlength=0.4e-6,ylength=0, zlength=0, polarization="x")
 
     grid.set_detector(detector_type='linedetector',
                       x_start=1.7e-6, x_end=2.1e-6, z=1.0e-6,
@@ -41,10 +41,10 @@ if __name__ == "__main__":
     grid.plot_n()
     grid.plot_n(axis="z", axis_index=220)
     #
-    # grid.run(animate=True, time=20000, save=True, interval=20)
+    grid.run(animate=True, time=20000, save=True, interval=20)
     # grid.animate()
     # grid = grid.read_simulation(grid.folder)
-    grid._grid.time_steps_passed = 20000
+
     grid.visualize()
     # grid.save_fig(axis="y", axis_number=0, show_energy=True)
     # # 绘制仿真结束时刻空间场分布
