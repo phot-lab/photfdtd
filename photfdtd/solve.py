@@ -145,9 +145,21 @@ class Solve:
             y_thickness_low = PML_with
         if y_boundary_high == "pml" and not y_thickness_high:
             y_thickness_high = PML_with
-        x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high = \
-            self.grid._handle_distance(x_thickness_low), self.grid._handle_distance(x_thickness_high), \
-            self.grid._handle_distance(y_thickness_low), self.grid._handle_distance(y_thickness_high),
+        try:
+            if self.axis == "x":
+                x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high = \
+                    self.grid._handle_distance(x_thickness_low, "y"), self.grid._handle_distance(x_thickness_high, "y"), \
+                    self.grid._handle_distance(y_thickness_low, "z"), self.grid._handle_distance(y_thickness_high, "z"),
+            if self.axis == "y":
+                x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high = \
+                    self.grid._handle_distance(x_thickness_low, "x"), self.grid._handle_distance(x_thickness_high, "x"), \
+                    self.grid._handle_distance(y_thickness_low, "z"), self.grid._handle_distance(y_thickness_high, "z"),
+            if self.axis == "z":
+                x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high = \
+                    self.grid._handle_distance(x_thickness_low, "x"), self.grid._handle_distance(x_thickness_high, "x"), \
+                    self.grid._handle_distance(y_thickness_low, "y"), self.grid._handle_distance(y_thickness_high, "y"),
+        except:
+            pass
         print(x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high)
         # Calculate modes
         # FIXME: 检查pml边界的四个方向是否有问题

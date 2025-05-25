@@ -40,7 +40,7 @@ if __name__ == "__main__":
                   filepath=grid.folder,
                   index=0
                   )
-
+    solve.plot()
      # 计算这个截面处，波长1.55um，折射率1.4482附近的6个模式，边界条件选择在四个方向上都是pml，
     data = solve.calculate_mode(lam=1550e-9, neff=1.4482, neigs=2,
                                 x_boundary_low="pml", y_boundary_low="pml",
@@ -53,5 +53,5 @@ if __name__ == "__main__":
                     content="amplitude",
                     number=30,TE_fractions=TE_fractions )
     #绘制模式场，我们选择绘制amplitude，即幅值
-    Solve.draw_mode(filepath=solve.filepath, data=data, content="amplitude")
+    solve.draw_mode(filepath=solve.filepath, data=data, content="amplitude")
 
