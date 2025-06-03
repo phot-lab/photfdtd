@@ -1,1 +1,0 @@
-https://github.com/phot-lab/photfdtd waveforms.py, sources.py and visualization.py modified by TaoJia
