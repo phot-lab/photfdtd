@@ -53,13 +53,13 @@ class Solve:
             self.n = self.geometry[:, index, :, :]
         elif axis == 'z':
             self.n = self.geometry[:, :, index, :]
-        if self.axis =="z":
+        if self.axis == "z":
             self.dx = self.grid.grid_spacing_x * 1e6
             self.dy = self.grid.grid_spacing_y * 1e6
-        elif self.axis =="y":
+        elif self.axis == "y":
             self.dx = self.grid.grid_spacing_x * 1e6
             self.dy = self.grid.grid_spacing_z * 1e6
-        elif self.axis =="x":
+        elif self.axis == "x":
             self.dx = self.grid.grid_spacing_z * 1e6
             self.dy = self.grid.grid_spacing_y * 1e6
         else:
@@ -80,7 +80,7 @@ class Solve:
         # It's quite important to transpose n
         self.n = np.transpose(self.n, [1, 0, 2])
         plt.imshow(self.n[:, :, 0], cmap=cm.jet, origin="lower",
-                   extent=[0, self.x *self.dx, 0, self.y * self.dy])
+                   extent=[0, self.x * self.dx, 0, self.y * self.dy])
         # plt.axis("tight")
         plt.clim([np.amin(self.n), np.amax(self.n)])
         # plt.xlim((0, self.n.shape[0] * self.grid.grid_spacing * 1e6))
@@ -99,17 +99,14 @@ class Solve:
         # 保存图片
         # 判断 image_name 是否为 None
         if image_name is None:
-             image_name = '%s_%s=%d.png' % ('index', self.axis, self.index)  # 默认命名方式
+            image_name = '%s_%s=%d.png' % ('index', self.axis, self.index)  # 默认命名方式
         else:
-             image_name = '%s\\%s' % (self.filepath, image_name)  # 使用传入的 filename
+            image_name = '%s\\%s' % (self.filepath, image_name)  # 使用传入的 filename
         plt.savefig(fname=image_name)
 
         # plt.show()
         plt.clf()
         plt.close()
-
-
-
 
     def calculate_mode(self,
                        lam: float = 1550e-9,
@@ -192,13 +189,14 @@ class Solve:
             # if abs(self.beta[i].imag * self.lam / (2 * np.pi)) > 1e-5:
             #     flag_deleted.append(i)
             #     neigs -= 1
-            if abs(self.beta[i].real * self.lam / (2 * np.pi)) < self.grid.background_index or abs(self.beta[i].imag * self.lam / (2 * np.pi)) > 1e-5:
+            if abs(self.beta[i].real * self.lam / (2 * np.pi)) < self.grid.background_index or abs(
+                    self.beta[i].imag * self.lam / (2 * np.pi)) > 1e-5:
                 flag_deleted.append(i)
                 neigs -= 1
 
         self.beta, Ex_field, Ey_field = np.delete(self.beta, flag_deleted), \
-                                        np.delete(Ex_field, flag_deleted, 0), \
-                                        np.delete(Ey_field, flag_deleted, 0)
+            np.delete(Ex_field, flag_deleted, 0), \
+            np.delete(Ey_field, flag_deleted, 0)
 
         print("%i dispersion modes have been discarded" % len(flag_deleted))
 
@@ -252,8 +250,9 @@ class Solve:
         Hy = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Hy]
         Hz = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Hz]
 
-        dic = {"number_of_modes": neigs, "axis": self.axis,"grid_spacing_x": self.dx, "grid_spacing_y": self.dy, "lam": lam,
-               "effective_index": self.effective_index,  "Ex": Ey, "Ey": Ex, "Ez": Ez, "Hx": Hy, "Hy": Hx,
+        dic = {"number_of_modes": neigs, "axis": self.axis, "grid_spacing_x": self.dx, "grid_spacing_y": self.dy,
+               "lam": lam,
+               "effective_index": self.effective_index, "Ex": Ey, "Ey": Ex, "Ez": Ez, "Hx": Hy, "Hy": Hx,
                "Hz": Hz}
 
         # 似乎原代码中Ex, Ey和Hx, Hy弄反了，所以我在这里调换了一下
@@ -264,7 +263,7 @@ class Solve:
     def draw_mode(filepath,
                   data: dict = None,
                   content: str = "amplitude",
-                  number:int=0,
+                  number: int = 0,
                   TE_fractions=None
                   ) -> None:
         '''
@@ -272,6 +271,7 @@ class Solve:
         :param data: dic returned by calculated_mode
         :param content: "real_part", "amplitude", "imaginary_part", "phase"
         :param TE_fractions: TE分量的比值列表
+        :param number: number of arrows to draw, default is 0, which means no arrows
         :return: None
         '''
         axis = data["axis"]
@@ -333,27 +333,32 @@ class Solve:
             if axis == "x":
                 plt.xlabel('y/um')
                 plt.ylabel('z/um')
+                Ex = data["Ey"][i].real
+                Ey = data["Ez"][i].real
             elif axis == "y":
                 plt.xlabel('x/um')
                 plt.ylabel('z/um')
+                Ex = data["Ex"][i].real
+                Ey = data["Ez"][i].real
             elif axis == "z":
                 plt.xlabel('x/um')
                 plt.ylabel('y/um')
+                Ex = data["Ex"][i].real
+                Ey = data["Ey"][i].real
             #设置标题
             mode_type = "(TE)" if TE_fractions and TE_fractions[i] >= 0.55 else "(TM)"
             plt.title(f'E_intensity {mode_type}\nneff={effective_index[i]}')
-
 
             # 计算电场强度的最大值
             max_intensity = np.amax(E_intensity)
             # 使用最大值的 10% 作为阈值，可以根据需要调整这个比例
             threshold = 0.1 * max_intensity
             # 计算电场不为零的区域
-            non_zero_region = np.where(E_intensity >threshold)  # 找到电场强度大于某个阈值的区域
+            non_zero_region = np.where(E_intensity > threshold)  # 找到电场强度大于某个阈值的区域
             # 检查数组是否为空，以避免后续报错
             if non_zero_region[0].size == 0:
-               print(f"Mode {i}: No regions with sufficient E_intensity.")
-               continue
+                print(f"Mode {i}: No regions with sufficient E_intensity.")
+                continue
             # 计算电场不为零区域的边界
             min_y, max_y = np.min(non_zero_region[0]), np.max(non_zero_region[0])
             min_x, max_x = np.min(non_zero_region[1]), np.max(non_zero_region[1])
@@ -361,21 +366,24 @@ class Solve:
             x_points = np.linspace(min_x, max_x, int(np.sqrt(number)), dtype=int)
             y_points = np.linspace(min_y, max_y, int(np.sqrt(number)), dtype=int)
             # 确定最大箭头长度和宽度，并确保矩形波导和光纤箭头的一致性
-            fixed_grid_points = 125#固定的网格点
-            if grid_spacing<100e-9:
-                arrow_length = fixed_grid_points * grid_spacing * 6e4
-            elif grid_spacing>400e-9:
-                arrow_length = fixed_grid_points * grid_spacing * 2e5
+            fixed_grid_points = 125  #固定的网格点
+            # 暂时写成dx
+            # dx是um单位
+            dx_in_m = dx * 1e-6
+            if dx_in_m < 100e-9:
+                arrow_length = fixed_grid_points * dx_in_m * 6e4
+            elif dx_in_m > 400e-9:
+                arrow_length = fixed_grid_points * dx_in_m * 2e5
             else:
-                arrow_length = fixed_grid_points * grid_spacing * 8e4
-            max_arrow_scale = 1 / arrow_length#确保max_arrow_scale = 0.08
+                arrow_length = fixed_grid_points * dx_in_m * 8e4
+            max_arrow_scale = 1 / arrow_length  #确保max_arrow_scale = 0.08
             max_arrow_width = 0.008
             # 绘制均匀间隔的矢量箭头
             for y in y_points:
                 for x in x_points:
                     Ex_val = Ex[y, x]
                     Ey_val = Ey[y, x]
-                    magnitude = np.sqrt(Ex_val**2 + Ey_val**2)
+                    magnitude = np.sqrt(Ex_val ** 2 + Ey_val ** 2)
 
                     if E_intensity[y, x] > threshold:
                         # 根据相对电场强度比例调整箭头长度和宽度
@@ -391,11 +399,10 @@ class Solve:
                             Ey_val_normalized = 0
 
                         #绘制箭头，scale掌管箭头整体长度，width掌管箭头宽度
-                        plt.quiver(x * grid_spacing * 1e6, y * grid_spacing * 1e6,
-                                    Ex_val_normalized,Ey_val_normalized,
-                                    angles='xy', scale_units='xy',scale=arrow_scale,width=arrow_width,
-                                    color='white', pivot='middle')
-
+                        plt.quiver(x * dx * 1e6, y * dx * 1e6,
+                                   Ex_val_normalized, Ey_val_normalized,
+                                   angles='xy', scale_units='xy', scale=arrow_scale, width=arrow_width,
+                                   color='white', pivot='middle')
 
             # 保存图片
             plt.savefig(fname='%s\\%s%d_E_intensity.png' % (filepath, 'mode', i + 1))
@@ -405,8 +412,8 @@ class Solve:
             plt.figure()
             plt.imshow(H_intensity, cmap=cm.jet, origin="lower",
                        # 由于做了转置，所以这里要交换x， y
-                       extent=[0, H_intensity.shape[1] * grid_spacing * 1e6,
-                               0, H_intensity.shape[0] * grid_spacing * 1e6])
+                       extent=[0, H_intensity.shape[1] * dx * 1e6,
+                               0, H_intensity.shape[0] * dx * 1e6])
             plt.clim([np.amin(H_intensity), np.amax(H_intensity)])
             plt.colorbar()
             if axis == "x":
@@ -486,7 +493,6 @@ class Solve:
             for i in ("effective_index", "Ex", "Ey", "Ez", "Hx", "Hy", "Hz"):
                 data[i] = dic[i][index]
 
-
             if format == "npz":
                 np.savez(path.join(folder, "saved_modes"), **data)
             elif format == "txt":
@@ -505,7 +511,6 @@ class Solve:
                 np.savetxt(filepath, data, fmt='%s')
                 np.set_printoptions()
                 print("txt has been saved")
-
 
     @staticmethod
     def read_mode(folder):
@@ -549,24 +554,24 @@ class Solve:
             Ex_list = dic["Ex"]
             Ey_list = dic["Ey"]
             Ez_list = dic["Ez"]
-         # 获取网格的横截面积,仅适用于均匀网格，当x,y,z方向的网格大小不一样的时候，这个网格积分得进行修改
-        grid_area=self.grid.grid_spacing**2
+        # 获取网格的横截面积,仅适用于均匀网格，当x,y,z方向的网格大小不一样的时候，这个网格积分得进行修改
+        grid_area = self.grid.grid_spacing ** 2
         TE_fractions = []
         #公式计算
         for i, (Ex, Ey, Ez) in enumerate(zip(Ex_list, Ey_list, Ez_list)):
             # 计算 |E_x|^2, |E_y|^2, |E_z|^2
-            Ex2 = np.abs(Ex)**2
-            Ey2 = np.abs(Ey)**2
-            Ez2 = np.abs(Ez)**2
+            Ex2 = np.abs(Ex) ** 2
+            Ey2 = np.abs(Ey) ** 2
+            Ez2 = np.abs(Ez) ** 2
             if axis == 'x':
-               numerator = np.sum(Ey2) * grid_area#分子
-               denominator=np.sum(Ey2 + Ez2) * grid_area#分母
+                numerator = np.sum(Ey2) * grid_area  #分子
+                denominator = np.sum(Ey2 + Ez2) * grid_area  #分母
             elif axis == 'y':
-               numerator = np.sum(Ex2 ) * grid_area
-               denominator=np.sum(Ex2 + Ez2) * grid_area
+                numerator = np.sum(Ex2) * grid_area
+                denominator = np.sum(Ex2 + Ez2) * grid_area
             elif axis == 'z':
-               numerator = np.sum(Ex2 ) * grid_area
-               denominator=np.sum(Ex2 + Ey2) * grid_area
+                numerator = np.sum(Ex2) * grid_area
+                denominator = np.sum(Ex2 + Ey2) * grid_area
             TE_fraction = numerator / denominator if denominator != 0 else 0
             # TE_fraction_percentage = round(TE_fraction * 100)  # 转为百分比并四舍五入
             TE_fractions.append(TE_fraction)
@@ -575,10 +580,6 @@ class Solve:
             # print(f"Mode {i + 1}: TE_fraction = {TE_fraction_percentage}%")
 
         return TE_fractions
-
-
-
-
 
         #pass
         #
