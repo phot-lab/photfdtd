@@ -1,10 +1,10 @@
 # PhotFDTD
 
-PhotFDTD/Pyphot passive, with [fdtd](https://github.com/flaport/fdtd) and [philsol](https://github.com/philmain28/philsol) as the underlying codes, realizes 3D time domain simulation of optical transmission and 2D mode computation for optical transmission, along with packaged waveguides and dozens of user-friendly examples.
+PhotFDTD/Pyphot passive，以[fdtd](https://github.com/flaport/fdtd) 和[phisol](https://github.com/philmain28/philsol)为底层代码，实现了光传输的3D FDTD仿真和FDE模式计算，同时提供了已经封装好的数十个组件和方便使用者的示例。
 
-PhotFDTD/Pyphot passive，以[fdtd](https://github.com/flaport/fdtd) 和[phisol](https://github.com/philmain28/philsol)为底层代码，实现了光传输的三维时域仿真和二维模式计算，同时提供了已经封装好的波导和数十个方便使用者的示例。
+PhotFDTD/Pyphotpassive, with [fdtd](https://github.com/flaport/fdtd) and [philsol](https://github.com/philmain28/philsol) as the underlying codes, realizes 3D FDTD simulation and FDE mode computation, along with dozens of packaged components and user-friendly examples.
 
-## Components/Waveguides 器件/波导
+## Components/Examples 结构/示例 
 
 1. Waveguide - 直波导
 2. Arc - 圆弧
@@ -15,11 +15,13 @@ PhotFDTD/Pyphot passive，以[fdtd](https://github.com/flaport/fdtd) 和[phisol]
 7. (Single mode) fiber - 单模光纤
 8. Fan-shaped waveguide grating (fwg) - 扇形波导光栅
 9. Directional coupler - 方向耦合器
-10. Mmi (Multimode-interferometer) - 多模耦合干涉器
+10. MMI (Multimode-interferometer) - 多模耦合干涉器
 11. Ring (resonator) - 环形谐振腔
 12. Photonic Crystal (PC) - 光子晶体
 13. Thin film filter (TFF) - 薄膜滤波器
-14. Mach–Zehnder interferometer (MZI) (in progress) - 马赫曾德干涉仪（未完成）
+14. Mach–Zehnder interferometer (MZI) - 马赫曾德干涉仪
+15. Photonic Lanterns - 光子晶体
+16. Arrayed waveguide grating (AWG) - 阵列波导光栅
 
 ## Installation 安装
 
@@ -32,9 +34,141 @@ Install requirements
 ```
 pip install -r requirements.txt
 ```
-You can also install it by downloading the .zip file directly and extracting it.
+One can also install this repository by downloading the .zip file directly and extracting it.
 
-## FDTD example
+## FDTD example 1: a microring resonator
+Here is an example of ring_ex.py in folder "./examples" to show the workflow and usage of photfdtd. 
+This example shows a 3D simulation of a a microring resonator. 
+本示例展示了一个基础矩形波导的二维仿真
+
+### Simulation set up  
+Import required classes
+```
+import utils
+from photfdtd import Ring, Grid, Index, Waveguide
+```
+Set material and background index 
+设置材料与背景折射率
+```
+index_Si = Index(material="Si")
+index_Re_Si, index_Im_Si = index_Si.get_refractive_index(wavelength=1.55e-6)
+index_SiO2 = Index(material="SiO2")
+index_Re_SiO2, index_Im_SiO2 = index_SiO2.get_refractive_index(wavelength=1.55e-6)
+```
+Create a 3D simulation region of 15um x 2.5um x 20um, with a grid spacing of 40nm. 
+新建仿真空间
+```
+grid = Grid(grid_xlength=15e-6, grid_ylength=2.5e-6, grid_zlength=20e-6, grid_spacing=40e-9, permittivity=index_Re_SiO2 ** 2,
+                foldername="test_ring")
+```
+设置PML边界厚度
+Set PML
+```
+grid.set_PML(pml_width_y=0.8e-6, pml_width_x=0.8e-6, pml_width_z=0.8e-6)
+```
+设置微环并加入仿真空间grid
+Set a ring and add it into simulation region (grid):
+```
+ring = Ring(outer_radius=5e-6, ylength=0.22e-6, width_s=400e-9, width_r=400e-9, length=4e-6, length_s=20e-6,
+                gap=40e-9, name="ring", refractive_index=index_Re_Si, grid=grid)
+grid.add_object(ring)
+```
+Set a line source with center wavelength at 1550nm, the profile and pulse type of it are both gaussian. 
+设置一个1550nm的高斯脉冲光源
+The x, y, z parameters specify the center position of the source (same as waveguides and detectors). If they are not set by users, it will be automatically set to the center of the grid region. 
+```
+grid.set_source(source_type="linesource", wavelength=1550e-9, pulse_type="gaussian",waveform="gaussian",
+                    x_start=2.1e-6, x_end=2.5e-6, z=2e-6,
+                    ylength=1, zlength=1, polarization="x")
+```
+在每一个端口上设置一个线监视器
+Set a line detector at each of the four ports
+
+In general, the detector is necessary for calculating the S-parameters and the Fourier transform.
+```
+grid.set_detector(detector_type='linedetector',
+                      x_start=1.7e-6, x_end=2.7e-6, z=3e-6,
+                      ylength=1, zlength=1,
+                      name='detector1')
+grid.set_detector(detector_type='linedetector',
+                  x_start=1.7e-6, x_end=2.7e-6, z=15e-6,
+                  ylength=1, zlength=1,
+                  name='detector2')
+grid.set_detector(detector_type='linedetector',
+                  x_start=12.3e-6, x_end=13.3e-6, z=3e-6,
+                  ylength=1, zlength=1,
+                  name='detector3')
+grid.set_detector(detector_type='linedetector',
+                  x_start=12.3e-6, x_end=13.3e-6, z=15e-6,
+                  ylength=1, zlength=1,
+                  name='detector4')
+```
+绘制结构与折射率分布
+Now we can plot the geometry and the index map.
+```
+grid.save_fig(axis_index=31)
+grid.plot_n(axis_index=31)
+```
+### Running and result
+Run the FDTD simulation 运行仿真
+```
+grid.run(animate=True, time=10000, save=True, interval=20)
+```
+保存仿真结果
+Save result of simulation. The result will be saved in .h5 files. It can be read by using grid.read_simulation method, refer to [read_FDTD_simulation.py](examples/read_FDTD_simulation.py) for further details. 
+```
+# grid = grid.read_simulation(folder=grid.folder)
+```
+结果可视化
+visualize the result
+```
+grid.visualize() 
+```
+可视化每一个监视器的结果
+visualize result of each detector
+```
+freqs, spectrum1 = grid.visualize_single_detector(name_det="detector1")
+freqs, spectrum2 = grid.visualize_single_detector(name_det="detector2")
+freqs, spectrum3 = grid.visualize_single_detector(name_det="detector3")
+freqs, spectrum4 = grid.visualize_single_detector(name_det="detector4")
+```
+绘制传输谱线
+Draw transmission spectrum
+```
+import matplotlib.pyplot as plt
+
+plt.plot(freqs, (spectrum2 / spectrum1) ** 2)
+plt.ylabel("Ex")
+plt.xlabel("frequency (THz)")
+plt.title("Transmission calculated by Ex^2")
+plt.legend()
+file_name = "Transmission_detector_2"
+plt.savefig(f"{grid.folder}/{file_name}.png")
+plt.close()
+
+plt.plot(freqs, (spectrum3 / spectrum1) ** 2)
+plt.ylabel("Ex")
+plt.xlabel("frequency (THz)")
+plt.title("Transmission calculated by Ex^2")
+plt.legend()
+file_name = "Transmission_detector_3"
+plt.savefig(f"{grid.folder}/{file_name}.png")
+plt.close()
+
+plt.plot(freqs, (spectrum4 / spectrum1) ** 2)
+plt.ylabel("Ex")
+plt.xlabel("frequency (THz)")
+plt.title("Transmission calculated by Ex^2")
+plt.legend()
+file_name = "Transmission_detector_4"
+plt.savefig(f"{grid.folder}/{file_name}.png")
+plt.close()
+```
+### Results 运行结果
+![Field distribution](./docs/figures/Ex_y=0.png)
+![Refractive index map](./docs/figures/index_y=0.png)
+![Ez-t](./docs/figures/Ez.png)
+![spectrum](./docs/figures/spectrum_Ex_detector.png)
 
 Here is an example of basic_ex.py in folder "./examples" to show the workflow and usage of photfdtd. 
 This example shows a 2D simulation of a basic straight waveguide. 
