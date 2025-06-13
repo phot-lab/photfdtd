@@ -1,8 +1,11 @@
 [tool.poetry]
 name = "photfdtd"
-version = "0.0.5"
-description = "PyPhot FDTD package"
-authors = ["Chunyu Li <cyli0212@gmail.com>"]
+version = "0.1"
+description = "PhotFDTD/Pyphotpassive, with fdtd and philsol as the underlying codes, realizes 3D FDTD simulation and FDE mode computation, along with dozens of packaged components and user-friendly examples."
+authors = [
+  "Tao Jia <taojia2024@gmail.com>", "LI yang <23126672@bjtu.edu.cn>", "Chunyu Li <cyli0212@gmail.com>",
+  "Zhenjie Wei <zhenjiewei@bjtu.edu.cn>",
+]
 license = "MIT"
 readme = "README.md"
 homepage = "https://pypi.org/project/photfdtd/"
