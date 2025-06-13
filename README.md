@@ -24,18 +24,18 @@ PhotFDTD/Pyphotpassive, with [fdtd](https://github.com/flaport/fdtd) and [philso
 16. Arrayed waveguide grating (AWG) - 阵列波导光栅
 
 ## Installation 安装
-
-The development version can be installed by cloning the repository
+<Recommended>The development version can be installed by cloning the repository.
 ```
 git clone http://github.com/flaport/fdtd
 ```
-
+One can also install this package by downloading the .zip file directly and extracting it.
+The package can also be installed through pypi:
+```
+pip install -i https://test.pypi.org/simple/ photfdtd
+```
 Install requirements
 ```
 pip install -r requirements.txt
-```
-One can also install this repository by downloading the .zip file directly and extracting it.
-
 ## FDTD example 1: a microring resonator
 Here is an example of ring_ex.py in folder "./examples" to show the workflow and usage of photfdtd. 
 This example shows a 3D simulation of a a microring resonator. 
