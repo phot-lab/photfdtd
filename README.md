@@ -112,7 +112,7 @@ grid.save_fig(axis_index=31)
 grid.plot_n(axis_index=31)
 ```
 ![Refractive index map](./docs/figures/ring_index_y=0.png)
-![Structure Profile](./docs/figures/ring_file_y=0, total_time=0.png)
+![Structure Profile](./docs/figures/file_y=0, total_time=0.png)
 ### Running and result
 Run the FDTD simulation 运行仿真
 ```
@@ -130,7 +130,6 @@ grid.visualize()
 ```
 ![Field distribution](./docs/figures/ring_Ex_y=0.png)
 ![Spectrum of detectors](./docs/figures/Spectrum of detectors.png)
-```
 可视化每一个监视器的结果
 visualize result of each detector
 ```
