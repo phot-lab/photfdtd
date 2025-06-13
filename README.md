@@ -142,7 +142,6 @@ freqs, spectrum4 = grid.visualize_single_detector(name_det="detector4")
 ![detector2 profile](./docs/figures/detector2 profile.png)
 ![detector3 profile](./docs/figures/detector3 profile.png)
 ![detector4 profile](./docs/figures/detector4 profile.png)
-```
 绘制传输谱线
 Draw transmission spectrum
 ```
