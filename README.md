@@ -112,7 +112,7 @@ grid.save_fig(axis_index=31)
 grid.plot_n(axis_index=31)
 ```
 ![Refractive index map](./docs/figures/ring_index_y=0.png)
-![Structure Profile](./docs/figures/file_y=0, total_time=0.png)
+![Structure Profile](./docs/figures/file_y=0_total_time=0.png)
 ### Running and result
 Run the FDTD simulation 运行仿真
 ```
@@ -129,7 +129,7 @@ visualize the result
 grid.visualize() 
 ```
 ![Field distribution](./docs/figures/ring_Ex_y=0.png)
-![Spectrum of detectors](./docs/figures/Spectrum of detectors.png)
+![Spectrum of detectors](./docs/figures/Spectrum_of_detectors.png)
 可视化每一个监视器的结果
 visualize result of each detector
 ```
@@ -138,10 +138,10 @@ freqs, spectrum2 = grid.visualize_single_detector(name_det="detector2")
 freqs, spectrum3 = grid.visualize_single_detector(name_det="detector3")
 freqs, spectrum4 = grid.visualize_single_detector(name_det="detector4")
 ```
-![detector1 profile](./docs/figures/detector1 profile.png)
-![detector2 profile](./docs/figures/detector2 profile.png)
-![detector3 profile](./docs/figures/detector3 profile.png)
-![detector4 profile](./docs/figures/detector4 profile.png)
+![detector1 profile](./docs/figures/detector1_profile.png)
+![detector2 profile](./docs/figures/detector2_profile.png)
+![detector3 profile](./docs/figures/detector3_profile.png)
+![detector4 profile](./docs/figures/detector4_profile.png)
 绘制传输谱线
 Draw transmission spectrum
 ```
