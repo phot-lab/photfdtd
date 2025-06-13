@@ -534,7 +534,6 @@ class Solve:
         绘制不同模式的Ey与Ex的实部之比，并保存
         # TODO: 在lumerical中，TE fracttion 来自全区域电场的平方积分之比，得到的是一个数，并不是这种算法。是否需要改正？
         :param filepath: 保存图片路径
-         n_levels：需要计算模式TE的个数
         :return: None
         """
         # 根据 axis 选择合适的电场分量
