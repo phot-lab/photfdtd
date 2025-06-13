@@ -55,31 +55,33 @@ index_Re_Si, index_Im_Si = index_Si.get_refractive_index(wavelength=1.55e-6)
 index_SiO2 = Index(material="SiO2")
 index_Re_SiO2, index_Im_SiO2 = index_SiO2.get_refractive_index(wavelength=1.55e-6)
 ```
-Create a 3D simulation region of 15um x 2.5um x 20um, with a grid spacing of 40nm. 
 新建仿真空间
+Create a 3D simulation region of 15um x 2.5um x 20um, with a grid spacing of 40nm. 
 ```
-grid = Grid(grid_xlength=15e-6, grid_ylength=2.5e-6, grid_zlength=20e-6, grid_spacing=40e-9, permittivity=index_Re_SiO2 ** 2,
-                foldername="test_ring")
+grid = Grid(grid_xlength=2e-6, grid_ylength=1, grid_zlength=2e-6, grid_spacing=20e-9, permittivity=1 ** 2, foldername="test_ring_0401_input")
 ```
-设置PML边界厚度
-Set PML
+设置PML边界厚度，为了减少内存占用并加快运算速度，将y方向PML厚度设置为0
+Set PML, the thickness of y_PML is set to 0 to avoid RAM insufficiency.
 ```
-grid.set_PML(pml_width_y=0.8e-6, pml_width_x=0.8e-6, pml_width_z=0.8e-6)
+grid.set_PML(pml_width_y=0e-6, pml_width_x=0.8e-6, pml_width_z=0.8e-6)
 ```
-设置微环并加入仿真空间grid
-Set a ring and add it into simulation region (grid):
+设置微环和基底并加入仿真空间grid
+Set a ring and a subtrate and add them into simulation region (grid):
 ```
-ring = Ring(outer_radius=5e-6, ylength=0.22e-6, width_s=400e-9, width_r=400e-9, length=4e-6, length_s=20e-6,
-                gap=40e-9, name="ring", refractive_index=index_Re_Si, grid=grid)
+ring = Ring(outer_radius=3.3e-6, ylength=0.18e-6, width_s=400e-9, width_r=400e-9, length=0e-6, length_s=10e-6,
+                gap=100e-9, name="ring", refractive_index=index_Re_Si, grid=grid)
+substrate = Waveguide(xlength=11e-6, ylength=0.41e-6,zlength=10e-6,y=0.205e-6, refractive_index=index_Re_SiO2, grid=grid)
+
 grid.add_object(ring)
+grid.add_object(substrate)
 ```
 Set a line source with center wavelength at 1550nm, the profile and pulse type of it are both gaussian. 
 设置一个1550nm的高斯脉冲光源
 The x, y, z parameters specify the center position of the source (same as waveguides and detectors). If they are not set by users, it will be automatically set to the center of the grid region. 
 ```
 grid.set_source(source_type="linesource", wavelength=1550e-9, pulse_type="gaussian",waveform="gaussian",
-                    x_start=2.1e-6, x_end=2.5e-6, z=2e-6,
-                    ylength=1, zlength=1, polarization="x")
+                    x_start=1.7e-6,x_end=2.1e-6,
+                    xlength=0.4e-6,ylength=0, zlength=0, polarization="x")
 ```
 在每一个端口上设置一个线监视器
 Set a line detector at each of the four ports
@@ -87,19 +89,19 @@ Set a line detector at each of the four ports
 In general, the detector is necessary for calculating the S-parameters and the Fourier transform.
 ```
 grid.set_detector(detector_type='linedetector',
-                      x_start=1.7e-6, x_end=2.7e-6, z=3e-6,
-                      ylength=1, zlength=1,
-                      name='detector1')
+                  x_start=1.7e-6, x_end=2.1e-6, z=1.0e-6,
+                  ylength=1, zlength=1,
+                  name='detector1')
 grid.set_detector(detector_type='linedetector',
-                  x_start=1.7e-6, x_end=2.7e-6, z=15e-6,
+                  x_start=1.7e-6, x_end=2.1e-6, z=9e-6,
                   ylength=1, zlength=1,
                   name='detector2')
 grid.set_detector(detector_type='linedetector',
-                  x_start=12.3e-6, x_end=13.3e-6, z=3e-6,
+                  x_start=8.9e-6, x_end=9.3e-6, z=1e-6,
                   ylength=1, zlength=1,
                   name='detector3')
 grid.set_detector(detector_type='linedetector',
-                  x_start=12.3e-6, x_end=13.3e-6, z=15e-6,
+                  x_start=8.9e-6, x_end=9.3e-6, z=9e-6,
                   ylength=1, zlength=1,
                   name='detector4')
 ```
@@ -109,10 +111,13 @@ Now we can plot the geometry and the index map.
 grid.save_fig(axis_index=31)
 grid.plot_n(axis_index=31)
 ```
+![Refractive index map](./docs/figures/ring_index_y=0.png)
+![Structure Profile](./docs/figures/ring_file_y=0, total_time=0.png)
+```
 ### Running and result
 Run the FDTD simulation 运行仿真
 ```
-grid.run(animate=True, time=10000, save=True, interval=20)
+grid.run(animate=True, time=10000e-15, save=True, interval=20)
 ```
 保存仿真结果
 Save result of simulation. The result will be saved in .h5 files. It can be read by using grid.read_simulation method, refer to [read_FDTD_simulation.py](examples/read_FDTD_simulation.py) for further details. 
@@ -124,6 +129,9 @@ visualize the result
 ```
 grid.visualize() 
 ```
+![Field distribution](./docs/figures/ring_Ex_y=0.png)
+![Spectrum of detectors](./docs/figures/Spectrum of detectors.png)
+```
 可视化每一个监视器的结果
 visualize result of each detector
 ```
@@ -131,6 +139,11 @@ freqs, spectrum1 = grid.visualize_single_detector(name_det="detector1")
 freqs, spectrum2 = grid.visualize_single_detector(name_det="detector2")
 freqs, spectrum3 = grid.visualize_single_detector(name_det="detector3")
 freqs, spectrum4 = grid.visualize_single_detector(name_det="detector4")
+```
+![detector1 profile](./docs/figures/detector1 profile.png)
+![detector2 profile](./docs/figures/detector2 profile.png)
+![detector3 profile](./docs/figures/detector3 profile.png)
+![detector4 profile](./docs/figures/detector4 profile.png)
 ```
 绘制传输谱线
 Draw transmission spectrum
@@ -155,21 +168,12 @@ file_name = "Transmission_detector_3"
 plt.savefig(f"{grid.folder}/{file_name}.png")
 plt.close()
 
-plt.plot(freqs, (spectrum4 / spectrum1) ** 2)
-plt.ylabel("Ex")
-plt.xlabel("frequency (THz)")
-plt.title("Transmission calculated by Ex^2")
-plt.legend()
-file_name = "Transmission_detector_4"
-plt.savefig(f"{grid.folder}/{file_name}.png")
-plt.close()
 ```
 ### Results 运行结果
-![Field distribution](./docs/figures/Ex_y=0.png)
-![Refractive index map](./docs/figures/index_y=0.png)
-![Ez-t](./docs/figures/Ez.png)
-![spectrum](./docs/figures/spectrum_Ex_detector.png)
+![Transmission through](./docs/figures/Transmission_detector_2.png)
+![Transmission drop](./docs/figures/Transmission_detector_3.png)
 
+## FDTD example 2: a straight waveguide
 Here is an example of basic_ex.py in folder "./examples" to show the workflow and usage of photfdtd. 
 This example shows a 2D simulation of a basic straight waveguide. 
 本示例展示了一个基础矩形波导的二维仿真
