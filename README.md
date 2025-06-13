@@ -112,7 +112,7 @@ grid.save_fig(axis_index=31)
 grid.plot_n(axis_index=31)
 ```
 ![Refractive index map](./docs/figures/ring_index_y=0.png)
-![Structure Profile](./docs/figures/file_y=0_total_time=0.png)
+![Structure Profile](./docs/figures/ring_file_y=0_total_time=0.png)
 ### Running and result
 Run the FDTD simulation 运行仿真
 ```
