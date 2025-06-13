@@ -29,6 +29,7 @@ PhotFDTD/Pyphotpassive, with [fdtd](https://github.com/flaport/fdtd) and [philso
 git clone http://github.com/flaport/fdtd
 ```
 One can also install this package by downloading the .zip file directly and extracting it.
+
 The package can also be installed through pypi:
 ```
 pip install -i https://test.pypi.org/simple/ photfdtd
@@ -36,8 +37,10 @@ pip install -i https://test.pypi.org/simple/ photfdtd
 Install requirements
 ```
 pip install -r requirements.txt
+```
 ## FDTD example 1: a microring resonator
 Here is an example of ring_ex.py in folder "./examples" to show the workflow and usage of photfdtd. 
+
 This example shows a 3D simulation of a a microring resonator. 
 本示例展示了一个基础矩形波导的二维仿真
 
@@ -48,6 +51,7 @@ import utils
 from photfdtd import Ring, Grid, Index, Waveguide
 ```
 Set material and background index 
+
 设置材料与背景折射率
 ```
 index_Si = Index(material="Si")
@@ -56,16 +60,19 @@ index_SiO2 = Index(material="SiO2")
 index_Re_SiO2, index_Im_SiO2 = index_SiO2.get_refractive_index(wavelength=1.55e-6)
 ```
 新建仿真空间
+
 Create a 3D simulation region of 15um x 2.5um x 20um, with a grid spacing of 40nm. 
 ```
 grid = Grid(grid_xlength=2e-6, grid_ylength=1, grid_zlength=2e-6, grid_spacing=20e-9, permittivity=1 ** 2, foldername="test_ring_0401_input")
 ```
 设置PML边界厚度，为了减少内存占用并加快运算速度，将y方向PML厚度设置为0
+
 Set PML, the thickness of y_PML is set to 0 to avoid RAM insufficiency.
 ```
 grid.set_PML(pml_width_y=0e-6, pml_width_x=0.8e-6, pml_width_z=0.8e-6)
 ```
 设置微环和基底并加入仿真空间grid
+
 Set a ring and a subtrate and add them into simulation region (grid):
 ```
 ring = Ring(outer_radius=3.3e-6, ylength=0.18e-6, width_s=400e-9, width_r=400e-9, length=0e-6, length_s=10e-6,
@@ -75,8 +82,10 @@ substrate = Waveguide(xlength=11e-6, ylength=0.41e-6,zlength=10e-6,y=0.205e-6, r
 grid.add_object(ring)
 grid.add_object(substrate)
 ```
-Set a line source with center wavelength at 1550nm, the profile and pulse type of it are both gaussian. 
+Set a line source with center wavelength at 1550nm, the profile and pulse type of it are both gaussian.
+
 设置一个1550nm的高斯脉冲光源
+
 The x, y, z parameters specify the center position of the source (same as waveguides and detectors). If they are not set by users, it will be automatically set to the center of the grid region. 
 ```
 grid.set_source(source_type="linesource", wavelength=1550e-9, pulse_type="gaussian",waveform="gaussian",
@@ -84,6 +93,7 @@ grid.set_source(source_type="linesource", wavelength=1550e-9, pulse_type="gaussi
                     xlength=0.4e-6,ylength=0, zlength=0, polarization="x")
 ```
 在每一个端口上设置一个线监视器
+
 Set a line detector at each of the four ports
 
 In general, the detector is necessary for calculating the S-parameters and the Fourier transform.
@@ -106,6 +116,7 @@ grid.set_detector(detector_type='linedetector',
                   name='detector4')
 ```
 绘制结构与折射率分布
+
 Now we can plot the geometry and the index map.
 ```
 grid.save_fig(axis_index=31)
@@ -119,18 +130,22 @@ Run the FDTD simulation 运行仿真
 grid.run(animate=True, time=10000e-15, save=True, interval=20)
 ```
 保存仿真结果
+
 Save result of simulation. The result will be saved in .h5 files. It can be read by using grid.read_simulation method, refer to [read_FDTD_simulation.py](examples/read_FDTD_simulation.py) for further details. 
 ```
 # grid = grid.read_simulation(folder=grid.folder)
 ```
 结果可视化
+
 visualize the result
 ```
 grid.visualize() 
 ```
 ![Field distribution](./docs/figures/ring_Ex_y=0.png)
 ![Spectrum of detectors](./docs/figures/Spectrum_of_detectors.png)
+
 可视化每一个监视器的结果
+
 visualize result of each detector
 ```
 freqs, spectrum1 = grid.visualize_single_detector(name_det="detector1")
@@ -142,7 +157,9 @@ freqs, spectrum4 = grid.visualize_single_detector(name_det="detector4")
 ![detector2 profile](./docs/figures/detector2_profile.png)
 ![detector3 profile](./docs/figures/detector3_profile.png)
 ![detector4 profile](./docs/figures/detector4_profile.png)
+
 绘制传输谱线
+
 Draw transmission spectrum
 ```
 import matplotlib.pyplot as plt
@@ -172,7 +189,9 @@ plt.close()
 
 ## FDTD example 2: a straight waveguide
 Here is an example of basic_ex.py in folder "./examples" to show the workflow and usage of photfdtd. 
+
 This example shows a 2D simulation of a basic straight waveguide. 
+
 本示例展示了一个基础矩形波导的二维仿真
 
 ### Simulation set up  
@@ -181,6 +200,7 @@ Import required classes
 from photfdtd import Waveguide, Grid, Index
 ```
 Set material and background index 
+
 设置材料与背景折射率
 ```
 background_index = 1.0
@@ -191,6 +211,7 @@ index_Si = Index(material="Si")
 index_Re_Si, index_Im_Si = index_Si.get_refractive_index(wavelength=1.55e-6)
 ```
 Create a 2D (y-z) simulation region of 3um x 8um, with a grid spacing of 20nm. 
+
 新建仿真空间
 ```
 grid = Grid(grid_xlength=3e-6, grid_ylength=1, grid_zlength=8e-6,
@@ -208,14 +229,18 @@ Add the waveguide to the grid, it will automatically be placed at the center of 
 grid.add_object(waveguide)
 ```
 Set a line source with center wavelength at 1550nm, the default profile of source is CW. 
+
 设置一个1550nm的CW线光源
+
 The x, y, z parameters specify the center position of the source (same as waveguides and detectors). If they are not set by users, it will be automatically set to the center of the grid region. 
 ```
 grid.set_source(source_type="linesource", wavelength=1550e-9, name="source", x=75, y=0, z=60,
                     xlength=400e-9, ylength=0, zlength=0, polarization="x")
 ```
 Set a line detector 
+
 设置一个线监视器
+
 In general, the detector is necessary for calculating the S-parameters and the Fourier transform, but if simulation data in the time domain are not needed, then this step can be omitted.
 ```
 grid.set_detector(detector_type="linedetector",
@@ -233,6 +258,7 @@ Now we can plot the geometry and the index map.
 grid.save_fig()
 ```
 Plot the refractive index map on z=0 
+
 绘制z=0截面折射率分布
 ```
 grid.plot_n()
@@ -242,7 +268,8 @@ Run the FDTD simulation 运行仿真
 ```
 grid.run()
 ```
-Save result of simulation. The result will be saved in a .npz file, which is a numpy file. It can be read by using grid.read_simulation method, refer to [read_FDTD_simulation.py](examples/read_FDTD_simulation.py) for further details. 
+Save result of simulation. It can be read by using grid.read_simulation method, refer to [read_FDTD_simulation.py](examples/read_FDTD_simulation.py) for further details. 
+
 保存仿真结果
 ```
 grid.save_simulation()
@@ -254,6 +281,7 @@ The field distribution at the end of the simulation.
 Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0, vmin=-1, vmax=1)
 ```
 If a detector has been added, the change curve of time domain at a certain point can be plotted, here choose index=30, that is, the center of the detector. 
+
 如果添加了监视器，还可以绘制某一点时域场变化曲线，这里选择index=10. 即监视器中心
 ```
 Grid.plot_fieldtime(folder=grid.folder, grid=grid, field_axis="z", index=10, name_det="detector")
@@ -273,6 +301,7 @@ In the [examples](examples) directory, you can see examples of various optical d
 
 ## Mode solver example
 Here is an example of solving modes of a single mode fiber from "[fiber_ex.py](examples/mode_solver/fiber_ex.py)" to analyze a single mode fiber using photfdtd. This example demonstrates the setup and usage of photfdtd mode solver.
+
 Parameters of the single mode fiber are as follows:
 ```
 # Single mode fiber 单模光纤模式分析
@@ -291,6 +320,7 @@ Set background index:
 background_index = 1.4437
 ```
 Create simulation region (grid) 
+
 新建一个 grid 对象
 ```
 grid = Grid(grid_xlength=15e-6, grid_ylength=15e-6, grid_zlength=1, grid_spacing=200e-9,
@@ -304,6 +334,7 @@ grid.set_PML(pml_width=3e-6)
 grid.add_object(fiber)
 ```
 Create a Solve variant, which is essential for solving mode 
+
 创建solve类变量
 ```
 solve = Solve(grid=grid,
@@ -313,15 +344,18 @@ solve = Solve(grid=grid,
               )
 ```
 Refractive index plot and geometry plot 
+
 绘制折射率分布
 ```
 solve.plot()
 # We can plot the geometry now
+
 绘制x=0截面结构图
+
 grid.save_fig(axis="z", axis_number=0)
 ```
-
 Caculate 2 modes around 1.4504 at 1.55um, the boundaries are PML
+
 计算这个截面处，波长1.55um，折射率1.4504附近的2个模式，边界条件选择在四个方向上都是pml
 ```
 data = solve.calculate_mode(lam=1550e-9, neff=1.4555, neigs=20,
