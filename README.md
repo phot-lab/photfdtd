@@ -24,7 +24,8 @@ PhotFDTD/Pyphotpassive, with [fdtd](https://github.com/flaport/fdtd) and [philso
 16. Arrayed waveguide grating (AWG) - 阵列波导光栅
 
 ## Installation 安装
-<Recommended>The development version can be installed by cloning the repository.
+**推荐** 直接使用git或下载压缩包获取开发版本。
+**Recommended** The development version can be installed by cloning the repository.
 ```
 git clone http://github.com/flaport/fdtd
 ```
