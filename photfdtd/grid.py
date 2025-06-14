@@ -1,3 +1,4 @@
+import photfdtd
 import photfdtd.fdtd as fdtd
 import matplotlib.pyplot as plt
 from .waveguide import Waveguide
@@ -1644,20 +1645,19 @@ class Grid:
         # TODO: consider multiple sources?考虑有不同光源的情况？
         source = self._try_to_find_source()
         fr = fdtd.FrequencyRoutines(self._grid, objs=indexed_data)
-        spectrum_freqs, fourier = fr.FFT(
+        spectrum_freqs, spectrum = fr.FFT(
             freq_window_tuple=[source.frequency - source.bandwidth,
                                source.frequency + source.bandwidth], )
-        spectrum = abs(fourier)
 
         ### 试试ufdtd书中的方法，对空间中每个点的电场分别傅里叶变换
         # F = np.empty(shape=data[0].shape, dtype=object)
         # for i in range(data[0].shape[0]):
         #     for j in range(3):
         #         fr = fdtd.FrequencyRoutines(self._grid, objs=data[:, i, j])
-        #         spectrum_freqs, fourier = fr.FFT(
+        #         spectrum_freqs, spectrum = fr.FFT(
         #             freq_window_tuple=[source.frequency - source.bandwidth,
         #                             source.frequency + source.bandwidth], )
-        #         F[i, j] = abs(fourier)
+        #         F[i, j] = abs(spectrum)
         ###
 
         # TODO: 目前只考虑了线监视器
@@ -1713,7 +1713,7 @@ class Grid:
         axes[0][1].legend()
 
         # Spectrum
-        axes[1][0].plot(spectrum_freqs * 1e-12, spectrum)
+        axes[1][0].plot(spectrum_freqs * 1e-12, abs(spectrum))
         axes[1][0].set_xlabel('frequency (THz)')
         axes[1][0].set_ylabel(f"|E{conversions.number_to_letter(field_axis)}| (V/m)")
         axes[1][0].set_title(f"Spectrum of {name_det}")
@@ -1733,19 +1733,10 @@ class Grid:
         return spectrum_freqs * 1e-12, spectrum
 
     def visulize_detector(self,
-                          index=0,
-                          index_3d=[0, 0, 0],
                           field_axis="x",
                           field="E"):
         """
-        傅里叶变换绘制频谱
-        @param wl_start: 起始波长(m)
-        @param wl_end: 结束波长(m)
-        @param name_det: 监视器名称
-        @param input_data: Optional: 如果输入了这个数据，则data、name_det、index、index_3d可以不输入。input_data必须是一个一维数组，
-        其长度表示时间步长，每一个元素表示在该时间场的幅值。
-        @param index: 用于线监视器，选择读取数据的点
-        @param index_3d: 用于面监视器，选择读取数据的点
+        绘制所有监视器的频谱。Draw the spectrum of all detectors.
         @param field_axis: "x", "y", "z"
         @param field: ”E"或"H"
         NOTE：
@@ -1792,7 +1783,15 @@ class Grid:
 
         return grid_sliced
 
-    def visualize(self, axis=None, axis_index=None, field="E", field_axis=None):
+    def visualize(self, axis: object = None, axis_index: int = None, field: str = "E", field_axis: str = None) -> None:
+        """
+        可视化仿真结果，包括折射率分布，场分布，频谱和所有监视器结果。
+        Visualize the grid, including field, energy, and detector data.
+        @param axis: axis to visualize, e.g., "x", "y", "z". If None, it will automatically detect.
+        @param axis_index: int, the index of the axis to visualize. If None, it will be set to the middle of the axis.
+        @param field: "E" or "H", the field to visualize. Default is "E".
+        @param field_axis: str, the axis of the field to visualize, e.g., "x", "y", "z". If None, it will use the source's polarization.
+        """
         # TODO: wl 能自动找到脉冲范围
         if axis is None:
             # 自动检测要绘制的维度

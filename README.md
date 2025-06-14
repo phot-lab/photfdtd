@@ -158,29 +158,48 @@ freqs, spectrum4 = grid.visualize_single_detector(name_det="detector4")
 ![detector3 profile](./docs/figures/detector3_profile.png)
 ![detector4 profile](./docs/figures/detector4_profile.png)
 
-绘制传输谱线
+绘制传输谱线：首先运行ring_ex_input.py以获取纯净的输入场。运行完成后，将test_ring_input文件夹内的detector_input_E.h5和detector_input_E.h5复制粘贴到test_ring文件夹内。
 
-Draw transmission spectrum
+然后运行S parameters.py：
+
+Plot the transmission spectral lines: first run ring_ex_input.py to get the pure input field. After the run is complete, copy and paste detector_input_E.h5 and detector_input_E.h5 from the test_ring_input folder into the test_ring folder.
+
+Then run S parameters.py:
+
 ```
-import matplotlib.pyplot as plt
+from photfdtd import Grid
 
-plt.plot(freqs, (spectrum2 / spectrum1) ** 2)
-plt.ylabel("Ex")
-plt.xlabel("frequency (THz)")
-plt.title("Transmission calculated by Ex^2")
-plt.legend()
-file_name = "Transmission_detector_2"
-plt.savefig(f"{grid.folder}/{file_name}.png")
-plt.close()
+if __name__ == "__main__":
+    # 读取保存的监视器数据
+    filepath = ".\\test_ring"
+    grid = Grid.read_simulation(folder=filepath)
+    grid.folder=filepath
+    # grid.animate(fps=200)
+    # grid.visualize()
+    freqs, spectrum1 = grid.visualize_single_detector(name_det='detector_input')
+    freqs, spectrum2 = grid.visualize_single_detector(name_det="detector2")
+    freqs, spectrum3 = grid.visualize_single_detector(name_det="detector3")
 
-plt.plot(freqs, (spectrum3 / spectrum1) ** 2)
-plt.ylabel("Ex")
-plt.xlabel("frequency (THz)")
-plt.title("Transmission calculated by Ex^2")
-plt.legend()
-file_name = "Transmission_detector_3"
-plt.savefig(f"{grid.folder}/{file_name}.png")
-plt.close()
+
+    import matplotlib.pyplot as plt
+
+    plt.plot(freqs, spectrum2 / spectrum1)
+    plt.ylabel("S parameter")
+    plt.xlabel("frequency (THz)")
+    plt.title("S21(f)")
+    plt.legend()
+    file_name = "S21"
+    plt.savefig(f"{grid.folder}/{file_name}.png")
+    plt.close()
+
+    plt.plot(freqs, (spectrum3 / spectrum1) ** 2)
+    plt.ylabel("S parameter")
+    plt.xlabel("frequency (THz)")
+    plt.title("S31(f)")
+    plt.legend()
+    file_name = "S31"
+    plt.savefig(f"{grid.folder}/{file_name}.png")
+    plt.close()
 
 ```
 ### Results 运行结果
