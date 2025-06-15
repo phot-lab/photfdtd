@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "photfdtd"
 version = "0.1"
-description = "PhotFDTD/Pyphotpassive, with fdtd and philsol as the underlying codes, realizes 3D FDTD simulation and FDE mode computation, along with dozens of packaged components and user-friendly examples."
+description = "PhotFDTD/Pyphotpassive, based on the excellent works of Floris Laporte (https://github.com/flaport/fdtd) and Philip Main (https://github.com/philmain28/philsol?tab=readme-ov-file), realizes 3D FDTD simulation and FDE mode computation, along with dozens of packaged components and user-friendly examples."
 authors = [
   "Tao Jia <taojia2024@gmail.com>", "LI yang <23126672@bjtu.edu.cn>", "Chunyu Li <cyli0212@gmail.com>",
   "Zhenjie Wei <zhenjiewei@bjtu.edu.cn>",
