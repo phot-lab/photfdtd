@@ -1,5 +1,9 @@
 # PhotFDTD
 
+PhotFDTD/Pyphot passive是一款功能强大且灵活的光器件仿真工具，能够支持包括ring resonator, MMI在内的多种无源光器件的仿真运算。其模块化设计使用户可以通过 PhotPassive 模块中的各种类和方法灵活地组合和配置仿真任务。用户可以设置背景介质的折射率，创建高分辨率的仿真网格，详细定义光器件的几何尺寸和光学特性，灵活配置光源参数，并添加监视器以检测电磁场变化。此外，该软件还提供了强大的结果处理和可视化功能，使用户能够方便地保存、读取和绘制仿真结果。
+
+PhotFDTD/Pyphot passive is a powerful and flexible optical device simulation tool that supports simulation operations for a wide range of passive optical devices including ring resonator, MMI, etc. Its modular design allows users to flexibly combine and configure simulation tasks through various classes and methods in the PhotPassive module. Users can set the refractive index of the background medium, create high-resolution simulation meshes, define in detail the geometrical dimensions and optical properties of optical devices, flexibly configure the parameters of the light source, and add monitors to detect electromagnetic field changes. In addition, the software provides powerful result processing and visualization functions, enabling users to easily save, read and plot simulation results.
+
 PhotFDTD/Pyphot passive，以[fdtd](https://github.com/flaport/fdtd) 和[phisol](https://github.com/philmain28/philsol)为底层代码，实现了光传输的3D FDTD仿真和FDE模式计算，同时提供了已经封装好的数十个组件和方便使用者的示例。
 
 PhotFDTD/Pyphotpassive, with [fdtd](https://github.com/flaport/fdtd) and [philsol](https://github.com/philmain28/philsol) as the underlying codes, realizes 3D FDTD simulation and FDE mode computation, along with dozens of packaged components and user-friendly examples.
@@ -27,7 +31,7 @@ PhotFDTD/Pyphotpassive, with [fdtd](https://github.com/flaport/fdtd) and [philso
 **推荐** 直接使用git或下载压缩包获取开发版本。
 **Recommended** The development version can be installed by cloning the repository.
 ```
-git clone http://github.com/flaport/fdtd
+git clone https://github.com/phot-lab/photfdtd.git
 ```
 One can also install this package by downloading the .zip file directly and extracting it.
 
