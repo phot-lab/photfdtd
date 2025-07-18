@@ -2,7 +2,7 @@
 
 from math import sin, cos, sqrt, log, exp
 
-import numpy as np
+from numpy import pi
 
 # For Hanning window pulses
 def hanning(f, t, n):
@@ -20,9 +20,9 @@ def pulse_oscillation(frequency, t, pulselength, offset):
     :param offset: 脉冲中心
     :return:
     """
-    w_center = frequency * 2 * np.pi # 中心波长
-    delta_t = pulselength / (2 * np.sqrt(2 * np.log(2))) # sigma
-    return np.sin(-w_center * (t - offset)) * np.exp(-(t - offset) ** 2 / 2 / delta_t ** 2)
+    w_center = frequency * 2 * pi # 中心波长
+    delta_t = pulselength / (2 * sqrt(2 * log(2))) # sigma
+    return sin(-w_center * (t - offset)) * exp(-(t - offset) ** 2 / 2 / delta_t ** 2)
 
 """
 
@@ -58,7 +58,7 @@ def normalized_gaussian_pulse(x, fwhm, center=0.0):
     # TODO: flag on input type and use backend?
 
     sigma = fwhm / fwhm_constant
-    return np.exp(-(((x - center) ** 2.0) / (2.0 * (sigma ** 2.0))))
+    return exp(-(((x - center) ** 2.0) / (2.0 * (sigma ** 2.0))))
 
 
 def normalized_gaussian_derivative_pulse(x, fwhm, center=0.0):

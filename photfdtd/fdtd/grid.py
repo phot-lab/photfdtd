@@ -14,7 +14,6 @@ from subprocess import check_call, CalledProcessError
 from glob import glob
 from datetime import datetime
 
-import numpy as np
 # 3rd party
 from tqdm import tqdm
 from numpy import savez, sqrt
@@ -387,7 +386,7 @@ class Grid:
             self._Epol = 'xyz'.index(self.sources[0].polarization)
         if "self.max_abs" not in locals():
             # self.max_abs = 1
-            self.max_abs = np.max(simE_to_worldE(np.abs(self.E[:, :, :, self._Epol])))
+            self.max_abs = bd.max(simE_to_worldE(bd.abs(self.E[:, :, :, self._Epol])))
 
         fig, ax = plt.subplots()
         if self.Nx == 1:
@@ -400,17 +399,17 @@ class Grid:
             # 3d仿真，自动绘制grid中心面上的场分布。3D simulation, plot the field distribution on the center plane of the grid.
             axis_index = int(self.E.shape[letter_to_number(axis)] / 2)
         if axis == "x":
-            im = ax.imshow(simE_to_worldE(np.transpose(self.E[axis_index, :, :, self._Epol])), cmap="RdBu", interpolation="nearest", aspect="auto",
+            im = ax.imshow(simE_to_worldE(bd.transpose(self.E[axis_index, :, :, self._Epol])), cmap="RdBu", interpolation="nearest", aspect="auto",
                            origin="lower", vmin=-self.max_abs, vmax=self.max_abs)
             ax.set_xlabel("y")
             ax.set_ylabel("z")
         elif axis == "y":
-            im = ax.imshow(simE_to_worldE(np.transpose(self.E[:, axis_index, :, self._Epol])), cmap="RdBu", interpolation="nearest", aspect="auto",
+            im = ax.imshow(simE_to_worldE(bd.transpose(self.E[:, axis_index, :, self._Epol])), cmap="RdBu", interpolation="nearest", aspect="auto",
                            origin="lower", vmin=-self.max_abs, vmax=self.max_abs)
             ax.set_xlabel("x")
             ax.set_ylabel("z")
         elif axis == "z":
-            im = ax.imshow(simE_to_worldE(np.transpose(self.E[:, :, axis_index, self._Epol])), cmap="RdBu", interpolation="nearest", aspect="auto",
+            im = ax.imshow(simE_to_worldE(bd.transpose(self.E[:, :, axis_index, self._Epol])), cmap="RdBu", interpolation="nearest", aspect="auto",
                            origin="lower", vmin=-self.max_abs, vmax=self.max_abs)
             ax.set_xlabel("x")
             ax.set_ylabel("y")

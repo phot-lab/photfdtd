@@ -1,18 +1,15 @@
-import photfdtd
 import photfdtd.fdtd as fdtd
+import photfdtd.fdtd.backend as bd
 import matplotlib.pyplot as plt
 from .waveguide import Waveguide
-import numpy as np
 from numpy import savez
 import os
 from os import path, makedirs
-from .analyse import Analyse
 from .index import Index
 import photfdtd.fdtd.constants as constants
 import photfdtd.fdtd.conversions as conversions
 from dataclasses import dataclass
 from typing import Optional
-import h5py
 
 
 @dataclass
@@ -53,6 +50,7 @@ class Grid:
             E(r, t) = √ϵ0 x E_real(r, t)
             H(r, t) = √μ0 x H_real(r, t)
         """
+        # fdtd.set_backend("torch")  # set backend to torch
         if grid_spacing_x is None:
             grid_spacing_x = grid_spacing
         if grid_spacing_y is None:
@@ -72,9 +70,9 @@ class Grid:
             self.folder = os.path.join(current_dir, foldername)
         makedirs(self.folder, exist_ok=True)
 
-        self.x_coordinates = np.full(grid_xlength, grid_spacing_x)
-        self.y_coordinates = np.full(grid_ylength, grid_spacing_y)
-        self.z_coordinates = np.full(grid_zlength, grid_spacing_z)
+        self.x_coordinates = bd.full(grid_xlength, grid_spacing_x)
+        self.y_coordinates = bd.full(grid_ylength, grid_spacing_y)
+        self.z_coordinates = bd.full(grid_zlength, grid_spacing_z)
 
         if subregions is not None:
             grid_xlength, grid_ylength, grid_zlength = self.add_subregion(subregions=subregions,
@@ -98,7 +96,7 @@ class Grid:
         # self._total_time = total_time
         self._grid = grid
 
-        self.background_index = np.sqrt(permittivity * permeability)
+        self.background_index = bd.sqrt(bd.array(permittivity) * bd.array(permeability))
 
         self.flag_PML_not_set = True if set_PML else False
 
@@ -107,16 +105,16 @@ class Grid:
             grid_spacing = self._grid.grid_spacing
         # 把SI单位变成空间步长单位 SI unit -> grid spacing unit
         for i in range(len(lengths)):
-            if not np.issubdtype(type(lengths[i]), np.integer) and lengths[i] is not None:
+            if not isinstance(lengths[i], int) and lengths[i] is not None:
                 # if not isinstance(lengths[i], int):
-                lengths[i] = int(np.round(lengths[i] / grid_spacing))
+                lengths[i] = int(bd.round(lengths[i] / grid_spacing))
 
         return lengths
 
     def _calculate_time(self):
         # calculate total time for FDTD simulation
         # return: total time in timesteps
-        n = np.sqrt(1 / self._grid.inverse_permittivity.min())
+        n = bd.sqrt(1 / self._grid.inverse_permittivity.min())
         # 默认传播方向为z default propagating direction: z
         L = max(self._grid_xlength, self._grid_ylength, self._grid_zlength) * self._grid.grid_spacing_z
         time = int(L * 1.5 * n / constants.c / self._grid.time_step)  # Multiply 1.5 to make sure stabilization
@@ -154,22 +152,22 @@ class Grid:
             if direction == "x":
                 self.start_coordinates = round(region_start / grid_spacing_x)
                 self.end_coordinates = round(region_end / grid_spacing_x)
-                subregion_x_coordinates = np.full(int((region_end - region_start) / cell_size), cell_size)
-                self.x_coordinates = np.concatenate([self.x_coordinates[:self.start_coordinates],
+                subregion_x_coordinates = bd.full(int((region_end - region_start) / cell_size), cell_size)
+                self.x_coordinates = bd.concatenate([self.x_coordinates[:self.start_coordinates],
                                                      subregion_x_coordinates,
                                                      self.x_coordinates[end_coordinates:]])
             if direction == "y":
                 start_coordinates = round(region_start / grid_spacing_y)
                 end_coordinates = round(region_end / grid_spacing_y)
-                subregion_y_coordinates = np.full(int((region_end - region_start) / cell_size), cell_size)
-                self.y_coordinates = np.concatenate([self.y_coordinates[:start_coordinates],
+                subregion_y_coordinates = bd.full(int((region_end - region_start) / cell_size), cell_size)
+                self.y_coordinates = bd.concatenate([self.y_coordinates[:start_coordinates],
                                                      subregion_y_coordinates,
                                                      self.y_coordinates[end_coordinates:]])
             if direction == "z":
                 start_coordinates = round(region_start / grid_spacing_z)
                 end_coordinates = round(region_end / grid_spacing_z)
-                subregion_z_coordinates = np.full(int((region_end - region_start) / cell_size), cell_size)
-                self.z_coordinates = np.concatenate([self.z_coordinates[:start_coordinates],
+                subregion_z_coordinates = bd.full(int((region_end - region_start) / cell_size), cell_size)
+                self.z_coordinates = bd.concatenate([self.z_coordinates[:start_coordinates],
                                                      subregion_z_coordinates,
                                                      self.z_coordinates[end_coordinates:]])
         self.subregion_added = True
@@ -188,7 +186,7 @@ class Grid:
     #             zoom = (1, 1, zoom_factor)
     #         # 对选中的部分进行缩放
     #         zoomed_part = scipy.ndimage.zoom(array[:, start:end, :], zoom, order=0)
-    #         return np.concatenate([array[:, :start, :], zoomed_part, array[:, end:, :]], axis=1)
+    #         return bd.concatenate([array[:, :start, :], zoomed_part, array[:, end:, :]], axis=1)
     #     _zoom(array, axis=0, start=0, end=10, new_len=20)
     #     _zoom(array, axis=1, start=0, end=10, new_len=20)
     #     _zoom(array, axis=2, start=0, end=10, new_len=20)
@@ -454,23 +452,23 @@ class Grid:
             print("This is a Linesource")
             source_profile = found_source.profile
             size = len(found_source.profile)
-            source_field = np.zeros((time, size, 3))
+            source_field = bd.zeros((time, size, 3))
         elif isinstance(found_source, fdtd.PointSource):
             print("This is a Pointsource")
             source_profile = found_source.sim_amplitude
             size = 1
-            source_field = np.zeros((time, size, 3))
+            source_field = bd.zeros((time, size, 3))
         elif isinstance(found_source, fdtd.PlaneSource):
             print("This is a Planesource")
             # TODO: To be finished
             source_profile = found_source.profile
             shape = found_source.profile.shape
-            source_field = np.zeros((time, shape[0], shape[1], shape[2], 3))
+            source_field = bd.zeros((time, shape[0], shape[1], shape[2], 3))
 
         _Epol = 'xyz'.index(found_source.polarization)
         for q in range(time):
             if found_source.pulse_type == "hanning":
-                t1 = int(2 * np.pi / (found_source.frequency * found_source.pulse_length / found_source.cycle))
+                t1 = int(2 * bd.pi / (found_source.frequency * found_source.pulse_length / found_source.cycle))
                 if q < t1:
                     vect = source_profile * fdtd.waveforms.hanning(
                         found_source.frequency, q * found_source.pulse_length, found_source.cycle
@@ -484,7 +482,7 @@ class Grid:
                                                                          pulselength=found_source.pulse_length,
                                                                          offset=found_source.offset)
             else:
-                vect = source_profile * np.sin(2 * np.pi * q / found_source.period + found_source.phase_shift)
+                vect = source_profile * bd.sin(2 * bd.pi * q / found_source.period + found_source.phase_shift)
             if isinstance(found_source, fdtd.PlaneSource):
                 source_field[q, :, :, :, _Epol] = vect
             else:
@@ -495,11 +493,9 @@ class Grid:
         # Spectrum
         if isinstance(found_source, fdtd.PlaneSource):
             fr = fdtd.FrequencyRoutines(self._grid, objs=source_field[:, int(shape[0] / 2), int(shape[1] / 2),
-                                                         int(shape[2] / 2),
-                                                         _Epol])
+                                                         int(shape[2] / 2), _Epol])
         else:
-            fr = fdtd.FrequencyRoutines(self._grid, objs=source_field[:, int(size / 2),
-                                                         _Epol])
+            fr = fdtd.FrequencyRoutines(self._grid, objs=source_field[:, int(size / 2), _Epol])
         # TODO: 为什么是2*bandwidth
         spectrum_freqs, fourier = fr.FFT(
             freq_window_tuple=[found_source.frequency - 2 * found_source.bandwidth,
@@ -508,7 +504,7 @@ class Grid:
         spectrum = abs(fourier)
 
         # time
-        time = np.linspace(0, len(source_field), len(source_field)) * self._grid.time_step * 1e15
+        time = bd.linspace(0, len(source_field), len(source_field)) * self._grid.time_step * 1e15
 
         # 创建一个画布，包含两个子图
         fig, axes = plt.subplots(2, 2, figsize=(12, 6))  # 1行2列的子图
@@ -520,7 +516,7 @@ class Grid:
             axes[0][0].text(0.5, 0.5, "Space distribution is unavailable for point source",
                             ha="center", va="center", fontsize=12)  # 居中显示文本
         elif isinstance(found_source, fdtd.LineSource):
-            length = np.linspace(0, len(found_source.profile), len(found_source.profile)) * self._grid.grid_spacing_x
+            length = bd.linspace(0, len(found_source.profile), len(found_source.profile)) * self._grid.grid_spacing_x
             axes[0][0].plot(length * 1e6, conversions.simE_to_worldE(found_source.profile))
             # axes[0][0].set_xticks()  # 每隔10个显示一个刻度
             axes[0][0].set_xlabel('um')
@@ -532,10 +528,10 @@ class Grid:
             shape = source_profile.shape
 
             # 找到 shape 中值为 1 的维度
-            squeeze_axis = np.where(np.array(shape) == 1)[0]
+            squeeze_axis = bd.where(bd.array(shape) == 1)[0]
 
             if len(squeeze_axis) == 1:  # 确保只有一个维度为 1
-                source_profile_2d = np.squeeze(conversions.simE_to_worldE(source_profile), axis=squeeze_axis[0])
+                source_profile_2d = bd.squeeze(conversions.simE_to_worldE(source_profile), axis=squeeze_axis[0])
             else:
                 raise ValueError("No single dimension found, or more than one dimension is 1")
 
@@ -716,10 +712,10 @@ class Grid:
             found_detector = self._try_to_find_detector()
         # TODO:考虑y和z方向
         x = found_detector.x
-        x = np.array(x) * self._grid.grid_spacing_x
+        x = bd.array(x) * self._grid.grid_spacing_x
         x_sticks = x
         field_number = conversions.letter_to_number(field_axis)
-        detector_profile = np.array([x for x in found_detector.detector_values()["%s" % field]])[timesteps, :,
+        detector_profile = bd.array([x for x in found_detector.detector_values()["%s" % field]])[timesteps, :,
                            field_number]
         plt.plot(x_sticks, detector_profile)
         plt.xticks()
@@ -823,7 +819,7 @@ class Grid:
         if not filepath:
             filepath = grid.folder
         grid = grid._grid
-        geometry = np.sqrt(1 / np.float16(grid.inverse_permittivity))
+        geometry = bd.sqrt(1 / bd.to_float(grid.inverse_permittivity))
         axis = axis.lower()
 
         # 去掉作为轴的那一维
@@ -840,7 +836,7 @@ class Grid:
 
         # It's quite important to transpose n
         from matplotlib import cm
-        n = np.transpose(n, [1, 0, 2])
+        n = bd.transpose(n, [1, 0, 2])
 
         if axis == "x":
             plt.xlabel('y/um')
@@ -859,7 +855,7 @@ class Grid:
             y_stick = y * grid.grid_spacing_y * 1e6
         plt.imshow(n[:, :, 0], cmap=cm.jet, origin="lower",
                    extent=[0, x_stick, 0, y_stick])
-        plt.clim([np.amin(n), np.amax(n)])
+        plt.clim([bd.min(n), bd.max(n)])
         plt.colorbar()
         plt.title("refractive_index_real")
         # 保存图片
@@ -1003,7 +999,7 @@ class Grid:
                 elif detector.name == detector_name_2:
                     P2 = detector.poynting[:, :, 2]
                     # P2[P2 > 0] = 0
-            F1, F2 = np.empty(shape=P1[0].shape, dtype=object), np.empty(shape=P1[0].shape, dtype=object)
+            F1, F2 = bd.empty(shape=P1[0].shape, dtype=object), bd.empty(shape=P1[0].shape, dtype=object)
             for i in range(P1[0].shape[0]):
                 fr = fdtd.FrequencyRoutines(self._grid, objs=P1[:, i])
                 spectrum_freqs_1, fourier = fr.FFT(
@@ -1015,8 +1011,8 @@ class Grid:
                     freq_window_tuple=[source.frequency - source.bandwidth,
                                        source.frequency + source.bandwidth], )
                 F2[i] = abs(fourier)
-            spectrum_1 = np.sum(F1, axis=0, keepdims=True)
-            spectrum_2 = np.sum(F2, axis=0, keepdims=True)
+            spectrum_1 = bd.sum(F1, axis=0, keepdims=True)
+            spectrum_2 = bd.sum(F2, axis=0, keepdims=True)
             Transmission = (spectrum_2 / spectrum_1)[0]
         else:
             for detector in grid._grid.detectors:
@@ -1039,12 +1035,12 @@ class Grid:
             # # Power Spectrums
             fig, axes = plt.subplots(2, 2, figsize=(12, 6))  # 1行2列的子图
 
-            axes[0][0].plot(np.linspace(0, len(flux_1), len(flux_1)) * self._grid.time_step * 1e15, flux_1)
+            axes[0][0].plot(bd.linspace(0, len(flux_1), len(flux_1)) * self._grid.time_step * 1e15, flux_1)
             axes[0][0].set_xlabel('fs')
             axes[0][0].set_ylabel('Power (W)')
             axes[0][0].set_title(f"Power of {detector_name_1}")
 
-            axes[0][1].plot(np.linspace(0, len(flux_1), len(flux_1)) * self._grid.time_step * 1e15, flux_2)
+            axes[0][1].plot(bd.linspace(0, len(flux_1), len(flux_1)) * self._grid.time_step * 1e15, flux_2)
             axes[0][1].set_xlabel('fs')
             axes[0][1].set_ylabel('Power (W)')
             axes[0][1].set_title(f"Power of {detector_name_2}")
@@ -1083,7 +1079,7 @@ class Grid:
         plt.close()
 
         if save_to_txt:
-            np.savetxt('%s/Transmission.txt' % grid.folder, np.column_stack((spectrum_wl, Transmission)), fmt='%f',
+            bd.savetxt('%s/Transmission.txt' % grid.folder, bd.column_stack((spectrum_wl, Transmission)), fmt='%f',
                        delimiter='\t',
                        header='Wavelength (um)\tTransmission', comments='')
 
@@ -1164,7 +1160,7 @@ class Grid:
         plt.close()
 
         if save_to_txt:
-            np.savetxt('%s/Transmission.txt' % grid.folder, np.column_stack((spectrum_wl, Transmission)), fmt='%f',
+            bd.savetxt('%s/Transmission.txt' % grid.folder, bd.column_stack((spectrum_wl, Transmission)), fmt='%f',
                        delimiter='\t',
                        header='Wavelength (um)\tTransmission', comments='')
 
@@ -1197,17 +1193,17 @@ class Grid:
         # self.folder = os.path.abspath(path.join("fdtd_output", folder))
         # makedirs(self.folder, exist_ok=True)
         dic = {}
-        for wl in np.linspace(wl_start, wl_end, points):
+        for wl in bd.linspace(wl_start, wl_end, points):
             for attr in dir(self._grid):
                 # 遍历grid的所有属性
                 try:
                     if isinstance(getattr(self._grid, attr), fdtd.Object):
                         # 找到Object类型的属性并修改permittivity属性
                         getattr(self._grid, attr).permittivity[
-                            getattr(self._grid, attr).permittivity != 1] = np.square(index.fit_function_Reindex(wl))
+                            getattr(self._grid, attr).permittivity != 1] = bd.square(index.fit_function_Reindex(wl))
                         # inverse_permittivity: 逆电容率（介电常数），即permittivity的倒数
                         getattr(self._grid, attr).inverse_permittivity[
-                            getattr(self._grid, attr).inverse_permittivity != 1] = 1 / np.square(
+                            getattr(self._grid, attr).inverse_permittivity != 1] = 1 / bd.square(
                             index.fit_function_Reindex(wl))
                         # print("已修改object")
                     else:
@@ -1240,7 +1236,7 @@ class Grid:
             # 重置grid
             self._grid.reset()
 
-        # 保存detector_readings_sweep.npz文件
+        # 保存detector_readings_sweep.bdz文件
         savez(path.join(self.folder, "detector_readings_sweep"), **dic)
 
     def _plot_sweep_result(self,
@@ -1252,12 +1248,12 @@ class Grid:
 
         for file_name in os.listdir(folder):
             if file_name.endswith('_sweep.npz'):
-                # 识别_sweep.npz文件
+                # 识别_sweep.bdz文件
                 # self.full_path = os.path.join(self.folder, file_name)
                 self.calculate_T(full_path=os.path.join(folder, file_name))
         print(self.T)
 
-        x = np.linspace(self.wl_start, self.wl_end, self.points)
+        x = bd.linspace(self.wl_start, self.wl_end, self.points)
 
         # TODO: 除了光源监视器外只能设置一个监视器，只能看一个端口的透过率，完善它。
         plt.plot(x, self.T)
@@ -1274,8 +1270,8 @@ class Grid:
         savez(path.join(self.folder, "saved_grid"), serialized_instance=saved_grid)
         # dic = {}
         # for detector in self._grid.detectors:
-        #     dic[detector.name + " (E)"] = np.array([x for x in detector.detector_values()["E"]])
-        #     dic[detector.name + " (H)"] = np.array([x for x in detector.detector_values()["H"]])
+        #     dic[detector.name + " (E)"] = bd.array([x for x in detector.detector_values()["E"]])
+        #     dic[detector.name + " (H)"] = bd.array([x for x in detector.detector_values()["H"]])
         # dic["grid_spacing"] = self._grid.grid_spacing
         # dic["time_step"] = self._grid.time_step
         # dic["detectors"] = self._grid.detectors
@@ -1283,7 +1279,7 @@ class Grid:
         # dic["time_passed"] = self._grid.time_passed
         # dic["grid"] = self
         #
-        # # 保存detector_readings_sweep.npz文件
+        # # 保存detector_readings_sweep.bdz文件
         # savez(path.join(self.folder, "saved_grid"), **dic)
 
     @staticmethod
@@ -1292,16 +1288,17 @@ class Grid:
         静态方法，调用时应使用 data = Grid.read_simulation(folder="...")
         folder: 保存监视器数据的文件路径
         """
+        from numpy import load
         if not folder:
             raise Exception("Please indicate the folder where your grid has been saved")
         import pickle
         if not folder.endswith(".npz"):
-            folder_npz = folder + "\saved_grid.npz"
+            folder_bdz = folder + "\saved_grid.npz"
         try:
-            readings = np.load(folder_npz, allow_pickle=True)
+            readings = load(folder_bdz, allow_pickle=True)
         except:
-            folder_npz = folder + "\detector_readings.npz"
-            readings = np.load(folder_npz, allow_pickle=True)
+            folder_bdz = folder + "\detector_readings.npz"
+            readings = load(folder_bdz, allow_pickle=True)
         return pickle.loads(readings['serialized_instance'])
 
     @staticmethod
@@ -1335,12 +1332,12 @@ class Grid:
             total_time = grid._grid.time_passed
         for detector in grid._grid.detectors:
             if isinstance(detector, fdtd.detectors.BlockDetector):
-                fdtd.dB_map_2D(block_det=np.array([x for x in detector.detector_values()["%s" % field]]),
+                fdtd.dB_map_2D(block_det=bd.array([x for x in detector.detector_values()["%s" % field]]),
                                interpolation=interpolation, axis=axis, field=field, field_axis=field_axis,
                                save=save, folder=folder, name_det=detector.name, total_time=total_time)
 
-            # dic[detector.name + " (E)"] = np.array([x for x in detector.detector_values()["E"]])
-            # dic[detector.name + " (H)"] = np.array([x for x in detector.detector_values()["H"]])
+            # dic[detector.name + " (E)"] = bd.array([x for x in detector.detector_values()["E"]])
+            # dic[detector.name + " (H)"] = bd.array([x for x in detector.detector_values()["H"]])
         # if block_det != None:
         #     data = block_det
         #     name_det = block_det.name
@@ -1378,11 +1375,11 @@ class Grid:
         grid = grid._grid
         if not show_field:
             if axis == "z":
-                field = np.zeros_like(grid.E[:, :, axis_index, 0])
+                field = bd.zeros_like(grid.E[:, :, axis_index, 0])
             elif axis == "y":
-                field = np.zeros_like(grid.E[:, axis_index, :, 0])
+                field = bd.zeros_like(grid.E[:, axis_index, :, 0])
             elif axis == "x":
-                field = np.zeros_like(grid.E[axis_index, :, :, 0])
+                field = bd.zeros_like(grid.E[axis_index, :, :, 0])
         else:
             if field == "E":
                 if not field_axis:
@@ -1449,27 +1446,30 @@ class Grid:
         if axis == "z":
             x_stick = field.shape[0] * grid.grid_spacing_x * 1e6
             y_stick = field.shape[1] * grid.grid_spacing_y * 1e6
-        plt.imshow(np.transpose(field), vmin=vmin, vmax=vmax, cmap=cmap,
+        plt.imshow(bd.transpose(field), vmin=vmin, vmax=vmax, cmap=cmap,
                    extent=[0, x_stick, 0, y_stick],
                    origin="lower")  # cmap 可以选择不同的颜色映射
         if show_field:
             cbar = plt.colorbar()
         if show_geometry:
+            geo = bd.sqrt(1 / bd.to_float(grid.inverse_permittivity))
 
-            geo = np.sqrt(1 / np.float16(grid.inverse_permittivity))
-
-            # geo是四维矩阵
+            # geo是四维矩阵，取最后一个维度
             geo = geo[:, :, :, -1]
+
+            # 根据不同的轴选择截面
             if axis == "x":
                 n_to_draw = geo[axis_index, :, :]
             elif axis == "y":
                 n_to_draw = geo[:, axis_index, :]
             elif axis == "z":
                 n_to_draw = geo[:, :, axis_index]
-            # n_to_draw /= n_to_draw.max()
-            contour_data = np.where(n_to_draw != background_index, 1, 0)
-            plt.contour(np.linspace(0, x_stick, field.shape[0]),
-                        np.linspace(0, y_stick, field.shape[1]),
+
+            # 创建轮廓数据
+            contour_data = bd.where(n_to_draw != bd.array(background_index), 1, 0)
+
+            plt.contour(bd.linspace(0, x_stick, field.shape[0]),
+                        bd.linspace(0, y_stick, field.shape[1]),
                         contour_data.T, colors='black', linewidths=1)
 
         # plt.ylim(-1, field.shape[1])
@@ -1516,9 +1516,9 @@ class Grid:
         for detector in grid._grid.detectors:
             if detector.name == name_det:
                 if field == "E":
-                    data = np.array(detector.real_E())
+                    data = bd.array(detector.real_E())
                 elif field == "H":
-                    data = np.array(detector.real_H())
+                    data = bd.array(detector.real_H())
                 else:
                     raise ValueError("Parameter field should be either 'E' or 'H")
         if data is None:
@@ -1597,6 +1597,7 @@ class Grid:
         @param index_3d: 用于面监视器，选择读取数据的点
         @param field_axis: "x", "y", "z"
         @param field: ”E"或"H"
+        @return frequency, spectrum: 频率和频谱
         NOTE：
             关于傅里叶变换后的单位：有的人说是原单位，有的人说是原单位乘以积分时积的单位(s)
             https://stackoverflow.com/questions/1523814/units-of-a-fourier-transform-fft-when-doing-spectral-analysis-of-a-signal
@@ -1620,14 +1621,14 @@ class Grid:
         elif field == "H":
             data = self.read_detector(name_det)[1]
         # if field == "E":
-        #     data = np.array(detector.real_E())
+        #     data = bd.array(detector.real_E())
         # elif field == "H":
-        #     data = np.array(detector.real_H())
+        #     data = bd.array(detector.real_H())
         else:
             raise ValueError("Parameter field should be either 'E' or 'H")
         # if data is None:
         #     detector = self._grid.detectors[0]
-        #     data = np.array([x for x in detector.detector_values()["%s" % field]])
+        #     data = bd.array([x for x in detector.detector_values()["%s" % field]])
 
         shape = data.shape
         if data.ndim == 3:
@@ -1648,9 +1649,10 @@ class Grid:
         spectrum_freqs, spectrum = fr.FFT(
             freq_window_tuple=[source.frequency - source.bandwidth,
                                source.frequency + source.bandwidth], )
+        # spectrum是复值
 
         ### 试试ufdtd书中的方法，对空间中每个点的电场分别傅里叶变换
-        # F = np.empty(shape=data[0].shape, dtype=object)
+        # F = bd.empty(shape=data[0].shape, dtype=object)
         # for i in range(data[0].shape[0]):
         #     for j in range(3):
         #         fr = fdtd.FrequencyRoutines(self._grid, objs=data[:, i, j])
@@ -1661,15 +1663,17 @@ class Grid:
         ###
 
         # TODO: 目前只考虑了线监视器
-        length = np.linspace(0, shape[1], shape[1]) * self._grid.grid_spacing_x
-        time = np.linspace(0, shape[0], shape[0]) * self._grid.time_step * 1e15
+        length = bd.linspace(0, shape[1], shape[1]) * self._grid.grid_spacing_x
+        time = bd.linspace(0, shape[0], shape[0]) * self._grid.time_step * 1e15
 
         # 创建一个画布，包含两个子图
         fig, axes = plt.subplots(2, 2, figsize=(12, 6))  # 1行2列的子图
 
         # 左侧子图: Space distribution at when the field is maximum
-        flattened_index = np.argmax(data)
-        time_step_max_field = np.unravel_index(flattened_index, data.shape)[0]
+        from numpy import argmax
+        from numpy import unravel_index
+        flattened_index = argmax(data)
+        time_step_max_field = unravel_index(flattened_index, data.shape)[0]
         if data.ndim == 3:
             axes[0][0].plot(length * 1e6, data[time_step_max_field, :, field_axis])
             # axes[0][0].set_xticks()  # 每隔10个显示一个刻度
@@ -1679,7 +1683,7 @@ class Grid:
             axes[0][0].legend(["Detector profile"])
         elif data.ndim == 5:
             # 绘制 2D 颜色图
-            im = axes[0][0].imshow(np.transpose(np.squeeze(data[time_step_max_field, :, :, :, field_axis])), cmap="viridis", aspect="auto", origin="lower")
+            im = axes[0][0].imshow(bd.transpose(bd.squeeze(data[time_step_max_field, :, :, :, field_axis])), cmap="viridis", aspect="auto", origin="lower")
             # 添加颜色条
             plt.colorbar(im, ax=axes[0][0])
             # 设置标题和标签
@@ -1718,7 +1722,7 @@ class Grid:
         axes[1][0].set_ylabel(f"|E{conversions.number_to_letter(field_axis)}| (V/m)")
         axes[1][0].set_title(f"Spectrum of {name_det}")
 
-        axes[1][1].plot(constants.c / spectrum_freqs * 1e6, spectrum)
+        axes[1][1].plot(constants.c / spectrum_freqs * 1e6, abs(spectrum))
         axes[1][1].set_xlabel('wavelength (um)')
         axes[1][1].set_ylabel(f"|E{conversions.number_to_letter(field_axis)}| (V/m)")
         axes[1][1].set_title(f"Spectrum of {name_det}")
@@ -1747,11 +1751,11 @@ class Grid:
         # TODO: 把fdtd的fourier.py研究明白
         if field_axis is not None:
             field_axis = conversions.letter_to_number(field_axis)
-        # spectrums = np.empty(self._grid.detectors.shape)
-        # names = np.empty(self._grid.detectors.shape)
+        # spectrums = bd.empty(self._grid.detectors.shape)
+        # names = bd.empty(self._grid.detectors.shape)
         for d in self._grid.detectors:
             freqs, spectrum = self.visualize_single_detector(detector=d, field=field, field_axis=field_axis)
-            plt.plot(freqs, spectrum, linestyle='-', label=d.name)
+            plt.plot(freqs, abs(spectrum), linestyle='-', label=d.name)
         source, __, spectrum_source = self.source_data()
         plt.plot(freqs, spectrum_source, linestyle='-', label=source.name)
 

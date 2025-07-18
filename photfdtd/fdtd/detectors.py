@@ -5,7 +5,6 @@ Available Detectors:
  - LineDetector
 
 """
-import numpy as np
 
 ## Imports
 
@@ -210,35 +209,35 @@ class LineDetector:
     def real_E(self):
         # 光源
         # The source is using simE unit so t
-        return simE_to_worldE(np.array(self.E))
+        return simE_to_worldE(bd.stack(self.E))
 
     @property
     def real_H(self):
-        return simH_to_worldH(np.array(self.H))
+        return simH_to_worldH(bd.stack(self.H))
 
     @property
-    def poynting(self) -> np.ndarray:
+    def poynting(self):
         # 似乎乘以H的共轭或非共轭都一样（因为H不是复数？）
-        return c * np.cross(self.E, self.H, axis=-1)
+        return c * bd.cross(self.E, self.H, axis=-1)
 
     @property
-    def flux(self) -> np.ndarray:
+    def flux(self):
         # energy flux (power)
         # *(self.poynting > 0)
         # * self.grid.grid_spacing_x * self.grid.grid_spacing_y
-        return np.sum(self.poynting, axis=1, keepdims=True)
+        return bd.sum(self.poynting, axis=1, keepdims=True)
 
     def real_E(self):
         from .conversions import simE_to_worldE
         if isinstance(self.E, list):
-            self.E = np.array(self.E, dtype=float)
+            self.E = bd.stack(self.E)
         return simE_to_worldE(self.E)
 
 
     def real_H(self):
         from .conversions import simH_to_worldH
         if isinstance(self.H, list):
-            self.H = np.array(self.H, dtype=float)
+            self.H = bd.stack(self.H)
         return simH_to_worldH(self.H)
 
 
@@ -428,14 +427,14 @@ class BlockDetector:
     def real_E(self):
         from .conversions import simE_to_worldE
         if isinstance(self.E, list):
-            self.E = np.array(self.E, dtype=float)
+            self.E = bd.stack(self.E)
         return simE_to_worldE(self.E)
 
 
     def real_H(self):
         from .conversions import simH_to_worldH
         if isinstance(self.H, list):
-            self.H = np.array(self.H, dtype=float)
+            self.H = bd.stack(self.H)
         return simH_to_worldH(self.H)
 
 

@@ -366,10 +366,18 @@ def visualize(
         yticks = bd.arange(0, grid_energy.shape[0], int((10e-6) / grid.grid_spacing))
     xlabels = xticks * grid.grid_spacing * 1e6
     ylabels = yticks * grid.grid_spacing * 1e6
-    xlabels.astype(int)
+    xlabels = round(xlabels)
+    ylabels = round(ylabels)
+    # convert xticks and yticks to int if they are numpy arrays or torch tensors
+    try: #for numpy
+        xlabels = xlabels.astype(int)
+        ylabels = ylabels.astype(int)
+    except: # for torch
+        xlabels = xlabels.to(dtype=bd.int)
+        ylabels = ylabels.to(dtype=bd.int)
     #
-    plt.xticks(xticks, round(xlabels).astype(int))
-    plt.yticks(yticks, round(ylabels).astype(int))
+    plt.xticks(xticks, xlabels)
+    plt.yticks(yticks, ylabels)
     # # finalize the plot
     # plt.ylabel(xlabel)
     # plt.xlabel(ylabel)

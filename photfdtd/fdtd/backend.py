@@ -50,19 +50,19 @@ numpy_float_dtypes = {
 
 
 # Torch Backends (and flags)
-# try:
-#     import torch
-#
-#     torch.set_default_dtype(torch.float64)  # we need more precision for FDTD
-#     try:  # we don't need gradients (for now)
-#         torch._C.set_grad_enabled(False)  # type: ignore
-#     except AttributeError:
-#         torch._C._set_grad_enabled(False)
-#     TORCH_AVAILABLE = True
-#     TORCH_CUDA_AVAILABLE = torch.cuda.is_available()
-# except ImportError:
-TORCH_AVAILABLE = False
-TORCH_CUDA_AVAILABLE = False
+try:
+    import torch
+
+    torch.set_default_dtype(torch.float64)  # we need more precision for FDTD
+    try:  # we don't need gradients (for now)
+        torch._C.set_grad_enabled(False)  # type: ignore
+    except AttributeError:
+        torch._C._set_grad_enabled(False)
+    TORCH_AVAILABLE = True
+    TORCH_CUDA_AVAILABLE = torch.cuda.is_available()
+except ImportError:
+    TORCH_AVAILABLE = False
+    TORCH_CUDA_AVAILABLE = False
 
 
 # Base Class
@@ -101,6 +101,16 @@ class NumpyBackend(Backend):
 
     float = numpy.float64
     """ floating type for array """
+
+    @staticmethod
+    def to_float(arr):
+        """ convert array to float type, same to numpy.float64 """
+        if isinstance(arr, numpy.ndarray):
+            return arr.astype(float)
+        else:
+            return numpy.asarray(arr, dtype=float)
+    """ convert array to float type, same to numpy.float64. This is to sync with torch.to_float() """
+
     
     complex = numpy.complex128
     """ complex type for array """
@@ -119,11 +129,29 @@ class NumpyBackend(Backend):
     cos = staticmethod(numpy.cos)
     """ cosine of all elements in array """
 
-    sum = staticmethod(numpy.sum)
+    # 在 NumpyBackend 类中
+    @staticmethod
+    def sum(x, axis=None, **kwargs):
+        """sum elements in array with axis support"""
+        if isinstance(x, numpy.ndarray):
+            return numpy.sum(x, axis=axis)
+        elif hasattr(x, 'sum'):  # PyTorch tensor
+            return x.sum(dim=axis)
+        else:
+            return numpy.sum(numpy.asarray(x), axis=axis)
     """ sum elements in array """
+
+    min = staticmethod(numpy.min)
+    """ min element in array """
 
     max = staticmethod(numpy.max)
     """ max element in array """
+
+    arg = staticmethod(numpy.argmax)
+    """ index of max element in array """
+
+    where = staticmethod(numpy.where)
+    """ return elements of array where condition is True, otherwise return other elements """
 
     sqrt = staticmethod(numpy.sqrt)
     """ max element in array """
@@ -140,11 +168,17 @@ class NumpyBackend(Backend):
     squeeze = staticmethod(numpy.squeeze)
     """ remove dim-1 dimensions """
 
+    round = staticmethod(numpy.round)
+    """ round array elements to nearest integer """
+
     broadcast_arrays = staticmethod(numpy.broadcast_arrays)
     """ broadcast arrays """
 
     broadcast_to = staticmethod(numpy.broadcast_to)
     """ broadcast array into shape """
+
+    cat = staticmethod(numpy.concatenate)
+    """ concatenate multiple arrays along a given dimension, only for fourier.FrequencyRountines.FFT """
 
     @staticmethod
     def bmm(arr1, arr2):
@@ -198,8 +232,7 @@ class NumpyBackend(Backend):
 
 
 # Torch Backend
-# Edited in 24/3/20, perhaps this would help saving RAM?
-TORCH_AVAILABLE = False
+
 if TORCH_AVAILABLE:
     import torch
 
@@ -207,11 +240,23 @@ if TORCH_AVAILABLE:
         """Torch Backend"""
 
         # types
+        abs = torch.abs
+
         int = torch.int64
         """ integer type for array"""
 
         float = torch.get_default_dtype()
         """ floating type for array """
+
+        @staticmethod
+        def to_float(tensor):
+            if hasattr(tensor, 'to'):  # 检查是否是 PyTorch 张量
+                return tensor.to(dtype=torch.float)
+            elif hasattr(tensor, 'astype'):  # 检查是否是 NumPy 数组
+                return tensor.astype(float)
+            else:
+                raise TypeError("Unsupported tensor type for conversion to float.")
+        """ convert tensor to float type, same to numpy.float64 """
 
         if float is torch.float32:
             complex = torch.complex64
@@ -232,14 +277,55 @@ if TORCH_AVAILABLE:
         cos = staticmethod(torch.cos)
         """ cosine of all elements in array """
 
-        sum = staticmethod(torch.sum)
+        @staticmethod
+        def sum(x, axis=None, **kwargs):
+            """sum elements in array with axis support"""
+            # 将 axis 参数转换为 PyTorch 的 dim 参数
+            if axis is not None:
+                kwargs['dim'] = axis
+            return torch.sum(x, **kwargs)
         """ sum elements in array """
+
+        min = staticmethod(torch.min)
+        """ min element in array """
 
         max = staticmethod(torch.max)
         """ max element in array """
 
+        argmax = staticmethod(torch.argmax)
+        """ index of max element in array """
+
+        where = staticmethod(torch.where)
+        """ return elements of array where condition is True, otherwise return other elements """
+
         stack = staticmethod(torch.stack)
         """ stack multiple arrays """
+
+        cat = staticmethod(torch.cat)
+        """ concatenate multiple arrays along a given dimension, only for fourier.FrequencyRountines.FFT """
+
+        @staticmethod
+        def sqrt(x):
+            if isinstance(x, torch.Tensor):
+                return torch.sqrt(x)
+            else:
+                return torch.sqrt(torch.tensor(x, dtype=torch.get_default_dtype()))
+
+        @staticmethod
+        def round(x):
+            if isinstance(x, torch.Tensor):
+                return torch.round(x)
+            else:
+                return round(x)
+
+        @staticmethod
+        def full(shape, fill_value, dtype=None):
+            if isinstance(shape, int):
+                shape = (shape,)
+            if dtype is None:
+                return torch.full(shape, fill_value)
+            else:
+                return torch.full(shape, fill_value, dtype=getattr(torch, str(dtype)))
 
         @staticmethod
         def transpose(arr, axes=None):
@@ -284,6 +370,8 @@ if TORCH_AVAILABLE:
         zeros = staticmethod(torch.zeros)
         """ create an array filled with zeros """
 
+        zeros_like = staticmethod(torch.zeros_like)
+
         def linspace(self, start, stop, num=50, endpoint=True):
             """create a linearly spaced array between two points"""
             delta = (stop - start) / float(num - float(endpoint))
@@ -296,9 +384,9 @@ if TORCH_AVAILABLE:
 
         pad = staticmethod(torch.nn.functional.pad)  # type: ignore
 
-        fftfreq = staticmethod(numpy.fft.fftfreq)
+        fftfreq = staticmethod(torch.fft.fftfreq)
 
-        fft = staticmethod(torch.fft)  # type: ignore
+        fft = staticmethod(torch.fft.fft)  # type: ignore
 
         divide = staticmethod(torch.div)
 
@@ -319,7 +407,7 @@ if TORCH_AVAILABLE:
 
         class TorchCudaBackend(TorchBackend):
             """Torch Cuda Backend"""
-
+            #TODO: max, abs?
             def ones(self, shape):
                 """create an array filled with ones"""
                 return torch.ones(shape, device="cuda")

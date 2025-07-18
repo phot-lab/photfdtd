@@ -53,7 +53,7 @@ class Object:
         self.grid = grid
         self.grid.objects.append(self)
 
-        if self.permittivity.dtype is bd.complex().dtype:
+        if self.permittivity.dtype is bd.complex:
             self.grid.promote_dtypes_to_complex()
 
         if self.name is not None:
