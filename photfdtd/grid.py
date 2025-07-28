@@ -2,7 +2,7 @@ import photfdtd.fdtd as fdtd
 import photfdtd.fdtd.backend as bd
 import matplotlib.pyplot as plt
 from .waveguide import Waveguide
-from numpy import savez
+import numpy as np
 import os
 from os import path, makedirs
 from .index import Index
@@ -10,6 +10,8 @@ import photfdtd.fdtd.constants as constants
 import photfdtd.fdtd.conversions as conversions
 from dataclasses import dataclass
 from typing import Optional
+import h5py
+import pickle
 
 
 @dataclass
@@ -122,21 +124,25 @@ class Grid:
 
     def _check_parameters(self, x_start=None, x_end=None, y_start=None, y_end=None, z_start=None, z_end=None,
                           object_to_check=None, name=None):
-        # Check if the object exceeds the region
         if object_to_check:
-            x_start, x_end, y_start, y_end, z_start, z_end = object_to_check.x, object_to_check.xlength + object_to_check.x, \
-                object_to_check.y, object_to_check.ylength + object_to_check.y, \
-                object_to_check.z, object_to_check.zlength + object_to_check.z
-            name = object_to_check.name
-        if max(x_start, x_end) > self._grid_xlength or min(x_start, x_end) < 0:
+            obj = object_to_check  # 缓存引用
+            x_start, x_end = obj.x, obj.xlength + obj.x
+            y_start, y_end = obj.y, obj.ylength + obj.y
+            z_start, z_end = obj.z, obj.zlength + obj.z
+            name = obj.name
+
+        # 缓存网格长度
+        grid_x, grid_y, grid_z = self._grid_xlength, self._grid_ylength, self._grid_zlength
+
+        if max(x_start, x_end) > grid_x or min(x_start, x_end) < 0:
             raise ValueError("X range of %s (%i, %i) has exceeded the simulation region (0, %i)!"
-                             % (name, x_start, x_end, self._grid_xlength))
-        if max(y_start, y_end) > self._grid_ylength or min(y_start, y_end) < 0:
+                             % (name, x_start, x_end, grid_x))
+        if max(y_start, y_end) > grid_y or min(y_start, y_end) < 0:
             raise ValueError("Y range of %s (%i, %i) has exceeded the simulation region (0, %i)!"
-                             % (name, y_start, y_end, self._grid_ylength))
-        if max(z_start, z_end) > self._grid_zlength or min(z_start, z_end) < 0:
+                             % (name, y_start, y_end, grid_x))
+        if max(z_start, z_end) > grid_z or min(z_start, z_end) < 0:
             raise ValueError("Z range of %s (%i, %i) has exceeded the simulation region (0, %i)!"
-                             % (name, z_start, z_end, self._grid_zlength))
+                             % (name, z_start, z_end, grid_z))
 
     def add_subregion(self,
                       subregions: list = None,
@@ -483,10 +489,11 @@ class Grid:
                                                                          offset=found_source.offset)
             else:
                 vect = source_profile * bd.sin(2 * bd.pi * q / found_source.period + found_source.phase_shift)
+
             if isinstance(found_source, fdtd.PlaneSource):
-                source_field[q, :, :, :, _Epol] = vect
+                source_field[q, :, :, :, _Epol] = bd.array(vect)
             else:
-                source_field[q, :, _Epol] = vect
+                source_field[q, :, _Epol] = bd.array(vect)
 
         # convert to world E
         source_field = conversions.simE_to_worldE(source_field)
@@ -502,7 +509,6 @@ class Grid:
                                found_source.frequency + 2 * found_source.bandwidth], )
 
         spectrum = abs(fourier)
-
         # time
         time = bd.linspace(0, len(source_field), len(source_field)) * self._grid.time_step * 1e15
 
@@ -517,7 +523,8 @@ class Grid:
                             ha="center", va="center", fontsize=12)  # 居中显示文本
         elif isinstance(found_source, fdtd.LineSource):
             length = bd.linspace(0, len(found_source.profile), len(found_source.profile)) * self._grid.grid_spacing_x
-            axes[0][0].plot(length * 1e6, conversions.simE_to_worldE(found_source.profile))
+            axes[0][0].plot(bd.numpy(length * 1e6),
+                            bd.numpy(conversions.simE_to_worldE(found_source.profile)))
             # axes[0][0].set_xticks()  # 每隔10个显示一个刻度
             axes[0][0].set_xlabel('um')
             axes[0][0].set_ylabel(f"E{conversions.number_to_letter(_Epol)} (V/m)")
@@ -552,6 +559,8 @@ class Grid:
                 axes[0][0].set_ylabel("Y")
 
         # 右侧子图: Time Signal 图
+        time = bd.numpy(time)
+        source_field = bd.numpy(source_field)
         if isinstance(found_source, fdtd.PlaneSource):
             axes[0][1].plot(time, source_field[:, int(shape[0] / 2), int(shape[1] / 2), int(shape[2] / 2), 0],
                             label="Ex")
@@ -853,7 +862,7 @@ class Grid:
             plt.ylabel('y/um')
             x_stick = x * grid.grid_spacing_x * 1e6
             y_stick = y * grid.grid_spacing_y * 1e6
-        plt.imshow(n[:, :, 0], cmap=cm.jet, origin="lower",
+        plt.imshow(bd.numpy(n[:, :, 0]), cmap=cm.jet, origin="lower",
                    extent=[0, x_stick, 0, y_stick])
         plt.clim([bd.min(n), bd.max(n)])
         plt.colorbar()
@@ -1237,7 +1246,7 @@ class Grid:
             self._grid.reset()
 
         # 保存detector_readings_sweep.bdz文件
-        savez(path.join(self.folder, "detector_readings_sweep"), **dic)
+        np.savez(path.join(self.folder, "detector_readings_sweep"), **dic)
 
     def _plot_sweep_result(self,
                            folder: str = ""):
@@ -1262,44 +1271,198 @@ class Grid:
         plt.savefig(fname='%s//wl-%s.png' % (self.folder, "T"))
         plt.show()
 
-    def save_simulation(self):
-        """ Save the Grid class instance into a ".npz" file"""
-        import pickle
+    def _convert_tensors_to_numpy(self, obj, visited=None):
+        """递归地将对象中的所有tensor转换为numpy数组，包括私有属性，避免循环引用"""
+        import torch
+
+        # 初始化访问记录
+        if visited is None:
+            visited = set()
+
+        # 检查对象ID，避免循环引用
+        obj_id = id(obj)
+        if obj_id in visited:
+            return obj
+
+        # 早期退出：如果是基本类型或np数组，直接返回
+        if isinstance(obj, (str, int, float, bool, type(None), np.ndarray)):
+            return obj
+
+        # 检查是否是torch张量
+        elif torch.is_tensor(obj):
+            if obj.device.type == 'cuda':
+                return obj.cpu().detach().numpy()
+            else:
+                return obj.detach().numpy()
+        elif isinstance(obj, dict):
+            # 只处理包含 tensor 的字典
+            has_tensor = any(torch.is_tensor(v) or hasattr(v, '__dict__') for v in obj.values())
+            if not has_tensor:
+                return obj
+
+            visited.add(obj_id)
+            try:
+                result = {key: self._convert_tensors_to_numpy(value, visited) for key, value in obj.items()}
+                return result
+            finally:
+                visited.remove(obj_id)
+        elif isinstance(obj, (list, tuple)):
+            # 只处理包含 tensor 的列表/元组
+            has_tensor = any(torch.is_tensor(item) or hasattr(item, '__dict__') for item in obj)
+            if not has_tensor:
+                return obj
+
+            visited.add(obj_id)
+            try:
+                converted = [self._convert_tensors_to_numpy(item, visited) for item in obj]
+                return type(obj)(converted)
+            finally:
+                visited.remove(obj_id)
+        elif hasattr(obj, '__dict__'):
+            visited.add(obj_id)
+            try:
+                # 只处理包含数据的属性
+                for attr_name in list(obj.__dict__.keys()):
+                    try:
+                        attr_value = getattr(obj, attr_name)
+                        # 跳过方法、类型和模块
+                        if (not callable(attr_value) and
+                                not isinstance(attr_value, (type, type(torch))) and
+                                not attr_name.startswith('__')):
+
+                            # 只有当属性值可能包含 tensor 时才递归处理
+                            if (torch.is_tensor(attr_value) or
+                                    isinstance(attr_value, (dict, list, tuple)) or
+                                    hasattr(attr_value, '__dict__')):
+                                converted_value = self._convert_tensors_to_numpy(attr_value, visited)
+                                setattr(obj, attr_name, converted_value)
+
+                    except (AttributeError, TypeError, RuntimeError, ValueError):
+                        continue
+
+                return obj
+            finally:
+                visited.remove(obj_id)
+        else:
+            return obj
+
+    def save_simulation_old(self):
+        """
+        保存整个 Grid 的到npz.文件
+        save the whole Grid to npz file.
+        这个函数已经过时，建议使用 save_simulation() 函数。
+        This function is deprecated, please use save_simulation() instead.
+        """
+        return
+
         # Serialize the class instance
         saved_grid = pickle.dumps(self)
-        savez(path.join(self.folder, "saved_grid"), serialized_instance=saved_grid)
-        # dic = {}
-        # for detector in self._grid.detectors:
-        #     dic[detector.name + " (E)"] = bd.array([x for x in detector.detector_values()["E"]])
-        #     dic[detector.name + " (H)"] = bd.array([x for x in detector.detector_values()["H"]])
-        # dic["grid_spacing"] = self._grid.grid_spacing
-        # dic["time_step"] = self._grid.time_step
-        # dic["detectors"] = self._grid.detectors
-        # dic["sources"] = self._grid.sources
-        # dic["time_passed"] = self._grid.time_passed
-        # dic["grid"] = self
-        #
-        # # 保存detector_readings_sweep.bdz文件
-        # savez(path.join(self.folder, "saved_grid"), **dic)
+        np.savez(path.join(self.folder, "saved_grid"), serialized_instance=saved_grid)
+
+    def save_simulation(self):
+        """使用 HDF5 格式保存，支持大型数据和压缩"""
+        import copy
+        import gc
+        from photfdtd.fdtd.backend import NumpyBackend
+
+        # 使用 HDF5 保存大型数组数据
+        grid_copy = copy.deepcopy(self)
+        if bd.__class__ != NumpyBackend:
+            # 如果不是 NumpyBackend，则将grid中的tensor转换为 ndarray
+            grid_copy._convert_tensors_to_numpy(grid_copy)
+
+        try:
+            with h5py.File(path.join(self.folder, "saved_grid.h5"), 'w') as f:
+                # 保存大型数组数据
+                if hasattr(grid_copy._grid, 'E'):
+                    f.create_dataset('E', data=grid_copy._grid.E, compression='gzip')
+                    grid_copy._grid.E = None
+                if hasattr(grid_copy._grid, 'H'):
+                    f.create_dataset('H', data=grid_copy._grid.H, compression='gzip')
+                    grid_copy._grid.H = None
+                if hasattr(grid_copy._grid, 'inverse_permittivity'):
+                    f.create_dataset('inverse_permittivity',
+                                     data=grid_copy._grid.inverse_permittivity, compression='gzip')
+                    grid_copy._grid.inverse_permittivity = None
+
+                # 将剩余对象序列化
+                metadata = pickle.dumps(grid_copy)
+
+                # 处理大型序列化数据
+                void_data = bd.void(metadata)
+                if isinstance(void_data, bytes):
+                    # 如果数据太大，保存为二进制数据集
+                    f.create_dataset('metadata_bytes', data=np.frombuffer(void_data, dtype=np.uint8))
+                else:
+                    # 正常情况下保存为属性
+                    f.attrs['metadata'] = void_data
+
+        finally:
+            del grid_copy
+            gc.collect()
 
     @staticmethod
-    def read_simulation(folder: str = None):
-        """读取保存的监视器数据
+    def read_simulation_old(folder: str = None):
+        """读取保存的grid
         静态方法，调用时应使用 data = Grid.read_simulation(folder="...")
         folder: 保存监视器数据的文件路径
+        read the saved grid from a folder.
+        这个函数已经过时，建议使用 read_simulation() 函数。
+        This function is deprecated, please use read_simulation() instead.
         """
-        from numpy import load
+        return
         if not folder:
             raise Exception("Please indicate the folder where your grid has been saved")
-        import pickle
         if not folder.endswith(".npz"):
             folder_bdz = folder + "\saved_grid.npz"
         try:
-            readings = load(folder_bdz, allow_pickle=True)
+            readings = np.load(folder_bdz, allow_pickle=True)
         except:
             folder_bdz = folder + "\detector_readings.npz"
-            readings = load(folder_bdz, allow_pickle=True)
+            readings = np.load(folder_bdz, allow_pickle=True)
         return pickle.loads(readings['serialized_instance'])
+
+    @staticmethod
+    def read_simulation(folder: str = None):
+        """读取 HDF5 保存的数据
+        read the saved grid from a folder using HDF5 format."""
+
+        if not folder:
+            raise ValueError("Folder path is required")
+
+        h5_path = path.join(folder, "saved_grid.h5")
+        if path.exists(h5_path):
+            with h5py.File(h5_path, 'r') as f:
+                # 恢复对象结构
+                if 'metadata_bytes' in f:
+                    # 从二进制数据集恢复
+                    metadata_bytes = f['metadata_bytes'][...].tobytes()
+                    grid_obj = pickle.loads(metadata_bytes)
+                else:
+                    # 从属性恢复
+                    metadata = f.attrs['metadata']
+                    if hasattr(metadata, 'tobytes'):
+                        grid_obj = pickle.loads(metadata.tobytes())
+                    else:
+                        grid_obj = pickle.loads(metadata)
+
+                # 恢复大型数据
+                if 'E' in f:
+                    grid_obj._grid.E = f['E'][...]
+                if 'H' in f:
+                    grid_obj._grid.H = f['H'][...]
+                if 'inverse_permittivity' in f:
+                    grid_obj._grid.inverse_permittivity = f['inverse_permittivity'][...]
+
+            return grid_obj
+
+        # 兼容旧格式
+        npz_path = path.join(folder, "saved_grid.npz")
+        if path.exists(npz_path):
+            readings = np.load(npz_path, allow_pickle=True)
+            return pickle.loads(readings['serialized_instance'])
+
+        raise FileNotFoundError("No saved simulation found in the specified folder")
 
     @staticmethod
     def dB_map(grid=None, folder=None, axis=None, field="E", field_axis="z",
@@ -1446,6 +1609,7 @@ class Grid:
         if axis == "z":
             x_stick = field.shape[0] * grid.grid_spacing_x * 1e6
             y_stick = field.shape[1] * grid.grid_spacing_y * 1e6
+        field = bd.numpy(field)
         plt.imshow(bd.transpose(field), vmin=vmin, vmax=vmax, cmap=cmap,
                    extent=[0, x_stick, 0, y_stick],
                    origin="lower")  # cmap 可以选择不同的颜色映射
@@ -1468,9 +1632,11 @@ class Grid:
             # 创建轮廓数据
             contour_data = bd.where(n_to_draw != bd.array(background_index), 1, 0)
 
-            plt.contour(bd.linspace(0, x_stick, field.shape[0]),
-                        bd.linspace(0, y_stick, field.shape[1]),
-                        contour_data.T, colors='black', linewidths=1)
+            plt.contour(
+                bd.numpy(bd.linspace(0, x_stick, field.shape[0])),
+                bd.numpy(bd.linspace(0, y_stick, field.shape[1])),
+                bd.numpy(contour_data.T),
+                colors='black', linewidths=1)
 
         # plt.ylim(-1, field.shape[1])
         # Make the figure full the canvas让画面铺满整个画布
@@ -1557,7 +1723,7 @@ class Grid:
         @param name_det: 监视器名称
         @param field: "E"或"H"
         """
-        import h5py
+
         E_path = f"{self.folder}\\{name_det}_E.h5"
         H_path = f"{self.folder}\\{name_det}_H.h5"
 
@@ -1626,6 +1792,7 @@ class Grid:
         #     data = bd.array(detector.real_H())
         else:
             raise ValueError("Parameter field should be either 'E' or 'H")
+        data = bd.numpy(data)
         # if data is None:
         #     detector = self._grid.detectors[0]
         #     data = bd.array([x for x in detector.detector_values()["%s" % field]])
@@ -1663,17 +1830,15 @@ class Grid:
         ###
 
         # TODO: 目前只考虑了线监视器
-        length = bd.linspace(0, shape[1], shape[1]) * self._grid.grid_spacing_x
-        time = bd.linspace(0, shape[0], shape[0]) * self._grid.time_step * 1e15
+        length = bd.numpy(bd.linspace(0, shape[1], shape[1]) * self._grid.grid_spacing_x)
+        time = bd.numpy(bd.linspace(0, shape[0], shape[0]) * self._grid.time_step * 1e15)
 
         # 创建一个画布，包含两个子图
         fig, axes = plt.subplots(2, 2, figsize=(12, 6))  # 1行2列的子图
 
         # 左侧子图: Space distribution at when the field is maximum
-        from numpy import argmax
-        from numpy import unravel_index
-        flattened_index = argmax(data)
-        time_step_max_field = unravel_index(flattened_index, data.shape)[0]
+        flattened_index = np.argmax(data)
+        time_step_max_field = np.unravel_index(flattened_index, data.shape)[0]
         if data.ndim == 3:
             axes[0][0].plot(length * 1e6, data[time_step_max_field, :, field_axis])
             # axes[0][0].set_xticks()  # 每隔10个显示一个刻度

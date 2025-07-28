@@ -23,7 +23,10 @@ give a significant performance boost.
 The ``cuda`` backends are only available for computers with a GPU.
 
 """
+# avoid duplicate library errors
 
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 ## Imports
 
 # Numpy Backend
@@ -77,12 +80,46 @@ class Backend:
 
 
 def _replace_float(func):
-    """replace the default dtype a function is called with"""
+    """replace the default dtype a function is called with
+    替换函数调用时的默认数据类型"""
+
+    # 预处理函数参数，确保都是numpy数组 / Pre-process function arguments to ensure they are numpy arrays
+    def preprocess_args(*args, **kwargs):
+        processed_args = []
+        for arg in args:
+            if hasattr(arg, 'device') and 'cuda' in str(arg.device):
+                # GPU张量先转到CPU再转numpy / GPU tensor to CPU then numpy
+                processed_args.append(arg.cpu().numpy())
+            elif hasattr(arg, 'numpy') and callable(getattr(arg, 'numpy')):
+                # CPU张量转numpy / CPU tensor to numpy
+                processed_args.append(arg.numpy())
+            elif hasattr(arg, 'device'):
+                # 其他torch张量 / Other torch tensors
+                processed_args.append(arg.detach().cpu().numpy())
+            else:
+                # 已经是numpy数组或其他类型 / Already numpy array or other types
+                processed_args.append(arg)
+
+        processed_kwargs = {}
+        for key, value in kwargs.items():
+            if hasattr(value, 'device') and 'cuda' in str(value.device):
+                processed_kwargs[key] = value.cpu().numpy()
+            elif hasattr(value, 'numpy') and callable(getattr(value, 'numpy')):
+                processed_kwargs[key] = value.numpy()
+            elif hasattr(value, 'device'):
+                processed_kwargs[key] = value.detach().cpu().numpy()
+            else:
+                processed_kwargs[key] = value
+
+        return processed_args, processed_kwargs
 
     @wraps(func)
     def new_func(self, *args, **kwargs):
-        result = func(*args, **kwargs)
-        if result.dtype in numpy_float_dtypes:
+        # 预处理参数 / Preprocess arguments
+        processed_args, processed_kwargs = preprocess_args(*args, **kwargs)
+
+        result = func(*processed_args, **processed_kwargs)
+        if hasattr(result, 'dtype') and result.dtype in numpy_float_dtypes:
             result = numpy.asarray(result, dtype=self.float)
         return result
 
@@ -128,6 +165,9 @@ class NumpyBackend(Backend):
 
     cos = staticmethod(numpy.cos)
     """ cosine of all elements in array """
+
+    cross = staticmethod(numpy.cross)
+    """ cross product of two arrays, only for fourier.FrequencyRountines.FFT """
 
     # 在 NumpyBackend 类中
     @staticmethod
@@ -180,6 +220,9 @@ class NumpyBackend(Backend):
     cat = staticmethod(numpy.concatenate)
     """ concatenate multiple arrays along a given dimension, only for fourier.FrequencyRountines.FFT """
 
+    full = staticmethod(numpy.full)
+    """ create an array filled with a constant value """
+
     @staticmethod
     def bmm(arr1, arr2):
         """batch matrix multiply two arrays"""
@@ -200,7 +243,17 @@ class NumpyBackend(Backend):
     zeros = _replace_float(numpy.zeros)
     """ create an array filled with zeros """
 
-    zeros_like = staticmethod(numpy.zeros_like)
+    @staticmethod
+    def zeros_like(arr):
+        """create an array filled with zeros with same shape as input
+        创建与输入相同形状的零填充数组"""
+        # 检查是否是GPU张量 / Check if GPU tensor
+        if hasattr(arr, 'device') and 'cuda' in str(arr.device):
+            arr = arr.cpu()
+        # 检查是否是torch张量 / Check if torch tensor
+        if hasattr(arr, 'numpy') and callable(getattr(arr, 'numpy')):
+            arr = arr.numpy()
+        return numpy.zeros_like(arr)
     """ create an array filled with zeros """
 
     linspace = _replace_float(numpy.linspace)
@@ -230,9 +283,22 @@ class NumpyBackend(Backend):
     numpy = _replace_float(numpy.asarray)
     """ convert the array to numpy array """
 
+    @staticmethod
+    def void(data):
+        if isinstance(data, bytes):
+            # 检查数据大小，如果太大则分块处理
+            if len(data) > 2 ** 31 - 1:  # numpy.void 的最大限制
+                # 对于大型数据，直接返回原始字节数据
+                return data
+            return numpy.void(data)
+        else:
+            arr_bytes = numpy.asarray(data).tobytes()
+            if len(arr_bytes) > 2 ** 31 - 1:
+                return arr_bytes
+            return numpy.void(arr_bytes)
+    """convert data to void array for HDF5 storage"""
 
 # Torch Backend
-
 if TORCH_AVAILABLE:
     import torch
 
@@ -305,6 +371,15 @@ if TORCH_AVAILABLE:
         """ concatenate multiple arrays along a given dimension, only for fourier.FrequencyRountines.FFT """
 
         @staticmethod
+        def cross(a, b, axis=-1):
+            """计算两个张量的叉积"""
+            if not torch.is_tensor(a):
+                a = torch.tensor(a)
+            if not torch.is_tensor(b):
+                b = torch.tensor(b)
+            return torch.cross(a, b, dim=axis)
+
+        @staticmethod
         def sqrt(x):
             if isinstance(x, torch.Tensor):
                 return torch.sqrt(x)
@@ -330,6 +405,9 @@ if TORCH_AVAILABLE:
         @staticmethod
         def transpose(arr, axes=None):
             """transpose array by flipping two dimensions"""
+            import numpy
+            if isinstance(arr, numpy.ndarray):
+                return numpy.transpose(arr, axes)
             if axes is None:
                 axes = tuple(range(len(arr.shape) - 1, -1, -1))
             return arr.permute(*axes)
@@ -348,6 +426,28 @@ if TORCH_AVAILABLE:
 
         bmm = staticmethod(torch.bmm)
         """ batch matrix multiply two arrays """
+
+        @staticmethod
+        def void(data):
+            """convert data to void array for HDF5 storage"""
+            import numpy
+            if isinstance(data, bytes):
+                # 检查数据大小，如果太大则分块处理
+                if len(data) > 2 ** 31 - 1:  # numpy.void 的最大限制
+                    # 对于大型数据，直接返回原始字节数据
+                    return data
+                return numpy.void(data)
+            else:
+                # 如果是torch张量，先转到CPU
+                if hasattr(data, 'cpu'):
+                    data = data.cpu()
+                if hasattr(data, 'numpy'):
+                    data = data.numpy()
+                arr_bytes = numpy.asarray(data).tobytes()
+                if len(arr_bytes) > 2 ** 31 - 1:
+                    return arr_bytes
+                return numpy.void(arr_bytes)
+        """ convert data to void array for HDF5 storage """
 
         @staticmethod
         def is_array(arr):
@@ -408,13 +508,13 @@ if TORCH_AVAILABLE:
         class TorchCudaBackend(TorchBackend):
             """Torch Cuda Backend"""
             #TODO: max, abs?
-            def ones(self, shape):
+            def ones(self, shape, dtype=None):
                 """create an array filled with ones"""
-                return torch.ones(shape, device="cuda")
+                return torch.ones(shape, device="cuda", dtype=dtype)
 
-            def zeros(self, shape):
+            def zeros(self, shape, dtype=None):
                 """create an array filled with zeros"""
-                return torch.zeros(shape, device="cuda")
+                return torch.zeros(shape, device="cuda", dtype=dtype)
 
             def array(self, arr, dtype=None):
                 """create an array from an array-like sequence"""
@@ -442,6 +542,21 @@ if TORCH_AVAILABLE:
                     start, stop + 0.5 * float(endpoint) * delta, delta, device="cuda"
                 )
 
+            @staticmethod
+            def void(data):
+                """convert data to void array for HDF5 storage"""
+                import numpy
+                if isinstance(data, bytes):
+                    # 检查数据大小，如果太大则分块处理
+                    if len(data) > 2 ** 31 - 1:  # numpy.void 的最大限制
+                        # 对于大型数据，直接返回原始字节数据
+                        return data
+                    return numpy.void(data)
+                else:
+                    arr_bytes = numpy.asarray(data).tobytes()
+                    if len(arr_bytes) > 2 ** 31 - 1:
+                        return arr_bytes
+                    return numpy.void(arr_bytes)
 
 ## Default Backend
 # this backend object will be used for all array/tensor operations.

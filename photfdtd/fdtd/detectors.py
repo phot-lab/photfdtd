@@ -17,6 +17,7 @@ from .backend import backend as bd
 from .constants import X, Y, Z, c
 from .conversions import simE_to_worldE, simH_to_worldH
 import h5py
+from numpy import cross
 
 
 ## Detector
@@ -149,7 +150,7 @@ class LineDetector:
             with h5py.File(self.grid.folder + f"//{self.name}_E.h5", "a") as f:
                 dset = f["E"]
                 # 存储数据，确保不会超出 E 的实际大小
-                dset[start_idx:end_idx] = self.real_E()[:end_idx - start_idx]
+                dset[start_idx:end_idx] = bd.numpy(self.real_E())[:end_idx - start_idx]
             print(f"Detector {self.name} saved E data from {start_idx} to {end_idx}")
             self.E = []
 
@@ -178,7 +179,7 @@ class LineDetector:
             with h5py.File(self.grid.folder + f"//{self.name}_H.h5", "a") as f:
                 dset = f["H"]
                 # 存储数据，确保不会超出 H 的实际大小
-                dset[start_idx:end_idx] = self.real_H()[:end_idx - start_idx]
+                dset[start_idx:end_idx] = bd.numpy(self.real_H())[:end_idx - start_idx]
             print(f"Detector {self.name} saved H data from {start_idx} to {end_idx}")
             self.H = []
 
@@ -218,7 +219,9 @@ class LineDetector:
     @property
     def poynting(self):
         # 似乎乘以H的共轭或非共轭都一样（因为H不是复数？）
-        return c * bd.cross(self.E, self.H, axis=-1)
+
+        return c * cross(self.E, self.H, axis=-1)
+
 
     @property
     def flux(self):
@@ -376,7 +379,7 @@ class BlockDetector:
             with h5py.File(self.grid.folder + f"//{self.name}_E.h5", "a") as f:
                 dset = f["E"]
                 # 存储数据，确保不会超出 E 的实际大小
-                dset[start_idx:end_idx] = self.real_E()[:end_idx - start_idx]
+                dset[start_idx:end_idx] = bd.numpy(self.real_E())[:end_idx - start_idx]
             print(f"Detector {self.name} saved E data from {start_idx} to {end_idx}")
             self.E = []
 
@@ -404,7 +407,7 @@ class BlockDetector:
             with h5py.File(self.grid.folder + f"//{self.name}_H.h5", "a") as f:
                 dset = f["H"]
                 # 存储数据，确保不会超出 H 的实际大小
-                dset[start_idx:end_idx] = self.real_H()[:end_idx - start_idx]
+                dset[start_idx:end_idx] = bd.numpy(self.real_H())[:end_idx - start_idx]
             print(f"Detector {self.name} saved H data from {start_idx} to {end_idx}")
             print(f"{self.grid.time_steps_passed} time steps passed")
             self.H = []

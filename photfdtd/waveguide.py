@@ -36,8 +36,6 @@ class Waveguide:
             grid=None,
             priority: int = 1
     ) -> None:
-        fdtd.set_backend("torch")
-        print(bd)
         if x == None:
             # If x not set, choose the center of grid. 如果没设置x，自动选仿真区域中心
             x = int(grid._grid_xlength / 2)

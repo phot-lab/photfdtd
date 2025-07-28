@@ -8,7 +8,7 @@
 # https://inst.eecs.berkeley.edu/~ee232/sp17/discussions/Discussion%207%20-%20Photonic%20circuit%20simulation.pptx
 
 # in the optical domain, the impedance would just be that of free space?
-
+import numpy as np
 from math import ceil
 from .backend import backend as bd
 from .detectors import LineDetector, BlockDetector, CurrentDetector
@@ -112,7 +112,7 @@ class FrequencyRoutines:
         # assumes a uniform timestep. It might be useful to add a .times vector to the grid
         # if the timestep is made variable at some point.
         # on the other hand, doing a non-uniform FFT is probably non-trivial at this point anyway
-        # times = bd.linspace(0,end_time + (required_padding*dt),
+        # times = np.linspace(0,end_time + (required_padding*dt),
         #                                         (input_length+required_padding))
 
     def compute_frequencies(self, length_with_padding, dt, freq_window_tuple=None):
@@ -121,7 +121,7 @@ class FrequencyRoutines:
         The indexes are for the real-frequency part of the span.
         '''
 
-        spectrum_freqs = bd.fftfreq(length_with_padding, d=dt)
+        spectrum_freqs = np.fft.fftfreq(length_with_padding, d=dt)
 
 
         if (freq_window_tuple == None):
@@ -130,8 +130,8 @@ class FrequencyRoutines:
             end_freq_idx = -1
         else:
             # closest frequencies
-            begin_freq_idx = bd.abs(spectrum_freqs - self.begin_freq).argmin()
-            end_freq_idx = bd.abs(spectrum_freqs - self.end_freq).argmin()
+            begin_freq_idx = np.abs(spectrum_freqs - self.begin_freq).argmin()
+            end_freq_idx = np.abs(spectrum_freqs - self.end_freq).argmin()
         print(self.begin_freq, self.end_freq)
         print(begin_freq_idx, end_freq_idx)
         print(spectrum_freqs.min(), spectrum_freqs.max())
@@ -191,35 +191,28 @@ class FrequencyRoutines:
         else:
             raise ValueError("Sorry, FFT can't yet interpret the argument given.")
 
-        input_data = bd.array(input_data)
+        input_data = bd.numpy(input_data)
         required_padding, _ = self.compute_padding(input_data,
                                                    self.grid.time_step,
                                                    freq_window_tuple=freq_window_tuple,
                                                    fft_num_bins_in_window=fft_num_bins_in_window,
                                                    fft_bin_freq_resolution=fft_bin_freq_resolution)
 
-        from .backend import NumpyBackend, TorchBackend, TorchCudaBackend
-        if isinstance(bd, NumpyBackend):
-            padding_mode = "edge"
-        elif isinstance(bd, (TorchBackend, TorchCudaBackend)):
-            padding_mode = "replicate"
-        else:
-            raise ValueError("Unsupported backend")
         # Padding makes spectrums more smoothier
 
-        # 检查输入数据的维度
-        if input_data.ndim == 1:
-            # 对 1D 数据进行填充
-            input_data = bd.cat([
-                input_data[:1].repeat(required_padding),  # 前填充
-                input_data,
-                input_data[-1:].repeat(required_padding)  # 后填充
-            ])
-        else:
-            # 对高维数据使用 torch.nn.functional.pad
-            input_data = bd.pad(input_data, (0, required_padding), padding_mode)
+        # # 检查输入数据的维度
+        # if input_data.ndim == 1:
+        #     # 对 1D 数据进行填充
+        #     input_data = np.cat([
+        #         input_data[:1].repeat(required_padding),  # 前填充
+        #         input_data,
+        #         input_data[-1:].repeat(required_padding)  # 后填充
+        #     ])
+        # else:
+        #     # 对高维数据使用 torch.nn.functional.pad
+        input_data = np.pad(input_data, (0, required_padding), "edge")
 
-        spectrum = bd.fft(input_data)
+        spectrum = np.fft.fft(input_data)
         spectrum_freqs, begin_freq_idx, end_freq_idx = self.compute_frequencies(
             input_data.shape[0], self.grid.time_step,
             freq_window_tuple=freq_window_tuple)
@@ -236,14 +229,14 @@ class FrequencyRoutines:
             return [], []
 
         if (isinstance(self.objs, SoftArbitraryPointSource)):
-            voltage_array = bd.array(self.objs.source_voltage)
-            current_array = bd.array(self.objs.current_detector.I)  # FIXME: this definitely isn't right
+            voltage_array = np.array(self.objs.source_voltage)
+            current_array = np.array(self.objs.current_detector.I)  # FIXME: this definitely isn't right
 
         elif (isinstance(self.objs, tuple) and isinstance(self.objs[0], (BlockDetector, LineDetector))
               and isinstance(self.objs[1], CurrentDetector)):
             # FIXME:
-            voltage_array = bd.array(self.objs[0].E)[:][0, 0, 0]
-            current_array = bd.array(self.objs[1].I)
+            voltage_array = np.array(self.objs[0].E)[:][0, 0, 0]
+            current_array = np.array(self.objs[1].I)
         else:
             raise ValueError("Sorry, FFT can't yet interpret the argument given.")
 
@@ -253,17 +246,17 @@ class FrequencyRoutines:
                                                    fft_num_bins_in_window=fft_num_bins_in_window,
                                                    fft_bin_freq_resolution=fft_bin_freq_resolution)
 
-        voltage_array = bd.reshape(voltage_array, self.grid.time_steps_passed)  # flatten
-        current_array = bd.reshape(current_array, self.grid.time_steps_passed)
+        voltage_array = np.reshape(voltage_array, self.grid.time_steps_passed)  # flatten
+        current_array = np.reshape(current_array, self.grid.time_steps_passed)
 
-        voltage_array = bd.pad(voltage_array, (0, required_padding), 'edge')
-        current_array = bd.pad(current_array, (0, required_padding), 'edge')
+        voltage_array = np.pad(voltage_array, (0, required_padding), 'edge')
+        current_array = np.pad(current_array, (0, required_padding), 'edge')
 
-        voltage_spectrum = bd.fft(voltage_array)
-        current_spectrum = bd.fft(current_array)
+        voltage_spectrum = np.fft(voltage_array)
+        current_spectrum = np.fft(current_array)
 
-        impedance_spectrum = bd.divide(voltage_spectrum, current_spectrum, out=
-        bd.zeros_like(voltage_spectrum), where=current_spectrum != 0)
+        impedance_spectrum = np.divide(voltage_spectrum, current_spectrum, out=
+        np.zeros_like(voltage_spectrum), where=current_spectrum != 0)
 
         spectrum_freqs, begin_freq_idx, end_freq_idx = self.compute_frequencies(
             voltage_array.shape[0], self.grid.time_step,
@@ -272,11 +265,11 @@ class FrequencyRoutines:
         return spectrum_freqs[begin_freq_idx:end_freq_idx], impedance_spectrum[begin_freq_idx:end_freq_idx]
 
         #
-        # voltages = bd.pad(voltages, (0, required_length), 'edge')
-        # currents = bd.pad(currents, (0, required_length), 'edge')
+        # voltages = np.pad(voltages, (0, required_length), 'edge')
+        # currents = np.pad(currents, (0, required_length), 'edge')
         #
-        # voltage_spectrum = bd.fft(voltages)
-        # current_spectrum = bd.fft(currents)
+        # voltage_spectrum = np.fft(voltages)
+        # current_spectrum = np.fft(currents)
         #
         # spectrum_freqs, begin_freq_idx, end_freq_idx = \
         #                         compute_frequencies(length_with_padding, dt, freq_window_tuple=None)

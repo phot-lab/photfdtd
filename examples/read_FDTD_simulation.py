@@ -1,7 +1,3 @@
-import photfdtd
-import os
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-photfdtd.fdtd.set_backend("torch") # 设置使用 torch 后端
 from photfdtd import Grid
 
 if __name__ == "__main__":
@@ -11,30 +7,28 @@ if __name__ == "__main__":
     grid.folder=filepath
     # grid.animate(fps=200)
     grid.visualize()
-    freqs, spectrum1 = grid.visualize_single_detector(name_det='detector_input')
-    freqs, spectrum2 = grid.visualize_single_detector(name_det="detector2")
-    freqs, spectrum3 = grid.visualize_single_detector(name_det="detector3")
+    freqs, spectrum2 = grid.visualize_single_detector(name_det="detector1")
 
-
-    import matplotlib.pyplot as plt
-
-    plt.plot(freqs, spectrum2 / spectrum1)
-    plt.ylabel("S parameter")
-    plt.xlabel("frequency (THz)")
-    plt.title("S21(f)")
-    plt.legend()
-    file_name = "S21"
-    plt.savefig(f"{grid.folder}/{file_name}.png")
-    plt.close()
-
-    plt.plot(freqs, (spectrum3 / spectrum1) ** 2)
-    plt.ylabel("S parameter")
-    plt.xlabel("frequency (THz)")
-    plt.title("S31(f)")
-    plt.legend()
-    file_name = "S31"
-    plt.savefig(f"{grid.folder}/{file_name}.png")
-    plt.close()
+    #
+    # import matplotlib.pyplot as plt
+    #
+    # plt.plot(freqs, spectrum2 / spectrum1)
+    # plt.ylabel("S parameter")
+    # plt.xlabel("frequency (THz)")
+    # plt.title("S21(f)")
+    # plt.legend()
+    # file_name = "S21"
+    # plt.savefig(f"{grid.folder}/{file_name}.png")
+    # plt.close()
+    #
+    # plt.plot(freqs, (spectrum3 / spectrum1) ** 2)
+    # plt.ylabel("S parameter")
+    # plt.xlabel("frequency (THz)")
+    # plt.title("S31(f)")
+    # plt.legend()
+    # file_name = "S31"
+    # plt.savefig(f"{grid.folder}/{file_name}.png")
+    # plt.close()
     # plt.plot(freqs, (spectrum2 / spectrum1) ** 2)
     # plt.ylabel("Transmission")
     # plt.xlabel("frequency (THz)")

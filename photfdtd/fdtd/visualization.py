@@ -20,6 +20,7 @@ from scipy.signal import hilbert  # TODO: Write hilbert function to replace usin
 
 # relative
 from .backend import backend as bd
+from .backend import TorchCudaBackend
 from . import conversions
 
 
@@ -314,7 +315,11 @@ def visualize(
     # 只显示波导结构的轮廓，而不显示整个波导
     if show_structure:
         if geo is None:
-            geo = sqrt(1 / grid.inverse_permittivity)
+            if bd.__class__ == TorchCudaBackend:
+                inv_eps = bd.numpy(grid.inverse_permittivity)
+            else:
+                inv_eps = grid.inverse_permittivity
+            geo = bd.sqrt(1 / inv_eps)
 
         # geo是四维矩阵
         geo = geo[:, :, :, -1]
@@ -325,7 +330,7 @@ def visualize(
         elif z is not None:
             n_to_draw = geo[:, :, z]
         # n_to_draw /= n_to_draw.max()
-        contour_data = where(n_to_draw != background_index, 1, 0)
+        contour_data = where(bd.numpy(n_to_draw) != bd.numpy(background_index), 1, 0)
         plt.contour(contour_data.T, colors='black', linewidths=1)
 
     # for obj in grid.objects:
