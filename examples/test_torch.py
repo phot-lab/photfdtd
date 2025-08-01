@@ -1,6 +1,6 @@
 import photfdtd.fdtd
 photfdtd.fdtd.set_backend("torch.cuda") # 设置使用 torch 后端
-from photfdtd import Waveguide, Grid, Solve, Index
+from photfdtd import Waveguide, Grid, Index
 
 if __name__ == "__main__":
     # This example shows a 2D simulation of a basic straight waveguide 本示例展示了一个基础矩形波导的二维仿真

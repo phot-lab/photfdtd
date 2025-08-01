@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from os import path
 import photfdtd.fdtd as fdtd
-import photfdtd.fdtd.backend as bd
 
 
 class Solve:
@@ -37,11 +36,11 @@ class Solve:
         if not filepath:
             filepath = grid.folder
         self.grid = grid._grid
-        self.geometry = bd.sqrt(1 / bd.float16(self.grid.inverse_permittivity))
+        self.geometry = np.sqrt(1 / np.float16(self.grid.inverse_permittivity))
         # for i in range(len(self.grid.objects)):
         #     self.geometry[self.grid.objects[i].x.start:self.grid.objects[i].x.stop,
         #     self.grid.objects[i].y.start:self.grid.objects[i].y.stop,
-        #     self.grid.objects[i].z.start:self.grid.objects[i].z.stop] = bd.sqrt(self.grid.objects[i].permittivity)
+        #     self.grid.objects[i].z.start:self.grid.objects[i].z.stop] = np.sqrt(self.grid.objects[i].permittivity)
 
         self.axis = axis.lower()
         self.index = index
@@ -79,11 +78,11 @@ class Solve:
         self.y = self.n.shape[1]
 
         # It's quite important to transpose n
-        self.n = bd.transpose(self.n, [1, 0, 2])
+        self.n = np.transpose(self.n, [1, 0, 2])
         plt.imshow(self.n[:, :, 0], cmap=cm.jet, origin="lower",
                    extent=[0, self.x * self.dx, 0, self.y * self.dy])
         # plt.axis("tight")
-        plt.clim([bd.amin(self.n), bd.amax(self.n)])
+        plt.clim([np.amin(self.n), np.amax(self.n)])
         # plt.xlim((0, self.n.shape[0] * self.grid.grid_spacing * 1e6))
         # plt.ylim((0, self.n.shape[1] * self.grid.grid_spacing * 1e6))
         if self.axis == "x":
@@ -139,9 +138,9 @@ class Solve:
             background_index = self.grid.background_index
         # NOTE: fdtd的单位是m，而philsol的单位是um
         if neff == None:
-            neff = bd.max(self.n)
+            neff = np.max(self.n)
         self.lam = lam * 10 ** 6
-        self.k = 2 * bd.pi / self.lam
+        self.k = 2 * np.pi / self.lam
         PML_width_x = lam / 4
         PML_width_y = lam / 4
         if x_boundary_low == "pml" and not x_thickness_low:
@@ -178,78 +177,78 @@ class Solve:
                                      y_thickness_low=y_thickness_low, x_boundary_high=x_boundary_high,
                                      y_boundary_high=y_boundary_high, x_thickness_high=x_thickness_high,
                                      y_thickness_high=y_thickness_high, background_index=background_index)
-        beta_in = 2. * bd.pi * neff / self.lam
+        beta_in = 2. * np.pi * neff / self.lam
         self.beta, Ex_field, Ey_field = ps.solve.solve(P, beta_in, neigs=neigs)
 
         flag_deleted = []
         print("%i modes are found" % neigs)
-        print("neff=", self.beta * self.lam / (2 * bd.pi))
+        print("neff=", self.beta * self.lam / (2 * np.pi))
 
         # Discard dispersion modes 丢掉耗散模
         for i in range(len(self.beta)):
-            # if abs(self.beta[i].imag * self.lam / (2 * bd.pi)) > 1e-5:
+            # if abs(self.beta[i].imag * self.lam / (2 * np.pi)) > 1e-5:
             #     flag_deleted.append(i)
             #     neigs -= 1
-            if abs(self.beta[i].real * self.lam / (2 * bd.pi)) < self.grid.background_index or abs(
-                    self.beta[i].imag * self.lam / (2 * bd.pi)) > 1e-5:
+            if abs(self.beta[i].real * self.lam / (2 * np.pi)) < self.grid.background_index or abs(
+                    self.beta[i].imag * self.lam / (2 * np.pi)) > 1e-5:
                 flag_deleted.append(i)
                 neigs -= 1
 
-        self.beta, Ex_field, Ey_field = bd.delete(self.beta, flag_deleted), \
-            bd.delete(Ex_field, flag_deleted, 0), \
-            bd.delete(Ey_field, flag_deleted, 0)
+        self.beta, Ex_field, Ey_field = np.delete(self.beta, flag_deleted), \
+            np.delete(Ex_field, flag_deleted, 0), \
+            np.delete(Ey_field, flag_deleted, 0)
 
         print("%i dispersion modes have been discarded" % len(flag_deleted))
 
-        self.effective_index = self.beta * self.lam / (2 * bd.pi)
+        self.effective_index = self.beta * self.lam / (2 * np.pi)
         print("neff=", self.effective_index)
 
         # Now calculate the other fields
-        Hx = bd.empty((neigs, Ex_field.shape[1]), dtype=complex)
-        Hy = bd.empty((neigs, Ex_field.shape[1]), dtype=complex)
-        Hz = bd.empty((neigs, Ex_field.shape[1]), dtype=complex)
+        Hx = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
+        Hy = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
+        Hz = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
 
         if self.axis == 'x':
-            Ex = bd.empty((neigs, Ex_field.shape[1]), dtype=complex)
+            Ex = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
 
             for i in range(neigs):
                 Ex[i], Hy[i], Hz[i], Hx[i] = ps.construct.extra_feilds(k0=self.k, beta=self.beta[i],
                                                                        Ex=Ex_field[i], Ey=Ey_field[i],
                                                                        matrices=matrices)
-            Ex = [bd.reshape(E_vec, (self.x, self.y)) for E_vec in Ex]
-            Ey = [bd.reshape(E_vec, (self.x, self.y)) for E_vec in Ex_field]
-            Ez = [bd.reshape(E_vec, (self.x, self.y)) for E_vec in Ey_field]
+            Ex = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ex]
+            Ey = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ex_field]
+            Ez = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ey_field]
 
 
         elif self.axis == 'y':
 
-            Ey = bd.empty((neigs, Ex_field.shape[1]), dtype=complex)
+            Ey = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
 
             for i in range(neigs):
                 Ey[i], Hx[i], Hz[i], Hy[i] = ps.construct.extra_feilds(k0=self.k, beta=self.beta[i],
                                                                        Ex=Ex_field[i], Ey=Ey_field[i],
                                                                        matrices=matrices)
 
-            Ey = [bd.reshape(E_vec, (self.x, self.y)) for E_vec in Ey]
-            Ex = [bd.reshape(E_vec, (self.x, self.y)) for E_vec in Ex_field]
-            Ez = [bd.reshape(E_vec, (self.x, self.y)) for E_vec in Ey_field]
+            Ey = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ey]
+            Ex = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ex_field]
+            Ez = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ey_field]
 
 
         elif self.axis == 'z':
 
-            Ez = bd.empty((neigs, Ex_field.shape[1]), dtype=complex)
+            Ez = np.empty((neigs, Ex_field.shape[1]), dtype=complex)
 
             for i in range(neigs):
                 Ez[i], Hx[i], Hy[i], Hz[i] = ps.construct.extra_feilds(k0=self.k, beta=self.beta[i], Ex=Ex_field[i],
                                                                        Ey=Ey_field[i], matrices=matrices)
             # (self.x, self.y)
-            Ez = [bd.reshape(E_vec, (self.x, self.y)) for E_vec in Ez]
-            Ex = [bd.reshape(E_vec, (self.x, self.y)) for E_vec in Ex_field]
-            Ey = [bd.reshape(E_vec, (self.x, self.y)) for E_vec in Ey_field]
+            Ez = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ez]
+            Ex = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ex_field]
+            Ey = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Ey_field]
 
-        Hx = [bd.reshape(E_vec, (self.x, self.y)) for E_vec in Hx]
-        Hy = [bd.reshape(E_vec, (self.x, self.y)) for E_vec in Hy]
-        Hz = [bd.reshape(E_vec, (self.x, self.y)) for E_vec in Hz]
+        Hx = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Hx]
+        Hy = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Hy]
+        Hz = [np.reshape(E_vec, (self.x, self.y)) for E_vec in Hz]
 
         dic = {"number_of_modes": neigs, "axis": self.axis, "grid_spacing_x": self.dx, "grid_spacing_y": self.dy,
                "lam": lam,
@@ -269,6 +268,7 @@ class Solve:
                   ) -> None:
         '''
         绘制模式，保存图片与相应的有效折射率
+        :param filepath:
         :param data: dic returned by calculated_mode
         :param content: "real_part", "amplitude", "imaginary_part", "phase"
         :param TE_fractions: TE分量的比值列表
@@ -286,20 +286,20 @@ class Solve:
             for i in range(data["number_of_modes"]):  # For each eigenvalue
                 plt.figure()
                 if content == "real_part":
-                    plot_matrix = bd.transpose(data[j][i].real)
+                    plot_matrix = np.transpose(data[j][i].real)
                 elif content == "amplitude":
-                    plot_matrix = bd.transpose(abs(data[j][i]))
+                    plot_matrix = np.transpose(abs(data[j][i]))
                 elif content == "imaginary_part":
-                    plot_matrix = bd.transpose(data[j][i].imag)
+                    plot_matrix = np.transpose(data[j][i].imag)
                 elif content == "phase":
-                    plot_matrix = bd.transpose(bd.angle(data[j][i]))
+                    plot_matrix = np.transpose(np.angle(data[j][i]))
 
                 plt.imshow(plot_matrix, cmap=cm.jet, origin="lower",
                            # 由于做了转置，所以这里要交换x， y
                            extent=[0, plot_matrix.shape[1] * dx,
                                    0, plot_matrix.shape[0] * dy])
                 # plt.axis("tight")
-                plt.clim([bd.amin(plot_matrix), bd.amax(plot_matrix)])
+                plt.clim([np.amin(plot_matrix), np.amax(plot_matrix)])
                 plt.colorbar()
                 if axis == "x":
                     plt.xlabel('y/um')
@@ -322,14 +322,14 @@ class Solve:
         for i in range(data["number_of_modes"]):
             E_intensity = data["Ex"][i].real ** 2 + data["Ey"][i].real ** 2 + data["Ez"][i].real ** 2
             H_intensity = data["Hx"][i].real ** 2 + data["Hy"][i].real ** 2 + data["Hz"][i].real ** 2
-            E_intensity = bd.transpose(E_intensity)
-            H_intensity = bd.transpose(H_intensity)
+            E_intensity = np.transpose(E_intensity)
+            H_intensity = np.transpose(H_intensity)
             plt.figure()
             plt.imshow(E_intensity, cmap=cm.jet, origin="lower",
                        # 由于做了转置，所以这里要交换x， y
                        extent=[0, E_intensity.shape[1] * dx,
                                0, E_intensity.shape[0] * dy])
-            plt.clim([bd.amin(E_intensity), bd.amax(E_intensity)])
+            plt.clim([np.amin(E_intensity), np.amax(E_intensity)])
             plt.colorbar()
             if axis == "x":
                 plt.xlabel('y/um')
@@ -351,21 +351,21 @@ class Solve:
             plt.title(f'E_intensity {mode_type}\nneff={effective_index[i]}')
 
             # 计算电场强度的最大值
-            max_intensity = bd.amax(E_intensity)
+            max_intensity = np.amax(E_intensity)
             # 使用最大值的 10% 作为阈值，可以根据需要调整这个比例
             threshold = 0.1 * max_intensity
             # 计算电场不为零的区域
-            non_zero_region = bd.where(E_intensity > threshold)  # 找到电场强度大于某个阈值的区域
+            non_zero_region = np.where(E_intensity > threshold)  # 找到电场强度大于某个阈值的区域
             # 检查数组是否为空，以避免后续报错
             if non_zero_region[0].size == 0:
                 print(f"Mode {i}: No regions with sufficient E_intensity.")
                 continue
             # 计算电场不为零区域的边界
-            min_y, max_y = bd.min(non_zero_region[0]), bd.max(non_zero_region[0])
-            min_x, max_x = bd.min(non_zero_region[1]), bd.max(non_zero_region[1])
+            min_y, max_y = np.min(non_zero_region[0]), np.max(non_zero_region[0])
+            min_x, max_x = np.min(non_zero_region[1]), np.max(non_zero_region[1])
             # 生成箭头放置的点
-            x_points = bd.linspace(min_x, max_x, int(bd.sqrt(number)), dtype=int)
-            y_points = bd.linspace(min_y, max_y, int(bd.sqrt(number)), dtype=int)
+            x_points = np.linspace(min_x, max_x, int(np.sqrt(number)), dtype=int)
+            y_points = np.linspace(min_y, max_y, int(np.sqrt(number)), dtype=int)
             # 确定最大箭头长度和宽度，并确保矩形波导和光纤箭头的一致性
             fixed_grid_points = 125  #固定的网格点
             # 暂时写成dx
@@ -384,7 +384,7 @@ class Solve:
                 for x in x_points:
                     Ex_val = Ex[y, x]
                     Ey_val = Ey[y, x]
-                    magnitude = bd.sqrt(Ex_val ** 2 + Ey_val ** 2)
+                    magnitude = np.sqrt(Ex_val ** 2 + Ey_val ** 2)
 
                     if E_intensity[y, x] > threshold:
                         # 根据相对电场强度比例调整箭头长度和宽度
@@ -415,7 +415,7 @@ class Solve:
                        # 由于做了转置，所以这里要交换x， y
                        extent=[0, H_intensity.shape[1] * dx * 1e6,
                                0, H_intensity.shape[0] * dx * 1e6])
-            plt.clim([bd.amin(H_intensity), bd.amax(H_intensity)])
+            plt.clim([np.amin(H_intensity), np.amax(H_intensity)])
             plt.colorbar()
             if axis == "x":
                 plt.xlabel('y/um')
@@ -437,20 +437,20 @@ class Solve:
         # https://optics.ansys.com/hc/en-us/articles/360034395354-Calculating-the-effective-mode-area-of-a-waveguide-mode
 
         # Draw neff plot
-        # plt.plot(bd.linspace(1, len(effective_index), len(effective_index)), effective_index.real, label='Line',
+        # plt.plot(np.linspace(1, len(effective_index), len(effective_index)), effective_index.real, label='Line',
         #          marker="o")
         # plt.title('neff plot')
-        # plt.xticks(bd.arange(1, len(effective_index), 1))
+        # plt.xticks(np.arange(1, len(effective_index), 1))
         # plt.xlabel('mode')
         # plt.savefig(fname='%s\\%s.png' % (filepath, 'neff_plot'))
         # plt.close()
 
         # Draw loss plot
-        # loss = -20 * bd.log10(bd.e ** (-2 * bd.pi * effective_index.imag / lam))
-        # plt.plot(bd.linspace(1, len(effective_index), len(effective_index)), loss, label='Line',
+        # loss = -20 * np.log10(np.e ** (-2 * np.pi * effective_index.imag / lam))
+        # plt.plot(np.linspace(1, len(effective_index), len(effective_index)), loss, label='Line',
         #          marker="o")
         # plt.title('loss plot')
-        # plt.xticks(bd.arange(1, len(effective_index), 1))
+        # plt.xticks(np.arange(1, len(effective_index), 1))
         # plt.xlabel('mode')
         # plt.ylabel('dB/m')
         # plt.savefig(fname='%s\\%s.png' % (filepath, 'loss_plot'))
@@ -469,7 +469,7 @@ class Solve:
         if not index:
             data = dic
             if format == "npz":
-                bd.savez(path.join(folder, "saved_modes"), **data)
+                np.savez(path.join(folder, "saved_modes"), **data)
             elif format == "txt":
                 # 打开文件，以写入模式打开，如果文件不存在则创建
                 import os
@@ -480,11 +480,11 @@ class Solve:
                 values = list(data.values())
 
                 # 创建一个 NumPy 数组，保存键和值
-                data = bd.array([keys, values], dtype=object).T
-                bd.set_printoptions(threshold=bd.inf)
+                data = np.array([keys, values], dtype=object).T
+                np.set_printoptions(threshold=np.inf)
                 # 保存为文本文件
-                bd.savetxt(filepath, data, fmt='%s')
-                bd.set_printoptions()
+                np.savetxt(filepath, data, fmt='%s')
+                np.set_printoptions()
                 print("txt has been saved")
         elif index:
             # 字典是可变对象，在函数内部修改dic会同时修改函数外的dic
@@ -495,7 +495,7 @@ class Solve:
                 data[i] = dic[i][index]
 
             if format == "npz":
-                bd.savez(path.join(folder, "saved_modes"), **data)
+                np.savez(path.join(folder, "saved_modes"), **data)
             elif format == "txt":
                 # 打开文件，以写入模式打开，如果文件不存在则创建
                 import os
@@ -506,18 +506,18 @@ class Solve:
                 values = list(data.values())
 
                 # 创建一个 NumPy 数组，保存键和值
-                data = bd.array([keys, values], dtype=object).T
-                bd.set_printoptions(threshold=bd.inf)
+                data = np.array([keys, values], dtype=object).T
+                np.set_printoptions(threshold=np.inf)
                 # 保存为文本文件
-                bd.savetxt(filepath, data, fmt='%s')
-                bd.set_printoptions()
+                np.savetxt(filepath, data, fmt='%s')
+                np.set_printoptions()
                 print("txt has been saved")
 
     @staticmethod
     def read_mode(folder):
         if not folder.endswith("saved_modes.npz"):
             folder = folder + "\\saved_modes.npz"
-        readings = bd.load(folder, allow_pickle=True)
+        readings = np.load(folder, allow_pickle=True)
         names = readings.files
         data = {}
         i = 0
@@ -560,18 +560,18 @@ class Solve:
         #公式计算
         for i, (Ex, Ey, Ez) in enumerate(zip(Ex_list, Ey_list, Ez_list)):
             # 计算 |E_x|^2, |E_y|^2, |E_z|^2
-            Ex2 = bd.abs(Ex) ** 2
-            Ey2 = bd.abs(Ey) ** 2
-            Ez2 = bd.abs(Ez) ** 2
+            Ex2 = np.abs(Ex) ** 2
+            Ey2 = np.abs(Ey) ** 2
+            Ez2 = np.abs(Ez) ** 2
             if axis == 'x':
-                numerator = bd.sum(Ey2) * grid_area  #分子
-                denominator = bd.sum(Ey2 + Ez2) * grid_area  #分母
+                numerator = np.sum(Ey2) * grid_area  #分子
+                denominator = np.sum(Ey2 + Ez2) * grid_area  #分母
             elif axis == 'y':
-                numerator = bd.sum(Ex2) * grid_area
-                denominator = bd.sum(Ex2 + Ez2) * grid_area
+                numerator = np.sum(Ex2) * grid_area
+                denominator = np.sum(Ex2 + Ez2) * grid_area
             elif axis == 'z':
-                numerator = bd.sum(Ex2) * grid_area
-                denominator = bd.sum(Ex2 + Ey2) * grid_area
+                numerator = np.sum(Ex2) * grid_area
+                denominator = np.sum(Ex2 + Ey2) * grid_area
             TE_fraction = numerator / denominator if denominator != 0 else 0
             # TE_fraction_percentage = round(TE_fraction * 100)  # 转为百分比并四舍五入
             TE_fractions.append(TE_fraction)
@@ -588,10 +588,10 @@ class Solve:
         #     f[i] = self.Ey_fields[i].real / self.Ex_fields[i].real
         #     plt.figure()
         #     plt.pcolor(self.x, self.y, self.n[:, :, 0], cmap=cm.Blues_r)
-        #     plt.clim([1, bd.amax(self.n)])
+        #     plt.clim([1, np.amax(self.n)])
         #
-        #     plot_matrix = bd.transpose(f[i].real)
-        #     levels = bd.linspace(bd.min(plot_matrix), bd.max(plot_matrix), n_levels + 2)
+        #     plot_matrix = np.transpose(f[i].real)
+        #     levels = np.linspace(np.min(plot_matrix), np.max(plot_matrix), n_levels + 2)
         #     plt.pcolor(self.x, self.y, plot_matrix, cmap=cm.jet)
         #
         #     plt.savefig(fname='%s\\%s%f.png' % (self.filepath, 'EyEz', self.effective_index[i]))
@@ -602,21 +602,21 @@ class Solve:
               steps: int = 5,
               lams: list = []):
         # 在[lams[0], lams[1]]范围内计算steps个点, lam单位为um
-        lams = bd.linspace(lams[0], lams[1], steps)
+        lams = np.linspace(lams[0], lams[1], steps)
 
         # phisol包在这里使用了一个函数来猜测扫描区间内折射率随波长的变化，但由于我们已经有材料库，所以应该用材料库的数据来估算。
         # TODO：这段代码暂时没用，有时间完成它
         # A = 2.17954368571
-        # B = bd.log(2.17954368571 / 1.75292972992) / 0.7
-        # self.n_guess = A * bd.exp(- B * (self.lam - 0.3))
+        # B = np.log(2.17954368571 / 1.75292972992) / 0.7
+        # self.n_guess = A * np.exp(- B * (self.lam - 0.3))
         # 暂时用下式估算（只是测试代码是否可用，在物理上没有意义！）
 
         pass
-        # n = bd.zeros((steps, self.n.shape[0], self.n.shape[1], self.n.shape[2]))
+        # n = np.zeros((steps, self.n.shape[0], self.n.shape[1], self.n.shape[2]))
         # for i in range(steps):
         #     n[i] = self.n
-        #     env_index = bd.zeros((self.n.shape[0], self.n.shape[1], self.n.shape[2]))
-        #     env_index += bd.sqrt(bd.amax(self.grid.inverse_permittivity) * bd.amax(self.grid.inverse_permeability))
+        #     env_index = np.zeros((self.n.shape[0], self.n.shape[1], self.n.shape[2]))
+        #     env_index += np.sqrt(np.amax(self.grid.inverse_permittivity) * np.amax(self.grid.inverse_permeability))
         #     # mask.shape=(self.n.shape[0], self.n.shape[1], self.n.shape[2]), 其元素为True或False
         #     mask = n[i] != env_index
         #     # 若折射率!=环境折射率，则减去波长/10（仅为测试）
@@ -626,13 +626,13 @@ class Solve:
         # neigs = 5
         #
         # # 由self.Ex_fields还原calculate_mode函数中的Ex
-        # Ex = bd.array([bd.ravel(E_field) for E_field in self.Ex_fields])
-        # Ex = bd.reshape(Ex, (self.neigs, self.Ex_fields[0].shape[0] * self.Ex_fields[0].shape[1]))
-        # Ey = bd.array([bd.ravel(E_field) for E_field in self.Ey_fields])
-        # Ey = bd.reshape(Ex, (self.neigs, self.Ey_fields[0].shape[0] * self.Ey_fields[0].shape[1]))
+        # Ex = np.array([np.ravel(E_field) for E_field in self.Ex_fields])
+        # Ex = np.reshape(Ex, (self.neigs, self.Ex_fields[0].shape[0] * self.Ex_fields[0].shape[1]))
+        # Ey = np.array([np.ravel(E_field) for E_field in self.Ey_fields])
+        # Ey = np.reshape(Ex, (self.neigs, self.Ey_fields[0].shape[0] * self.Ey_fields[0].shape[1]))
         #
         # # E_in将作为E_trial输入到函数ps.solve.solve中，其作用是作为迭代的起始向量，它是(self.neigs, self.grid.xlength*self.grid.ylength)的ndarray
-        # E_in = bd.concatenate((Ex[0], Ey[0]))
+        # E_in = np.concatenate((Ex[0], Ey[0]))
         #
         # # Now we have a go sweeping
         # beta_out = []
@@ -641,24 +641,24 @@ class Solve:
         #
         # # n_trial是一个规格为（steps)的一维矩阵，其值为材料在对应波长的折射率
         # # 这句代码仅作测试，没有物理意义！
-        # n_trial = bd.amax(self.n) - lams / 10
+        # n_trial = np.amax(self.n) - lams / 10
         #
         # # TODO: Fix complex casting warning （这是phisol包原作者留下的TODO，看不懂什么意思）
         # for i in range(steps):
-        #     k = 2. * bd.pi / lams[i]
+        #     k = 2. * np.pi / lams[i]
         #     P, _ = ps.eigen_build(k, n[i], self.grid.grid_spacing * 1e6, self.grid.grid_spacing * 1e6)
         #
         #     # TODO: Fix complex casting warning
         #     # 为什么要计算neigs个模式
         #     beta, Ex, Ey = ps.solve.solve(P,
-        #                                   2. * n_trial[i] * bd.pi / lams[i],
+        #                                   2. * n_trial[i] * np.pi / lams[i],
         #                                   E_trial=E_in,
         #                                   neigs=neigs)
         #
         #     Ey_plot.append(
-        #         [bd.reshape(E_vec, (self.Ex_fields[0].shape[0], self.Ex_fields[0].shape[1])) for E_vec in Ey])
+        #         [np.reshape(E_vec, (self.Ex_fields[0].shape[0], self.Ex_fields[0].shape[1])) for E_vec in Ey])
         #     Ex_plot.append(
-        #         [bd.reshape(E_vec, (self.Ex_fields[0].shape[0], self.Ex_fields[0].shape[1])) for E_vec in Ex])
+        #         [np.reshape(E_vec, (self.Ex_fields[0].shape[0], self.Ex_fields[0].shape[1])) for E_vec in Ex])
         #     beta_out.append(beta)
         #
         # index = 0  # Select starting mode
@@ -673,9 +673,9 @@ class Solve:
         #
         # # Plot selected mode for testing
         # # plt.figure()
-        # # xend = bd.size(x)
-        # # yend = bd.size(y)
-        # # plt.pcolor(x, y, bd.transpose(Eyplottrace[0].real), cmap=cm.jet)
+        # # xend = np.size(x)
+        # # yend = np.size(y)
+        # # plt.pcolor(x, y, np.transpose(Eyplottrace[0].real), cmap=cm.jet)
         # # plt.title("Initial selected mode")
         # # plt.show()
         #
@@ -684,16 +684,16 @@ class Solve:
         # for i in range(steps - 1):
         #     # Takes product of all modes with all next modes the largest value should be the same mode!
         #     # 使用了 numpy.einsum() 函数来计算两个电场 Ey_plot[i] 和 Ey_plot[i+1] 的张量积
-        #     prod_next = abs(bd.einsum('kij, lij', Ey_plot[i], Ey_plot[i + 1]))
+        #     prod_next = abs(np.einsum('kij, lij', Ey_plot[i], Ey_plot[i + 1]))
         #
-        #     # 将当前时刻的电场矩阵（Ey_plot[i]）与下一时刻的电场矩阵的内积（prod_next）进行乘积运算（bd.einsum('kij, kl', Ey_plot[i], prod_next)），
+        #     # 将当前时刻的电场矩阵（Ey_plot[i]）与下一时刻的电场矩阵的内积（prod_next）进行乘积运算（np.einsum('kij, kl', Ey_plot[i], prod_next)），
         #     # 并将结果添加到电场轨迹列表 E_trace 中
-        #     E_trace.append(bd.einsum('kij, kl', Ey_plot[i], prod_next))  # New reordering method. WIP
+        #     E_trace.append(np.einsum('kij, kl', Ey_plot[i], prod_next))  # New reordering method. WIP
         #
         #     # 找到一个多维数组prod_next中指定行index中的最大值，然后返回这个最大值在该行的列索引
         #     # 我估计这是在找不同波长下的基模，假如想看其他模式的扫描图，就得更改代码
         #     # TODO:完成它
-        #     index = bd.argmax(prod_next[index, :])
+        #     index = np.argmax(prod_next[index, :])
         #     indices.append(index)  # Append the index, for debugging
         #
         #     beta_trace.append(beta_out[i + 1][index])
@@ -704,7 +704,7 @@ class Solve:
         #
         # # Now we can plot the dispersion and e field
         # plt.figure()
-        # plt.plot(lams, bd.real(beta_trace))
+        # plt.plot(lams, np.real(beta_trace))
         # plt.xlabel('$/lambda / /mu m$')
         # plt.ylabel(r'$/beta [ /mu m^{-1} ]$')
         # plt.title("Structure dispersion")
@@ -714,8 +714,8 @@ class Solve:
         # # Finally plot the mode at some sweep position 'some_random_point', for testing
         # # plt.figure()
         # # some_random_point = -1  # Last value in sweep
-        # # xend = bd.size(x)
-        # # yend = bd.size(y)
-        # # plt.pcolor(x, y, bd.transpose(Eyplottrace[some_random_point].real), cmap=cm.inferno)
+        # # xend = np.size(x)
+        # # yend = np.size(y)
+        # # plt.pcolor(x, y, np.transpose(Eyplottrace[some_random_point].real), cmap=cm.inferno)
         # # plt.title("Selected mode")
         # plt.show()

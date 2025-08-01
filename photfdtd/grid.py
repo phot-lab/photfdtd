@@ -1,13 +1,12 @@
+import photfdtd
 import photfdtd.fdtd as fdtd
 import photfdtd.fdtd.backend as bd
-import matplotlib.pyplot as plt
-from .waveguide import Waveguide
-import numpy as np
-import os
-from os import path, makedirs
-from .index import Index
 import photfdtd.fdtd.constants as constants
 import photfdtd.fdtd.conversions as conversions
+
+import matplotlib.pyplot as plt
+import numpy as np
+import os
 from dataclasses import dataclass
 from typing import Optional
 import h5py
@@ -24,12 +23,15 @@ class Subregion:
 
 class Grid:
     def __init__(
-            self, grid_xlength=100, grid_ylength=200, grid_zlength=50, grid_spacing=20e-9,
+            self, grid_xlength=100, grid_ylength=200, grid_zlength=50,
+            grid_spacing=20e-9,
             grid_spacing_x: float = None,
             grid_spacing_y: float = None,
             grid_spacing_z: float = None,
             subregions: list = None,
-            permittivity=1.0, permeability=1.0, courant_number=None, foldername=" ",
+            permittivity=1.0, permeability=1.0,
+            courant_number=None,
+            foldername=" ",
             folder=None,
             set_PML: bool = True
     ) -> None:
@@ -45,14 +47,18 @@ class Grid:
             permeability (float, optional): magnetic relative permeability of the background,环境相对磁导率 1.0
             permittivity (float, optional): electrical relative permittivity of the background,环境相对介电常数 1.0
             (refractive_index ** 2 = permeability * permittivity, 对大部分材料permeability=1.0)
-            courant_number: 科朗数 默认为None
-            foldername: 文件夹名称, 若其不存在将在目录下创建该文件夹
+            courant_number: 科朗数，None为默认
+            foldername: 保存结果的文件夹名称
+            folder: 保存结果的文件夹路径, None为当前目录下的foldername
+            set_PML: 是否设置PML边界条件, 默认True
         Note:
             The units of E and H field in this package have been scaled:
             E(r, t) = √ϵ0 x E_real(r, t)
             H(r, t) = √μ0 x H_real(r, t)
+        Example:
+            grid = Grid(grid_xlength=4e-6, grid_ylength=4e-6, grid_zlength=4e-6, grid_spacing=20e-9,
+            permittivity=background_index ** 2, foldername="test_torch")
         """
-        # fdtd.set_backend("torch")  # set backend to torch
         if grid_spacing_x is None:
             grid_spacing_x = grid_spacing
         if grid_spacing_y is None:
@@ -70,7 +76,7 @@ class Grid:
         else:
             current_dir = os.getcwd()
             self.folder = os.path.join(current_dir, foldername)
-        makedirs(self.folder, exist_ok=True)
+        os.makedirs(self.folder, exist_ok=True)
 
         self.x_coordinates = bd.full(grid_xlength, grid_spacing_x)
         self.y_coordinates = bd.full(grid_ylength, grid_spacing_y)
@@ -102,7 +108,18 @@ class Grid:
 
         self.flag_PML_not_set = True if set_PML else False
 
-    def _handle_unit(self, lengths, grid_spacing=None):
+    def _handle_unit(self, lengths, grid_spacing=None) -> list:
+        """处理单位，将SI单位转换为网格间距单位
+        Handle the unit of lengths, convert SI units to grid spacing units.
+        Args:
+            lengths (list): 长度列表，SI单位(m)
+            grid_spacing (float, optional): 网格间距单位，默认为None，使用Grid对象的grid_spacing属性
+        Returns:
+            list: 转换后的长度列表，单位为网格间距单位
+        Examples:
+            xlength, x, = grid._handle_unit([xlength, x], grid_spacing=grid._grid.grid_spacing_x)
+            xlength = grid._handle_unit([xlength], grid_spacing=grid._grid.grid_spacing_x)[0]
+            """
         if grid_spacing is None:
             grid_spacing = self._grid.grid_spacing
         # 把SI单位变成空间步长单位 SI unit -> grid spacing unit
@@ -113,17 +130,21 @@ class Grid:
 
         return lengths
 
-    def _calculate_time(self):
-        # calculate total time for FDTD simulation
-        # return: total time in timesteps
+    def _calculate_time(self) -> int:
+        """calculate total time for FDTD simulation
+        return: total time in timesteps"""
         n = bd.sqrt(1 / self._grid.inverse_permittivity.min())
         # 默认传播方向为z default propagating direction: z
         L = max(self._grid_xlength, self._grid_ylength, self._grid_zlength) * self._grid.grid_spacing_z
         time = int(L * 1.5 * n / constants.c / self._grid.time_step)  # Multiply 1.5 to make sure stabilization
         return time
 
-    def _check_parameters(self, x_start=None, x_end=None, y_start=None, y_end=None, z_start=None, z_end=None,
-                          object_to_check=None, name=None):
+    def _check_parameters(self,
+                          x_start=None, x_end=None, y_start=None, y_end=None, z_start=None, z_end=None,
+                          object_to_check=None, name=None) -> None:
+        """检查参数是否在网格范围内
+        Check if the parameters are within the grid range.
+            """
         if object_to_check:
             obj = object_to_check  # 缓存引用
             x_start, x_end = obj.x, obj.xlength + obj.x
@@ -150,6 +171,8 @@ class Grid:
                       grid_spacing_x=None,
                       grid_spacing_y=None,
                       grid_spacing_z=None):
+        """王硕在做"""
+        return
         # subregions中每个方向仅允许有一个subregion
         for subregion in subregions:
             cell_size = subregion.cell_size
@@ -199,8 +222,12 @@ class Grid:
     #
     #     pass
 
-    def add_object(self, object: Waveguide):
-
+    def add_object(self, object: photfdtd.Waveguide):
+        """添加一个光学波导到网格中
+        Add an optical waveguide to the grid.
+        Args:
+            object: photfdtd.Waveguide object, the waveguide to be added to the grid
+            """
         for internal_object in object._internal_objects:
 
             if internal_object == 0:
@@ -215,7 +242,7 @@ class Grid:
                                 background_index=internal_object.background_index,
                                 priority_matrix=internal_object.priority_matrix)
 
-    def del_object(self, object: Waveguide):
+    def del_object(self, object: photfdtd.Waveguide):
         # TODO: unfinished, no use
         for internal_object in object._internal_objects:
 
@@ -238,7 +265,15 @@ class Grid:
                 pml_width=None,
                 pml_width_x=None,
                 pml_width_y=None,
-                pml_width_z=None):
+                pml_width_z=None) -> None:
+        """
+        设置PML边界条件
+        :param pml_width:
+        :param pml_width_x:
+        :param pml_width_y:
+        :param pml_width_z:
+        :return: None
+        """
         if pml_width is not None:
             pml_width_x = pml_width if pml_width_x is None else pml_width_x
             pml_width_y = pml_width if pml_width_y is None else pml_width_y
@@ -290,35 +325,29 @@ class Grid:
             axis: str = "y"
     ):
         """
-        @param source_type: 光源种类：点或线或面 "pointsource", "linesource", "planesource"
-        @param wavelength: 波长(m)
-        @param period:周期
-        @param amplitude: 振幅
-        @param phase_shift: 相移
-        @param name: 名称
-        @param waveform: default to "gaussian" 波形 "plane":平面波 "gaussian": 高斯波
-        @param cycle: number of cycles of Hanning window pulse汉宁窗脉冲的周期数（仅使用汉宁hanning脉冲时有用）
-        @param hanning_dt: 汉宁窗宽度（仅使用汉宁hanning脉冲时有用）
-        @param polarization: 偏振
-        @param pulse_type: 脉冲类型 "gaussian" 或 "hanning" 或 "CW"
-        @param pulse_length: 脉宽(s)（仅用于高斯脉冲）
-        @param offset: 脉冲中心(s)（仅用于高斯脉冲）
-        @param x_start, y_start, z_start, x_end, y_end, z_end: parameters for 'linesource'
-        @param x, y, z: center position, parameters for 'linesource' & pointsource
-        @param xlength, ylength, zlength: cross length, parameters for '"planesource"
-        @param axis: "x", "y", "z", only for "planesource"
+        Set a source in the grid.
+        Args:
+            @param source_type: 光源种类：点或线或面 "pointsource", "linesource", "planesource"
+            @param wavelength: 波长(m)
+            @param period:周期
+            @param amplitude: 振幅
+            @param phase_shift: 相移
+            @param name: 名称
+            @param waveform: default to "gaussian" 波形 "plane":平面波 "gaussian": 高斯波
+            @param cycle: number of cycles of Hanning window pulse汉宁窗脉冲的周期数（仅使用汉宁hanning脉冲时有用）
+            @param hanning_dt: 汉宁窗宽度（仅使用汉宁hanning脉冲时有用）
+            @param polarization: 偏振
+            @param pulse_type: 脉冲类型 "gaussian" 或 "hanning" 或 "CW"
+            @param pulse_length: 脉宽(s)（仅用于高斯脉冲）
+            @param offset: 脉冲中心(s)（仅用于高斯脉冲）
+            @param x_start, y_start, z_start, x_end, y_end, z_end: parameters for 'linesource'
+            @param x, y, z: center position, parameters for 'linesource' & pointsource
+            @param xlength, ylength, zlength: cross length, parameters for '"planesource"
+            @param axis: "x", "y", "z", only for "planesource"
         """
 
-        # if pml_width_x != 0:
-        #     grid[0:pml_width_x, :, :] = fdtd.PML(name="pml_xlow")
-        #     grid[-pml_width_x:, :, :] = fdtd.PML(name="pml_xhigh")
-        # if pml_width_y != 0:
-        #     grid[:, 0:pml_width_y, :] = fdtd.PML(name="pml_ylow")
-        #     grid[:, -pml_width_y:, :] = fdtd.PML(name="pml_yhigh")
-        # if pml_width_z != 0:
-        #     grid[:, :, 0:pml_width_z] = fdtd.PML(name="pml_zlow")
-        #     grid[:, :, -pml_width_z:] = fdtd.PML(name="pml_zhigh")
         if pulse_type == "cw" or pulse_type == "CW" or pulse_type == "cW" or pulse_type == "Cw":
+            # 如果是连续波光源 If it is a continuous wave source
             pulse_type = "none"
 
         if period is None:
@@ -421,6 +450,11 @@ class Grid:
             raise ValueError("Invalid source type.")
 
     def _try_to_find_source(self):
+        """尝试在网格中找到一个光源
+        Try to find a source in the grid.
+        Returns:
+            fdtd.Source: the first source found in the grid
+        """
         try:
             found_source = self._grid.sources[0]
             print(f"Found source successfully: {found_source.name}")
@@ -431,6 +465,13 @@ class Grid:
     def source_data(self,
                     time: Optional[int] or Optional[float] = None,
                     source_name: Optional[str] = None):
+        """
+        获取光源数据，绘制光源的空间分布、时域信号和频谱
+        Get the source data from the grid.
+        :param time: if None, use the current time steps passed in the grid. Or in timesteps(int) or in second(float).
+        :param source_name: If None, try to find a source automatically. If specified, find the source with the name.
+        :return: found_source, source_field, spectrum
+        """
         if time is None:
             if self._grid.time_steps_passed != 0:
                 time = self._grid.time_steps_passed
@@ -623,6 +664,7 @@ class Grid:
         @param xlength, ylength, zlength: cross length, parameters for 'blockdetector'
         @param name:
         @param axis: "x", "y", "z", only for blockdetector
+        @return: None
         """
 
         if x == None:
@@ -693,6 +735,11 @@ class Grid:
 
 
     def _try_to_find_detector(self):
+        """尝试在网格中找到一个监视器
+        Try to find a detector in the grid.
+        Returns:
+            found_detector: the first detector found in the grid"""
+
         try:
             found_detector = self._grid.detectors[0]
             print("Found detector successfully without name")
@@ -741,20 +788,19 @@ class Grid:
                  axis_index=0,
                  axis_number=None,
                  animate=False,
-                 time=None,
                  geo=None,
                  show_structure=True,
                  show_energy=False):
         """
         Saving the geometry figure. This function can also show energy while show_energy = True.
-        @param geo: Optional: Solve.geometry, will be calculated automatically if None. 也可以为None，程序会自己计算
-        @param axis: 轴(若为二维XY模拟，则axis只能='z')
+        @param geo: Refractive index profile, will be calculated automatically if None. 也可以为None，程序会自己计算
+        @param axis: axis to plot. 轴(若为二维XY模拟，则axis只能='z')
         @param axis_index: index of axis
         @param axis_number: an outdated version of axis_index
-        @param time: only for method run() 绘制哪个时刻的场图（用户用不到，仅供run()使用
-        @param animate: 是否播放动画。这个参数应该只有在notebook里有用 This parameter is only useful in Jupyter Notebook
-        #TODO: How to animate? 该如何播放动画？
-        :
+        @param animate: 是否生成动画。
+        @param show_structure: 是否显示结构
+        @param show_energy: 是否显示能量分布
+        @return: None
         """
         if not axis:
             # Tell which dimension to draw automatically
@@ -782,36 +828,35 @@ class Grid:
         axis = axis.lower()  # 识别大写的 "X"
         folder = self.folder
         if axis == "x":  # 绘制截面/剖面场图
-            self._grid.visualize(x=axis_index, save=True, animate=animate,
-                                 index=index, folder=folder, geo=geo,
-                                 background_index=self.background_index, show_structure=show_structure,
-                                 show_energy=show_energy)
+            self._grid.plot_structure(x=axis_index, save=True, animate=animate,
+                                      index=index, folder=folder, geo=geo,
+                                      background_index=self.background_index, show_structure=show_structure,
+                                      show_energy=show_energy)
         elif axis == "y":
-            self._grid.visualize(y=axis_index, save=True, animate=animate,
-                                 index=index, folder=folder, geo=geo,
-                                 background_index=self.background_index, show_structure=show_structure,
-                                 show_energy=show_energy)
+            self._grid.plot_structure(y=axis_index, save=True, animate=animate,
+                                      index=index, folder=folder, geo=geo,
+                                      background_index=self.background_index, show_structure=show_structure,
+                                      show_energy=show_energy)
         elif axis == "z":
-            self._grid.visualize(z=axis_index, save=True, animate=animate,
-                                 index=index, folder=folder, geo=geo,
-                                 background_index=self.background_index, show_structure=show_structure,
-                                 show_energy=show_energy)
+            self._grid.plot_structure(z=axis_index, save=True, animate=animate,
+                                      index=index, folder=folder, geo=geo,
+                                      background_index=self.background_index, show_structure=show_structure,
+                                      show_energy=show_energy)
         else:
             raise ValueError("Unknown axis parameter.")
 
         plt.close()  # 清除画布
 
     def plot_n(self,
-               grid=None,
                axis: str = None,
                axis_index: int = 0,
                filepath: str = None):
         """
         Draw a refractive index plot. It is basically same with solve.plot().
-        @param grid: Optional: photfdtd.grid
-        @param axis:
-        @param axis_index:
-        @param filepath:
+        @param axis: axis to plot, can be 'x', 'y' or 'z'. If None, it will be automatically determined.
+        @param axis_index: index of axis, default to 0.
+        @param filepath: the path to save the figure. If None, it will be saved in the folder of the grid.
+        @return: None
         """
         if not axis:
             # Tell which dimension to draw automatically
@@ -821,13 +866,10 @@ class Grid:
                 axis_index = int(self._grid.Ny / 2)
             else:
                 axis = conversions.number_to_letter(dims_with_size_one[0])
-        if self:
-            grid = self
-        if not grid:
-            raise ValueError("Parameter 'grid' shold not be None!")
+
         if not filepath:
-            filepath = grid.folder
-        grid = grid._grid
+            filepath = self.folder
+        grid = self._grid
         geometry = bd.sqrt(1 / bd.to_float(grid.inverse_permittivity))
         axis = axis.lower()
 
@@ -875,23 +917,17 @@ class Grid:
         plt.close()
 
     def run(self,
-            animate: bool = False,
-            step: int = 5,
-            axis="x",
-            axis_number=0,
             time=None,
             save=True,
+            animate: bool = False,
             interval=100
             ):
         """
         @param time: int for timesteps or float for seconds
-        @param axis: 与save_fig()相同
-        @param axis_number:
-        @param animate: 是否播放动画 ffmpeg required
-        @param step: 每多少个时间步绘一次图
         @param save: save the grid?
+        @param animate: 是否生成动画？ ffmpeg required
+        @param interval: 每隔多少个时间步保存一次图
         """
-        axis = axis.lower()
         if time is None:
             time = self._calculate_time()
 
@@ -991,7 +1027,7 @@ class Grid:
         @param grid: Optinal: photfdtd.Grid instance
         """
         # Spectrum
-        # TODO: consider multiple sources?考虑有不同光源的情况？
+        # TODO: Not finished yet. Not sure if the right way has been used. Or if it's not that complex?
 
         if grid is None:
             grid = self
@@ -1118,8 +1154,7 @@ class Grid:
         @param grid: Optinal: photfdtd.Grid instance
         """
         # Spectrum
-        # TODO: consider multiple sources?考虑有不同光源的情况？
-
+        return
         field_axis = fdtd.conversions.letter_to_number(field_axis)
         if grid is None:
             grid = self
@@ -1246,7 +1281,7 @@ class Grid:
             self._grid.reset()
 
         # 保存detector_readings_sweep.bdz文件
-        np.savez(path.join(self.folder, "detector_readings_sweep"), **dic)
+        np.savez(os.path.join(self.folder, "detector_readings_sweep"), **dic)
 
     def _plot_sweep_result(self,
                            folder: str = ""):
@@ -1272,7 +1307,12 @@ class Grid:
         plt.show()
 
     def _convert_tensors_to_numpy(self, obj, visited=None):
-        """递归地将对象中的所有tensor转换为numpy数组，包括私有属性，避免循环引用"""
+        """递归地将对象中的所有tensor转换为numpy数组，包括私有属性，避免循环引用
+        Recursively convert all tensors in the object to numpy arrays,
+        including private attributes, avoiding circular references.
+        Args:
+
+            """
         import torch
 
         # 初始化访问记录
@@ -1357,10 +1397,14 @@ class Grid:
 
         # Serialize the class instance
         saved_grid = pickle.dumps(self)
-        np.savez(path.join(self.folder, "saved_grid"), serialized_instance=saved_grid)
+        np.savez(os.path.join(self.folder, "saved_grid"), serialized_instance=saved_grid)
 
     def save_simulation(self):
-        """使用 HDF5 格式保存，支持大型数据和压缩"""
+        """使用 HDF5 格式保存grid，支持大型数据和压缩
+        Use HDF5 format to save the grid, supporting large data and compression.
+        保存时，tensor会被转为ndarray
+        Tensors will be converted to ndarrays when saving.
+        """
         import copy
         import gc
         from photfdtd.fdtd.backend import NumpyBackend
@@ -1372,7 +1416,7 @@ class Grid:
             grid_copy._convert_tensors_to_numpy(grid_copy)
 
         try:
-            with h5py.File(path.join(self.folder, "saved_grid.h5"), 'w') as f:
+            with h5py.File(os.path.join(self.folder, "saved_grid.h5"), 'w') as f:
                 # 保存大型数组数据
                 if hasattr(grid_copy._grid, 'E'):
                     f.create_dataset('E', data=grid_copy._grid.E, compression='gzip')
@@ -1430,8 +1474,8 @@ class Grid:
         if not folder:
             raise ValueError("Folder path is required")
 
-        h5_path = path.join(folder, "saved_grid.h5")
-        if path.exists(h5_path):
+        h5_path = os.path.join(folder, "saved_grid.h5")
+        if os.path.exists(h5_path):
             with h5py.File(h5_path, 'r') as f:
                 # 恢复对象结构
                 if 'metadata_bytes' in f:
@@ -1457,8 +1501,8 @@ class Grid:
             return grid_obj
 
         # 兼容旧格式
-        npz_path = path.join(folder, "saved_grid.npz")
-        if path.exists(npz_path):
+        npz_path = os.path.join(folder, "saved_grid.npz")
+        if os.path.exists(npz_path):
             readings = np.load(npz_path, allow_pickle=True)
             return pickle.loads(readings['serialized_instance'])
 
@@ -1667,7 +1711,7 @@ class Grid:
     @staticmethod
     def plot_fieldtime(grid=None, folder=None, field_axis="z", field="E", index=None, index_3d=None, name_det=None):
         """
-        Draw and save the field vs time of a point. 绘制监视器某一点的时域场图 没什么用
+        Draw and save the field vs time of a point, no use currently. 绘制监视器某一点的时域场图 没什么用
         @param grid: Photfdtd.Grid
         @param folder: Optional. The folder path to save the dB map. Default to grid.folder. 保存图片的地址，默认为grid.folder
         @param data: read_simulation()读到的数据
@@ -1717,15 +1761,20 @@ class Grid:
             plt.savefig(os.path.join(folder, f"{file_name}.png"))
             plt.close()
 
-    def read_detector(self, name_det=None):
+    def read_detector(self, folder=None, name_det=None):
         """
-        读取监视器数据
-        @param name_det: 监视器名称
-        @param field: "E"或"H"
+        从保存监视器数据的路径读取监视器数据
+        Read the detector data from the saved path.
+        Args:
+            folder: Optional. The folder path to save the dB map. Default to grid.folder. 保存图片的地址，默认为grid.folder
+            name_det: The name of the detector to read. 监视器名称
         """
-
-        E_path = f"{self.folder}\\{name_det}_E.h5"
-        H_path = f"{self.folder}\\{name_det}_H.h5"
+        if name_det is None:
+            raise ValueError("Parameter name_det should not be None")
+        if not folder:
+            folder = self.folder
+        E_path = f"{folder}\\{name_det}_E.h5"
+        H_path = f"{folder}\\{name_det}_H.h5"
 
         # 打开 HDF5 文件
         for path in [E_path, H_path]:
@@ -1757,6 +1806,7 @@ class Grid:
                                   field="E"):
         """
         Visualization of the result of a single detector
+        绘制单个监视器的结果
         @param detector: photfdtd.grid.detector
         @param name_det: 监视器名称
         @param index: 用于线监视器，选择读取数据的点
@@ -1764,9 +1814,8 @@ class Grid:
         @param field_axis: "x", "y", "z"
         @param field: ”E"或"H"
         @return frequency, spectrum: 频率和频谱
-        NOTE：
-            关于傅里叶变换后的单位：有的人说是原单位，有的人说是原单位乘以积分时积的单位(s)
-            https://stackoverflow.com/questions/1523814/units-of-a-fourier-transform-fft-when-doing-spectral-analysis-of-a-signal
+        关于傅里叶变换后的单位：有的人说是原单位，有的人说是原单位乘以积分时积的单位(s)
+        https://stackoverflow.com/questions/1523814/units-of-a-fourier-transform-fft-when-doing-spectral-analysis-of-a-signal
         """
         # TODO: 把fdtd的fourier.py研究明白
         if field_axis is not None:
@@ -1909,11 +1958,11 @@ class Grid:
         @param field_axis: "x", "y", "z"
         @param field: ”E"或"H"
         NOTE：
-            关于傅里叶变换后的单位：有的人说是原单位，有的人说是原单位乘以积分时积的单位(s)
-            https://stackoverflow.com/questions/1523814/units-of-a-fourier-transform-fft-when-doing-spectral-analysis-of-a-signal
+            This function will plot the spectrum of all detectors in the grid by
+            using visualize_single_detector() for each one.
+            这个函数使用 visualize_single_detector() 绘制网格中所有监视器的频谱。
         """
         # TODO: axis参数与其他可视化参数一致
-        # TODO: 把fdtd的fourier.py研究明白
         if field_axis is not None:
             field_axis = conversions.letter_to_number(field_axis)
         # spectrums = bd.empty(self._grid.detectors.shape)
@@ -1933,7 +1982,9 @@ class Grid:
         plt.close()
 
     def slice_grid(self, grid=None, x_slice=[], y_slice=[], z_slice=[]):
-        """切割grid，以切割后的grid创建grid_sliced
+        """
+        切割grid，以切割后的grid创建grid_sliced
+        Slice the grid to create a new grid_sliced.
         @param grid: photfdtd.Grid
         @param x_slice: list. X range that will be sliced
         @param y_slice:
@@ -1954,8 +2005,8 @@ class Grid:
 
     def visualize(self, axis: object = None, axis_index: int = None, field: str = "E", field_axis: str = None) -> None:
         """
+        Generally visualize the grid, including field, energy, and detector data.
         可视化仿真结果，包括折射率分布，场分布，频谱和所有监视器结果。
-        Visualize the grid, including field, energy, and detector data.
         @param axis: axis to visualize, e.g., "x", "y", "z". If None, it will automatically detect.
         @param axis_index: int, the index of the axis to visualize. If None, it will be set to the middle of the axis.
         @param field: "E" or "H", the field to visualize. Default is "E".

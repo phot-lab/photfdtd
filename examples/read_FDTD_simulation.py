@@ -6,7 +6,7 @@ if __name__ == "__main__":
     grid = Grid.read_simulation(folder=filepath)
     grid.folder=filepath
     # grid.animate(fps=200)
-    grid.visualize()
+    grid.plot_structure()
     freqs, spectrum2 = grid.visualize_single_detector(name_det="detector1")
 
     #

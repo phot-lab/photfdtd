@@ -56,6 +56,6 @@ if __name__ == "__main__":
     # #
     # # # Or you can read from a folder 也可以读取仿真结果
     grid = grid.read_simulation(folder=grid.folder)
-    grid.visualize()
+    grid.plot_structure()
 
     grid.calculate_Transmission(detector_name_1="detector1", detector_name_2="detector2")

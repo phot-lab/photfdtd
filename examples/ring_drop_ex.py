@@ -49,7 +49,7 @@ if __name__ == "__main__":
     # grid.detector_profile()
     # grid.calculate_source_profile()
     grid.calculate_Transmission(detector_name_1="detector1", detector_name_2="detector2")
-    grid.visualize()
+    grid.plot_structure()
     freqs, spectrum1 = grid.visualize_single_detector(name_det="detector1")
     freqs, spectrum2 = grid.visualize_single_detector(name_det="detector2")
     freqs, spectrum3 = grid.visualize_single_detector(name_det="detector3")

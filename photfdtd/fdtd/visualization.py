@@ -27,7 +27,7 @@ from . import conversions
 # 2D visualization function
 
 
-def visualize(
+def plot_structure(
         grid,
         x=None,
         y=None,
@@ -369,17 +369,12 @@ def visualize(
         yticks = bd.arange(0, grid_energy.shape[0], int((1e-6) / grid.grid_spacing))
     else:
         yticks = bd.arange(0, grid_energy.shape[0], int((10e-6) / grid.grid_spacing))
+
     xlabels = xticks * grid.grid_spacing * 1e6
     ylabels = yticks * grid.grid_spacing * 1e6
-    xlabels = round(xlabels)
-    ylabels = round(ylabels)
-    # convert xticks and yticks to int if they are numpy arrays or torch tensors
-    try: #for numpy
-        xlabels = xlabels.astype(int)
-        ylabels = ylabels.astype(int)
-    except: # for torch
-        xlabels = xlabels.to(dtype=bd.int)
-        ylabels = ylabels.to(dtype=bd.int)
+    xlabels = bd.numpy(round(xlabels)).astype(int).tolist()
+    ylabels = bd.numpy(round(ylabels)).astype(int).tolist()
+
     #
     plt.xticks(xticks, xlabels)
     plt.yticks(yticks, ylabels)
@@ -495,6 +490,7 @@ def dB_map_2D(block_det=None, interpolation="spline16", axis="z", field="E", fie
 
 def plot_detection(detector_dict=None, specific_plot=None):
     """
+    #TODO: 这个函数以前从来没用过
     1. Plots intensity readings on array of 'fdtd.LineDetector' as a function of timestep.
     2. Plots time of arrival of waveform at different LineDetector in array.
     Compatible with waveform sources.
@@ -581,10 +577,549 @@ def plot_detection(detector_dict=None, specific_plot=None):
         plt.legend()
         plt.suptitle("Time-of-arrival plot")
     plt.show()
+@staticmethod
+def dB_map(grid=None, folder=None, axis=None, field="E", field_axis="z",
+           interpolation="spline16", total_time=None, save: bool = True):
+    """
+    Draw a field dB_map. At least 1 block detector is required. 绘制场分贝图 需要面监视器数据
+    @param grid: Photfdtd.Grid
+    @param folder: Optional. The folder path to save the dB map. Default to grid.folder. 保存图片的地址，默认为grid.folder
+    @param axis: "x" or "y" or "z" 选择绘制dB图的截面
+    @param field_axis: {x,y,z} of "E" or "H" field
+    @param field: “E”或“H”
+    @param interpolation: Optional. 'matplotlib.pyplot.imshow' interpolation 绘图方式
+    @param save: bool, to save or not. 是否保存
+    @param total_time: Optional, only used for title 模拟经历的时间，可选，仅命名用
+
+
+    """
+    print("Drawing dB map is not available currently.")
+    return
+    # FIXME: 由于detector数据保存方式的修改，该函数目前无法使用。需要读取h5文件
+    if not axis:
+        # Tell which dimension to draw automatically
+        dims_with_size_one = [i for i, size in enumerate(grid._grid.inverse_permittivity.shape) if size == 1]
+        if not dims_with_size_one:
+            raise ValueError("Parameter 'axis' should not be None for 3D simulation")
+        axis = conversions.number_to_letter(dims_with_size_one[0])
+    if not folder:
+        folder = grid.folder
+    if not total_time:
+        total_time = grid._grid.time_passed
+    for detector in grid._grid.detectors:
+        if isinstance(detector, fdtd.detectors.BlockDetector):
+            fdtd.dB_map_2D(block_det=bd.array([x for x in detector.detector_values()["%s" % field]]),
+                           interpolation=interpolation, axis=axis, field=field, field_axis=field_axis,
+                           save=save, folder=folder, name_det=detector.name, total_time=total_time)
+
+        # dic[detector.name + " (E)"] = bd.array([x for x in detector.detector_values()["E"]])
+        # dic[detector.name + " (H)"] = bd.array([x for x in detector.detector_values()["H"]])
+    # if block_det != None:
+    #     data = block_det
+    #     name_det = block_det.name
+    # else:
+    #     data = data[name_det + " (%s)" % field]
+
+@staticmethod
+def plot_field(grid=None, axis="y", axis_index=0, field="E", field_axis=None, folder=None, cmap="jet",
+               show_geometry=True, show_field=True, vmax=None, vmin=None):
+    """
+    Plot a field map at current state. No need for detectors. 绘制当前时刻场分布（不需要监视器）
+    @param show_geometry: bool 是否绘制波导结构
+    @param show_field: bool 是否绘制场
+    @param grid: Photfdtd.Grid
+    @param field: "E"或"H"
+    @param field_axis: {x,y,z,None} of E or H, if None, the energy intensity of E or H will be plotted
+    @param axis: "x"或"y"或"z"表示绘制哪个截面
+    @param axis_index: 例如绘制z=0截面 ，则axis设为"z"而axis_index为0
+    @param folder: Optional. The folder path to save the dB map. Default to grid.folder. 保存图片的地址，默认为grid.folder
+    @param cmap: Optional. matplotlib.pyplot.imshow(cmap)
+    @param vmax: Optional. Max value of the color bar. 颜色条的最大、最小值
+    @param vmin: Optional. Min value of the color bar.
+
+    """
+
+    if not show_field:
+        title = "%s=%i" % (axis, axis_index)
+    elif not field_axis:
+        title = "%s^2" % field
+    else:
+        title = f"{field}{field_axis}"
+    if not folder:
+        folder = grid.folder
+    background_index = grid.background_index
+    grid = grid._grid
+    if not show_field:
+        if axis == "z":
+            field = bd.zeros_like(grid.E[:, :, axis_index, 0])
+        elif axis == "y":
+            field = bd.zeros_like(grid.E[:, axis_index, :, 0])
+        elif axis == "x":
+            field = bd.zeros_like(grid.E[axis_index, :, :, 0])
+    else:
+        if field == "E":
+            if not field_axis:
+                # 能量
+                # TODO：这种算能量的方法对吗
+                if axis == "z":
+                    field = grid.E[:, :, axis_index, 0] ** 2 + grid.E[:, :, axis_index, 1] ** 2 + grid.E[:, :,
+                                                                                                  axis_index,
+                                                                                                  2] ** 2
+                elif axis == "y":
+                    field = grid.E[:, axis_index, :, 0] ** 2 + grid.E[:, axis_index, :, 1] ** 2 + grid.E[:,
+                                                                                                  axis_index,
+                                                                                                  :, 2] ** 2
+                elif axis == "x":
+                    field = grid.E[axis_index, :, :, 0] ** 2 + grid.E[axis_index, :, :, 1] ** 2 + grid.E[axis_index,
+                                                                                                  :,
+                                                                                                  :, 2] ** 2
+            else:
+                if axis == "z":
+                    field = grid.E[:, :, axis_index, ord(field_axis) - 120]
+                elif axis == "y":
+                    field = grid.E[:, axis_index, :, ord(field_axis) - 120]
+                elif axis == "x":
+                    field = grid.E[axis_index, :, :, ord(field_axis) - 120]
+        elif field == "H":
+            if not field_axis:
+                # 能量
+                if axis == "z":
+                    field = grid.H[:, :, axis_index, 0] ** 2 + grid.H[:, :, axis_index, 1] ** 2 + grid.H[:, :,
+                                                                                                  axis_index,
+                                                                                                  2] ** 2
+                elif axis == "y":
+                    field = grid.H[:, axis_index, :, 0] ** 2 + grid.H[:, axis_index, :, 1] ** 2 + grid.H[:,
+                                                                                                  axis_index,
+                                                                                                  :, 2] ** 2
+                elif axis == "x":
+                    field = grid.H[axis_index, :, :, 0] ** 2 + grid.H[axis_index, :, :, 1] ** 2 + grid.H[axis_index,
+                                                                                                  :,
+                                                                                                  :, 2] ** 2
+            else:
+                if axis == "z":
+                    field = grid.H[:, :, axis_index, ord(field_axis) - 120]
+                elif axis == "y":
+                    field = grid.H[:, axis_index, :, ord(field_axis) - 120]
+                elif axis == "x":
+                    field = grid.H[axis_index, :, :, ord(field_axis) - 120]
+        if not vmax:
+            # vmax = max(abs(field.min().item()), abs(field.max().item()))
+            vmax = field.max().item()
+        if not vmin:
+            if not field_axis:
+                vmin = 0
+            else:
+                vmin = field.min().item()
+
+    # 创建颜色图
+    plt.figure()
+    if axis == "x":
+        x_stick = field.shape[0] * grid.grid_spacing_y * 1e6
+        y_stick = field.shape[1] * grid.grid_spacing_z * 1e6
+    if axis == "y":
+        x_stick = field.shape[0] * grid.grid_spacing_x * 1e6
+        y_stick = field.shape[1] * grid.grid_spacing_z * 1e6
+    if axis == "z":
+        x_stick = field.shape[0] * grid.grid_spacing_x * 1e6
+        y_stick = field.shape[1] * grid.grid_spacing_y * 1e6
+    field = bd.numpy(field)
+    plt.imshow(bd.transpose(field), vmin=vmin, vmax=vmax, cmap=cmap,
+               extent=[0, x_stick, 0, y_stick],
+               origin="lower")  # cmap 可以选择不同的颜色映射
+    if show_field:
+        cbar = plt.colorbar()
+    if show_geometry:
+        geo = bd.sqrt(1 / bd.to_float(grid.inverse_permittivity))
+
+        # geo是四维矩阵，取最后一个维度
+        geo = geo[:, :, :, -1]
+
+        # 根据不同的轴选择截面
+        if axis == "x":
+            n_to_draw = geo[axis_index, :, :]
+        elif axis == "y":
+            n_to_draw = geo[:, axis_index, :]
+        elif axis == "z":
+            n_to_draw = geo[:, :, axis_index]
+
+        # 创建轮廓数据
+        contour_data = bd.where(n_to_draw != bd.array(background_index), 1, 0)
+
+        plt.contour(
+            bd.numpy(bd.linspace(0, x_stick, field.shape[0])),
+            bd.numpy(bd.linspace(0, y_stick, field.shape[1])),
+            bd.numpy(contour_data.T),
+            colors='black', linewidths=1)
+
+    # plt.ylim(-1, field.shape[1])
+    # Make the figure full the canvas让画面铺满整个画布
+    # plt.axis("tight")
+    # 添加颜色条
+
+    # cbar.set_label('')
+
+    # 添加标题和坐标轴标签
+    plt.title(f"{title}")
+
+    if axis == "z":
+        plt.xlabel('x/um')
+        plt.ylabel('y/um')
+    elif axis == "x":
+        plt.xlabel('y/um')
+        plt.ylabel('z/um')
+    elif axis == "y":
+        plt.xlabel('x/um')
+        plt.ylabel('z/um')
+    if show_field:
+        fname = "%s//%s_%s=%i.png" % (folder, title, axis, axis_index)
+    else:
+        fname = "%s//%s.png" % (folder, title)
+    plt.savefig(fname=fname)
+    plt.close()
+
+@staticmethod
+def plot_fieldtime(grid=None, folder=None, field_axis="z", field="E", index=None, index_3d=None, name_det=None):
+    """
+    Draw and save the field vs time of a point, no use currently. 绘制监视器某一点的时域场图 没什么用
+    @param grid: Photfdtd.Grid
+    @param folder: Optional. The folder path to save the dB map. Default to grid.folder. 保存图片的地址，默认为grid.folder
+    @param data: read_simulation()读到的数据
+    @param field_axis: x, y, z of E or H
+    @param field: “E“或”H“
+    @param index: 用于线监视器，选择读取数据的点
+    @param index_3d: 三维数组：用于面监视器，选择读取数据的点
+    @param name_det: 监视器的名称
+    """
+    return
+    data = None
+    for detector in grid._grid.detectors:
+        if detector.name == name_det:
+            if field == "E":
+                data = bd.array(detector.real_E())
+            elif field == "H":
+                data = bd.array(detector.real_H())
+            else:
+                raise ValueError("Parameter field should be either 'E' or 'H")
+    if data is None:
+        print("ValueError when using plot_fieldtime: No detector named '%s'" % name_det)
+        return
+    if folder is None:
+        folder = grid.folder
+    plt.figure()
+
+    if data.ndim == 3:
+        if index == None:
+            index = int(data.shape[1] / 2)
+        plt.plot(range(len(data)), data[:, index, ord(field_axis) - 120], linestyle='-', label="Experiment")
+        plt.ylabel('%s%s' % (field, field_axis))
+        plt.xlabel("timesteps")
+        plt.title("%s%s-t" % (field, field_axis))
+        file_name = "%s%s" % (field, field_axis)
+        plt.savefig(os.path.join(folder, f"{file_name}.png"))
+        plt.close()
+    else:
+        if index_3d == None:
+            index_3d = [int(data.shape[0] / 2), int(data.shape[1] / 2), int(data.shape[2] / 2)]
+        plt.plot(range(len(data)), data[:, index_3d[0], index_3d[1], index_3d[2], ord(field_axis) - 120],
+                 linestyle='-',
+                 label="Experiment")
+        plt.ylabel('%s%s' % (field, field_axis))
+        plt.xlabel("timesteps")
+        plt.title("%s%s-t" % (field, field_axis))
+        file_name = "%s%s" % (field, field_axis)
+        plt.savefig(os.path.join(folder, f"{file_name}.png"))
+        plt.close()
+
+def read_detector(self, folder=None, name_det=None):
+    """
+    从保存监视器数据的路径读取监视器数据
+    Read the detector data from the saved path.
+    Args:
+        folder: Optional. The folder path to save the dB map. Default to grid.folder. 保存图片的地址，默认为grid.folder
+        name_det: The name of the detector to read. 监视器名称
+    """
+    if name_det is None:
+        raise ValueError("Parameter name_det should not be None")
+    if not folder:
+        folder = self.folder
+    E_path = f"{folder}\\{name_det}_E.h5"
+    H_path = f"{folder}\\{name_det}_H.h5"
+
+    # 打开 HDF5 文件
+    for path in [E_path, H_path]:
+        with h5py.File(path, "r") as f:
+            # 打印文件中的所有数据集（类似于查看文件目录）
+            def print_h5_structure(name, obj):
+                print(name, "->", obj)
+
+            f.visititems(print_h5_structure)  # 遍历并打印 HDF5 文件结构
+
+            # 读取某个数据集（假设文件中有 "E" 数据集）
+            if "E" in f:
+                E = f["E"][:]  # 读取整个数据集
+                print("E shape:", E.shape)  # 打印数据形状
+                print("E dtype:", E.dtype)  # 打印数据类型
+            elif "H" in f:
+                H = f["H"][:]  # 读取整个数据集
+                print("H shape:", H.shape)  # 打印数据形状
+                print("H dtype:", H.dtype)  # 打印数据类型
+
+    return E, H
+
+def visualize_single_detector(self,
+                              detector=None,
+                              name_det=None,
+                              index=0,
+                              index_3d=None,
+                              field_axis="x",
+                              field="E"):
+    """
+    Visualization of the result of a single detector
+    绘制单个监视器的结果
+    @param detector: photfdtd.grid.detector
+    @param name_det: 监视器名称
+    @param index: 用于线监视器，选择读取数据的点
+    @param index_3d: 用于面监视器，选择读取数据的点
+    @param field_axis: "x", "y", "z"
+    @param field: ”E"或"H"
+    @return frequency, spectrum: 频率和频谱
+    关于傅里叶变换后的单位：有的人说是原单位，有的人说是原单位乘以积分时积的单位(s)
+    https://stackoverflow.com/questions/1523814/units-of-a-fourier-transform-fft-when-doing-spectral-analysis-of-a-signal
+    """
+    # TODO: 把fdtd的fourier.py研究明白
+    if field_axis is not None:
+        # 如果field_axis是字母，转换为数字
+        if field_axis in ["x", "y", "z"]:
+            field_axis = conversions.letter_to_number(field_axis)
+    if detector is None and name_det is not None:
+        # 通过监视器名称找到监视器
+        for d in self._grid.detectors:
+            if d.name == name_det:
+                detector = d
+
+    if name_det is None:
+        name_det = detector.name
+
+    if field == "E":
+        data = self.read_detector(name_det)[0]
+    elif field == "H":
+        data = self.read_detector(name_det)[1]
+    # if field == "E":
+    #     data = bd.array(detector.real_E())
+    # elif field == "H":
+    #     data = bd.array(detector.real_H())
+    else:
+        raise ValueError("Parameter field should be either 'E' or 'H")
+    data = bd.numpy(data)
+    # if data is None:
+    #     detector = self._grid.detectors[0]
+    #     data = bd.array([x for x in detector.detector_values()["%s" % field]])
+
+    shape = data.shape
+    if data.ndim == 3:
+        # 线监视器
+        if not index:
+            index = int(shape[1] / 2)
+        indexed_data = data[:, index, field_axis]
+    elif data.ndim == 5:
+        # 面监视器
+        if not index_3d:
+            index_3d = [int(shape[1] / 2), int(shape[2] / 2), int(shape[3] / 2)]
+        indexed_data = data[:, index_3d[0], index_3d[1], index_3d[2], field_axis]
+
+    # Spectrum
+    # TODO: consider multiple sources?考虑有不同光源的情况？
+    source = self._try_to_find_source()
+    fr = fdtd.FrequencyRoutines(self._grid, objs=indexed_data)
+    spectrum_freqs, spectrum = fr.FFT(
+        freq_window_tuple=[source.frequency - source.bandwidth,
+                           source.frequency + source.bandwidth], )
+    # spectrum是复值
+
+    ### 试试ufdtd书中的方法，对空间中每个点的电场分别傅里叶变换
+    # F = bd.empty(shape=data[0].shape, dtype=object)
+    # for i in range(data[0].shape[0]):
+    #     for j in range(3):
+    #         fr = fdtd.FrequencyRoutines(self._grid, objs=data[:, i, j])
+    #         spectrum_freqs, spectrum = fr.FFT(
+    #             freq_window_tuple=[source.frequency - source.bandwidth,
+    #                             source.frequency + source.bandwidth], )
+    #         F[i, j] = abs(spectrum)
+    ###
+
+    # TODO: 目前只考虑了线监视器
+    length = bd.numpy(bd.linspace(0, shape[1], shape[1]) * self._grid.grid_spacing_x)
+    time = bd.numpy(bd.linspace(0, shape[0], shape[0]) * self._grid.time_step * 1e15)
+
+    # 创建一个画布，包含两个子图
+    fig, axes = plt.subplots(2, 2, figsize=(12, 6))  # 1行2列的子图
+
+    # 左侧子图: Space distribution at when the field is maximum
+    flattened_index = np.argmax(data)
+    time_step_max_field = np.unravel_index(flattened_index, data.shape)[0]
+    if data.ndim == 3:
+        axes[0][0].plot(length * 1e6, data[time_step_max_field, :, field_axis])
+        # axes[0][0].set_xticks()  # 每隔10个显示一个刻度
+        axes[0][0].set_xlabel('um')
+        axes[0][0].set_ylabel("E (V/m)")
+        axes[0][0].set_title(f"Space distribution of {name_det} at {time_step_max_field * self._grid.time_step * 1e15} fs")
+        axes[0][0].legend(["Detector profile"])
+    elif data.ndim == 5:
+        # 绘制 2D 颜色图
+        im = axes[0][0].imshow(bd.transpose(bd.squeeze(data[time_step_max_field, :, :, :, field_axis])), cmap="viridis", aspect="auto", origin="lower")
+        # 添加颜色条
+        plt.colorbar(im, ax=axes[0][0])
+        # 设置标题和标签
+        axes[0][0].set_title("Space distribution")
+        if detector.axis == "x":
+            axes[0][0].set_xlabel("Y")
+            axes[0][0].set_ylabel("Z")
+        if detector.axis == "y":
+            axes[0][0].set_xlabel("X")
+            axes[0][0].set_ylabel("Z")
+        if detector.axis == "z":
+            axes[0][0].set_xlabel("X")
+            axes[0][0].set_ylabel("Y")
+        # axes[0][0].set_xticks()  # 每隔10个显示一个刻度
+        axes[0][0].set_title(f"Space distribution of {name_det} at {time_step_max_field * self._grid.time_step * 1e15} fs")
+        axes[0][0].legend(["Detector profile"])
+
+
+    # 右侧子图: Time Signal 图
+    if data.ndim == 3:
+        axes[0][1].plot(time, data[:, index, 0], label="Ex")
+        axes[0][1].plot(time, data[:, index, 1], label="Ey")
+        axes[0][1].plot(time, data[:, index, 2], label="Ez")
+    else:
+        axes[0][1].plot(time, data[:, index_3d[0], index_3d[1], index_3d[2], 0], label="Ex")
+        axes[0][1].plot(time, data[:, index_3d[0], index_3d[1], index_3d[2], 1], label="Ey")
+        axes[0][1].plot(time, data[:, index_3d[0], index_3d[1], index_3d[2], 2], label="Ez")
+    axes[0][1].set_xlabel('fs')
+    axes[0][1].set_ylabel("E (V/m)")
+    axes[0][1].set_title(f"Time Signal of {name_det}")
+    axes[0][1].legend()
+
+    # Spectrum
+    axes[1][0].plot(spectrum_freqs * 1e-12, abs(spectrum))
+    axes[1][0].set_xlabel('frequency (THz)')
+    axes[1][0].set_ylabel(f"|E{conversions.number_to_letter(field_axis)}| (V/m)")
+    axes[1][0].set_title(f"Spectrum of {name_det}")
+
+    axes[1][1].plot(constants.c / spectrum_freqs * 1e6, abs(spectrum))
+    axes[1][1].set_xlabel('wavelength (um)')
+    axes[1][1].set_ylabel(f"|E{conversions.number_to_letter(field_axis)}| (V/m)")
+    axes[1][1].set_title(f"Spectrum of {name_det}")
+
+    plt.tight_layout()
+
+    file_name = f"{name_det} profile"
+    plt.savefig(os.path.join(self.folder, f"{file_name}.png"))
+
+    plt.close()
+
+    return spectrum_freqs * 1e-12, spectrum
+
+def visulize_detector(self,
+                      field_axis="x",
+                      field="E"):
+    """
+    绘制所有监视器的频谱。Draw the spectrum of all detectors.
+    @param field_axis: "x", "y", "z"
+    @param field: ”E"或"H"
+    NOTE：
+        This function will plot the spectrum of all detectors in the grid by
+        using visualize_single_detector() for each one.
+        这个函数使用 visualize_single_detector() 绘制网格中所有监视器的频谱。
+    """
+    # TODO: axis参数与其他可视化参数一致
+    if field_axis is not None:
+        field_axis = conversions.letter_to_number(field_axis)
+    # spectrums = bd.empty(self._grid.detectors.shape)
+    # names = bd.empty(self._grid.detectors.shape)
+    for d in self._grid.detectors:
+        freqs, spectrum = self.visualize_single_detector(detector=d, field=field, field_axis=field_axis)
+        plt.plot(freqs, abs(spectrum), linestyle='-', label=d.name)
+    source, __, spectrum_source = self.source_data()
+    plt.plot(freqs, spectrum_source, linestyle='-', label=source.name)
+
+    plt.ylabel('%s%s' % (field, conversions.number_to_letter(field_axis)))
+    plt.xlabel("frequency (THz)")
+    plt.title("Spectrum of detectors")
+    plt.legend()
+    file_name = "Spectrum of detectors"
+    plt.savefig(os.path.join(self.folder, f"{file_name}.png"))
+    plt.close()
+
+def slice_grid(self, grid=None, x_slice=[], y_slice=[], z_slice=[]):
+    """
+    切割grid，以切割后的grid创建grid_sliced
+    Slice the grid to create a new grid_sliced.
+    @param grid: photfdtd.Grid
+    @param x_slice: list. X range that will be sliced
+    @param y_slice:
+    @param z_slice:
+    @return: Sliced grid
+    """
+    # TODO: 磁导率？
+    if grid is None:
+        grid = self
+
+    grid_sliced = Grid(grid_xlength=x_slice[1] - x_slice[0], grid_ylength=y_slice[1] - y_slice[0],
+                       grid_zlength=z_slice[1] - z_slice[0], grid_spacing=grid._grid.grid_spacing,
+                       permittivity=self.background_index ** 2, foldername="%s_sliced_grid" % grid.folder)
+    grid_sliced._grid.inverse_permittivity = grid._grid.inverse_permittivity[x_slice[0]:x_slice[1],
+                                             y_slice[0]:y_slice[1], z_slice[0]:z_slice[1]]
+
+    return grid_sliced
+
+def visualize(self, axis: object = None, axis_index: int = None, field: str = "E", field_axis: str = None) -> None:
+    """
+    Generally visualize the grid, including field, energy, and detector data.
+    可视化仿真结果，包括折射率分布，场分布，频谱和所有监视器结果。
+    @param axis: axis to visualize, e.g., "x", "y", "z". If None, it will automatically detect.
+    @param axis_index: int, the index of the axis to visualize. If None, it will be set to the middle of the axis.
+    @param field: "E" or "H", the field to visualize. Default is "E".
+    @param field_axis: str, the axis of the field to visualize, e.g., "x", "y", "z". If None, it will use the source's polarization.
+    """
+    # TODO: wl 能自动找到脉冲范围
+    if axis is None:
+        # 自动检测要绘制的维度
+        dims_with_size_one = [i for i, size in enumerate(self._grid.inverse_permittivity.shape) if size == 1]
+        axis = conversions.number_to_letter(dims_with_size_one[0] if dims_with_size_one else 1)
+
+    axis_index = axis_index or self._grid.inverse_permittivity.shape[conversions.letter_to_number(axis)] // 2
+
+    # 获取 source 数据
+    for s in self._grid.sources:
+        source, _, _ = self.source_data(source_name=s.name)
+
+    # 获取 field_axis
+    if field_axis is None:
+        field_axis = getattr(source, "polarization", None)
+        if field_axis is None:
+            print("Grid.visualize: No source found in grid")
+
+    self.save_fig(axis=axis, axis_index=axis_index)
+    self.save_fig(axis=axis, axis_index=axis_index, show_energy=True)
+    self.plot_n(axis=axis, axis_index=axis_index)
+    self.plot_field(grid=self, field=field, field_axis=field_axis, axis=axis, axis_index=axis_index)
+
+    if self._grid.detectors:  # 检查是否为空
+        self.visulize_detector(field_axis=field_axis, field=field)
+
+        for detector in self._grid.detectors:
+            # self.detector_profile(detector_name=detector.name, field=field, field_axis=field_axis)
+            # self.plot_fieldtime(grid=self, field=field, field_axis=field_axis, name_det=detector.name)
+            if isinstance(detector, fdtd.detectors.BlockDetector):
+                self.dB_map(grid=self, field=field, field_axis=field_axis)
+            # self.calculate_Transmission(detector_name=detector.name, source_name=self._try_to_find_source().name)
+
+
 
 #
 # def dump_to_vtk(pcb, filename, iteration, Ex_dump=False, Ey_dump=False, Ez_dump=False, Emag_dump=True, objects_dump=True, ports_dump=True):
 #     '''
+#     Floris
 #     Extension is automatically chosen, you don't need to supply it
 #
 #     thanks

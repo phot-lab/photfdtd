@@ -46,7 +46,7 @@ class Grid:
 
     """
 
-    from .visualization import visualize
+    from .visualization import plot_structure
 
     def __init__(
             self,
@@ -346,8 +346,10 @@ class Grid:
 
         Args:
             total_time: the total time for the simulation to run.
-            progress_bar: choose to show a progress bar during
-                simulation
+            progress_bar: choose to show a progress bar during simulation
+            interval: the interval at which to save frames for animation.
+                If animate is True, the frames will be saved every `interval`
+                time steps.
 
         """
         if isinstance(total_time, float):
@@ -371,6 +373,10 @@ class Grid:
     def step(self, interval=100):
         """do a single FDTD step by first updating the electric field and then
         updating the magnetic field
+        Args:
+            interval: the interval at which to save frames for animation.
+                If animate is True, the frames will be saved every `interval`
+                time steps.
         """
         self.update_E()
         self.update_H()

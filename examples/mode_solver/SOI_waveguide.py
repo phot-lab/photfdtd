@@ -4,12 +4,12 @@ if __name__ == "__main__":
     background_index = 1.45
 
     # 新建一个 grid 对象
-    grid = Grid(grid_xlength=2e-6, grid_ylength=2e-6, grid_zlength=1, grid_spacing=20e-9,
+    grid = Grid(grid_xlength=4e-6, grid_ylength=4e-6, grid_zlength=1, grid_spacing=20e-9,
                 permittivity=background_index ** 2, foldername="waveguide_result")
 
     # 设置器件参数
     waveguide = Waveguide(
-        xlength=600e-9, ylength=440e-9, zlength=1, refractive_index=3.47638, name="Waveguide",
+        xlength=500e-9, ylength=220e-9, zlength=1, refractive_index=3.47638, name="Waveguide",
         grid=grid
     )
 
@@ -29,10 +29,10 @@ if __name__ == "__main__":
 
     # Now we can calculate modes
     data = solve.calculate_mode(lam=1550e-9, neff=2.8, neigs=200,
-                                x_boundary_low="pml",
-                                y_boundary_low="pml",
-                                x_boundary_high="pml",
-                                y_boundary_high="pml",
+                                x_boundary_low="zero",
+                                y_boundary_low="zero",
+                                x_boundary_high="zero",
+                                y_boundary_high="zero",
                                 # y_thickness_low=0.5e-6,
                                 # y_thickness_high=0.5e-6,
                                 background_index=background_index)

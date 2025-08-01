@@ -42,7 +42,7 @@ if __name__ == "__main__":
     # # # 保存仿真结果
     # grid.save_simulation()
     grid = Grid.read_simulation("test_grating")
-    grid.visualize()
+    grid.plot_structure()
     # # 绘制仿真结束时刻空间场分布
 
     # for time in range(10):
