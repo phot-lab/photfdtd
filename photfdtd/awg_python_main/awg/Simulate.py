@@ -1,5 +1,5 @@
 import numpy as np
-from . import SimulationOptions
+from .simulation_options import SimulationOptions
 from .AWG import *
 
 class Simulate:

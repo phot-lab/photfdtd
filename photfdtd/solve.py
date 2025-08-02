@@ -1,10 +1,10 @@
-# import utils
 import photfdtd.philsol as ps
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from os import path
 import photfdtd.fdtd as fdtd
+import os
 
 
 class Solve:
@@ -49,7 +49,7 @@ class Solve:
 
         # 去掉作为轴的那一维
         if axis == 'x':
-            self.n = self.geometry[index, :, :, :]
+            self.n = self.geometry[index, :, :, :]#原本self.geometry形状是(x, y, z, 3)，self.n形状变成（y，z，3）
         elif axis == 'y':
             self.n = self.geometry[:, index, :, :]
         elif axis == 'z':
@@ -59,18 +59,18 @@ class Solve:
 
         # 日后加入判断是否是各向异性材料
 
-    def plot(self, image_name=None):
+    def plot(self):
         """
         绘制截面折射率分布图。
         # TODO:如果要仿真各向异性材料，代码还需要更加细化
         :return: None
         """
 
-        self.x = self.n.shape[0]
+        self.x = self.n.shape[0]#取self.n第一个方向的网格点数
         self.y = self.n.shape[1]
 
         # It's quite important to transpose n
-        self.n = np.transpose(self.n, [1, 0, 2])
+        self.n = np.transpose(self.n, [1, 0, 2])#对 self.n 的前两个维度进行转置，为了匹配 imshow 图像显示的坐标系（imshow 默认显示 rows 为 y，columns 为 x）。
         plt.imshow(self.n[:, :, 0], cmap=cm.jet, origin="lower",
                    extent=[0, self.x * self.grid.grid_spacing * 1e6, 0, self.y * self.grid.grid_spacing * 1e6])
         # plt.axis("tight")
@@ -89,12 +89,10 @@ class Solve:
         plt.colorbar()
         plt.title("refractive_index_real")
         # 保存图片
-        # 判断 image_name 是否为 None
-        if image_name is None:
-             image_name = '%s_%s=%d.png' % ('index', self.axis, self.index)  # 默认命名方式
-        else:
-             image_name = '%s\\%s' % (self.filepath, image_name)  # 使用传入的 filename
-        plt.savefig(fname=image_name)
+        image_name = f"index_{self.axis}={self.index}.png"
+        image_path = os.path.join(self.filepath, image_name)
+
+        plt.savefig(fname=image_path)
 
         # plt.show()
         plt.clf()
@@ -136,7 +134,7 @@ class Solve:
             neff = np.max(self.n)
         self.lam = lam * 10 ** 6
         self.k = 2 * np.pi / self.lam
-        PML_with = int(np.round(lam / self.grid.grid_spacing / 4))
+        PML_with = int(np.round(lam / self.grid.grid_spacing / 4))#默认是波长的1/4
         if x_boundary_low == "pml" and not x_thickness_low:
             x_thickness_low = PML_with
         if x_boundary_high == "pml" and not x_thickness_high:
@@ -146,7 +144,7 @@ class Solve:
         if y_boundary_high == "pml" and not y_thickness_high:
             y_thickness_high = PML_with
         try:
-            if self.axis == "x":
+            if self.axis == "x":#将以m单位转为网格大小为单位，返回网格点数
                 x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high = \
                     self.grid._handle_distance(x_thickness_low, "y"), self.grid._handle_distance(x_thickness_high, "y"), \
                     self.grid._handle_distance(y_thickness_low, "z"), self.grid._handle_distance(y_thickness_high, "z"),
@@ -161,8 +159,9 @@ class Solve:
         except:
             pass
         print(x_thickness_low, x_thickness_high, y_thickness_low, y_thickness_high)
-        # Calculate modes
+        # Calculate modes，调用philsol包计算模式
         # FIXME: 检查pml边界的四个方向是否有问题
+        #根据二维折射率张量 n[x, y, 3] 构建矢量波动方程对应的稀疏本征矩阵 P
         P, matrices = ps.eigen_build(self.k, self.n, self.grid.grid_spacing * 1e6, self.grid.grid_spacing * 1e6,
                                      x_boundary_low=x_boundary_low, y_boundary_low=y_boundary_low,
                                      x_thickness_low=x_thickness_low,
@@ -250,14 +249,13 @@ class Solve:
     def draw_mode(filepath,
                   data: dict = None,
                   content: str = "amplitude",
-                  number:int=0,
-                  TE_fractions=None
+                  number:int=0
                   ) -> None:
         '''
         绘制模式，保存图片与相应的有效折射率
         :param neigs: 绘制模式数
         :param component: ey: 绘制Ey ex: 绘制Ex # TODO: Ez与磁场？
-        :param TE_fractions: TE分量的比值列表
+        :number:绘制箭头个数
         :return: None
         '''
         axis = data["axis"]
@@ -339,11 +337,12 @@ class Solve:
             elif axis == "z":
                 plt.xlabel('x/um')
                 plt.ylabel('y/um')
-            #设置标题
-            mode_type = "(TE)" if TE_fractions and TE_fractions[i] >= 0.55 else "(TM)"
+            #设置标题，增加区分TE/TM模式判断
+            TE_fraction = Solve.calculate_TEfraction(data["Ex"][i], data["Ey"][i], data["Ez"][i], data["axis"],data["grid_spacing"])
+            mode_type = "(TE)" if TE_fraction  >= 0.55 else "(TM)"
             plt.title(f'E_intensity {mode_type}\nneff={effective_index[i]}')
 
-
+            #绘制表示电场方向的箭头
             # 计算电场强度的最大值
             max_intensity = np.amax(E_intensity)
             # 使用最大值的 10% 作为阈值，可以根据需要调整这个比例
@@ -362,7 +361,7 @@ class Solve:
             y_points = np.linspace(min_y, max_y, int(np.sqrt(number)), dtype=int)
             # 确定最大箭头长度和宽度，并确保矩形波导和光纤箭头的一致性
             fixed_grid_points = 125#固定的网格点
-            if grid_spacing<100e-9:
+            if grid_spacing<100e-9:#todo:在实现非均匀网格时，这个地方的代码想要修改
                 arrow_length = fixed_grid_points * grid_spacing * 6e4
             elif grid_spacing>400e-9:
                 arrow_length = fixed_grid_points * grid_spacing * 2e5
@@ -382,7 +381,6 @@ class Solve:
                         relative_intensity = E_intensity[y, x] / max_intensity
                         arrow_scale = max_arrow_scale / relative_intensity if relative_intensity > 0 else max_arrow_scale
                         arrow_width = max_arrow_width * relative_intensity
-                        #print("arrow_scale:", arrow_scale, "arrow_width:", arrow_width)
                         if magnitude > 0:
                             Ex_val_normalized = Ex_val / magnitude
                             Ey_val_normalized = Ey_val / magnitude
@@ -496,61 +494,31 @@ class Solve:
             i += 1
         return data
 
-    def calculate_TEfraction(self,
-                             dic,
+    @staticmethod
+    def calculate_TEfraction(Ex, Ey, Ez,
                              axis,
-                             n_levels: int = 6,
-                             ) -> None:
+                             grid_spacing
+                             ) -> float:
         """
-        绘制不同模式的Ey与Ex的实部之比，并保存
-        # TODO: 在lumerical中，TE fracttion 来自全区域电场的平方积分之比，得到的是一个数，并不是这种算法。是否需要改正？
-        :param filepath: 保存图片路径
-         n_levels：需要计算模式TE的个数
-        :return: None
+        计算单个模式的TE polarization Fraction
         """
-        # 根据 axis 选择合适的电场分量
+        # TODO:获取网格的横截面积,仅适用于均匀网格，当x,y,z方向的网格大小不一样的时候，这个网格积分得进行修改
+        grid_area=grid_spacing**2
+        # 计算 |E_x|^2, |E_y|^2, |E_z|^2
+        Ex2 = np.abs(Ex)**2
+        Ey2 = np.abs(Ey)**2
+        Ez2 = np.abs(Ez)**2
         if axis == 'x':
-            # 传播方向为 x，横截面电场为 Ey 和 Ez
-            Ey_list = dic["Ey"]
-            Ez_list = dic["Ez"]
-            Ex_list = dic["Ex"]  # 不忽略 Ex 分量
+            numerator = np.sum(Ey2) * grid_area#分子
+            denominator=np.sum(Ey2 + Ez2) * grid_area#分母
         elif axis == 'y':
-            # 传播方向为 y，横截面电场为 Ex 和 Ez
-            Ex_list = dic["Ex"]
-            Ez_list = dic["Ez"]
-            Ey_list = dic["Ey"]
-
+            numerator = np.sum(Ex2 ) * grid_area
+            denominator=np.sum(Ex2 + Ez2) * grid_area
         elif axis == 'z':
-            # 传播方向为 z，横截面电场为 Ex 和 Ey
-            Ex_list = dic["Ex"]
-            Ey_list = dic["Ey"]
-            Ez_list = dic["Ez"]
-         # 获取网格的横截面积,仅适用于均匀网格，当x,y,z方向的网格大小不一样的时候，这个网格积分得进行修改
-        grid_area=self.grid.grid_spacing**2
-        TE_fractions = []
-        #公式计算
-        for i, (Ex, Ey, Ez) in enumerate(zip(Ex_list, Ey_list, Ez_list)):
-            # 计算 |E_x|^2, |E_y|^2, |E_z|^2
-            Ex2 = np.abs(Ex)**2
-            Ey2 = np.abs(Ey)**2
-            Ez2 = np.abs(Ez)**2
-            if axis == 'x':
-               numerator = np.sum(Ey2) * grid_area#分子
-               denominator=np.sum(Ey2 + Ez2) * grid_area#分母
-            elif axis == 'y':
-               numerator = np.sum(Ex2 ) * grid_area
-               denominator=np.sum(Ex2 + Ez2) * grid_area
-            elif axis == 'z':
-               numerator = np.sum(Ex2 ) * grid_area
-               denominator=np.sum(Ex2 + Ey2) * grid_area
-            TE_fraction = numerator / denominator if denominator != 0 else 0
-            # TE_fraction_percentage = round(TE_fraction * 100)  # 转为百分比并四舍五入
-            TE_fractions.append(TE_fraction)
-            # print(f"Mode {i + 1}: TE_fraction = {TE_fraction}")
-            # 打印当前模式的 TE_fraction 百分比
-            # print(f"Mode {i + 1}: TE_fraction = {TE_fraction_percentage}%")
-
-        return TE_fractions
+            numerator = np.sum(Ex2 ) * grid_area
+            denominator=np.sum(Ex2 + Ey2) * grid_area
+        TE_fraction = numerator / denominator if denominator != 0 else 0
+        return TE_fraction
 
 
 

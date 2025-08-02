@@ -52,7 +52,7 @@ if __name__ == "__main__":
     # 绘制折射率分布
     solve.plot()
 
-    # 计算这个截面处，波长1.55um，折射率3.47附近的2个模式，边界条件选择在四个方向上都是pml，厚度均为15格
+    # 计算这个截面处，波长1.55um，折射率1.4504附近的20个模式，边界条件选择在四个方向上都是pml，厚度均为15格
     data = solve.calculate_mode(lam=1550e-9, neff=1.4504, neigs=20,
                                 x_boundary_low="pml", y_boundary_low="pml",
                                 x_boundary_high="pml",

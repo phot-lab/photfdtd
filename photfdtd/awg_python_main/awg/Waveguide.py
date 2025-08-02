@@ -1,10 +1,11 @@
 from .core import *
 from .material import *
-from .material.Material import Material
+from .material.material import Material
 from .material import dispersion
-from . import Field
+from .field import Field
 from tabulate import tabulate
 import types
+import numpy as np
 
 class Waveguide:
     """	 Waveguide class
@@ -41,49 +42,50 @@ class Waveguide:
             if i not in slots[:]:
                 raise AttributeError(f"'Waveguide' object has no attribute '{i}'")
         if "clad" in _in:
-            if type(kwargs["clad"]) in [types.FunctionType, float, int]:
-                # self._clad = Material(kwargs["clad"])
-                self._clad = kwargs["clad"]  # 如果是数值，直接保存
-            elif (str(type(kwargs["clad"])) == "<class 'awg.material.Material.Material'>"):
-                self._clad = kwargs["clad"]
-            elif type(kwargs["clad"]) == list:
-                self._clad = Material(list_to_array(kwargs["clad"]))
-            elif str(type(kwargs["clad"])) == "<class 'numpy.ndarray'>":
-                self._clad = Material(kwargs["clad"])
+            clad_val = kwargs["clad"]
+            if isinstance(clad_val, (types.FunctionType, float, int)):
+                self._clad = clad_val  # 数值或函数直接保存
+            elif isinstance(clad_val, Material):
+                self._clad = clad_val
+            elif isinstance(clad_val, list):
+                self._clad = Material(list_to_array(clad_val))
+            elif isinstance(clad_val, np.ndarray):
+                self._clad = Material(clad_val)
             else:
                 raise ValueError("The cladding must be a material or a float representing its refractive index.")
         else:
             self._clad = Material(SiO2)
 
         if "core" in _in:
-            if type(kwargs["core"]) in [types.FunctionType, float, int]:
-                # self._core = Material(kwargs["core"])
-                self._core = kwargs["core"]  # 如果是数值，直接保存
-            elif (str(type(kwargs["core"])) == "<class 'awg.material.Material.Material'>"):
-                self._core = kwargs["core"]
-            elif type(kwargs["core"]) == list:
-                self._core = Material(list_to_array(kwargs["core"]))
-            elif str(type(kwargs["core"])) == "<class 'numpy.ndarray'>":
-                self._core = Material(kwargs["core"])
+            core_val = kwargs["core"]
+            if isinstance(core_val, (types.FunctionType, float, int)):
+                self._core = core_val
+            elif isinstance(core_val, Material):
+                self._core = core_val
+            elif isinstance(core_val, list):
+                self._core = Material(list_to_array(core_val))
+            elif isinstance(core_val, np.ndarray):
+                self._core = Material(core_val)
             else:
                 raise ValueError("The core must be a material or a float representing its refractive index.")
         else:
             self._core = Material(Si)
 
         if "subs" in _in:
-            if type(kwargs["subs"]) in [types.FunctionType, float, int]:
-                # self._subs = Material(kwargs["subs"])
-                self._subs = kwargs["subs"]  # 如果是数值，直接保存
-            elif (str(type(kwargs["subs"])) == "<class 'awg.material.Material.Material'>"):
-                self._subs = kwargs["subs"]
-            elif type(kwargs["subs"]) == list:
-                self._subs = Material(list_to_array(kwargs["subs"]))
-            elif str(type(kwargs["subs"])) == "<class 'numpy.ndarray'>":
-                self._subs = Material(kwargs["subs"])
+            subs_val = kwargs["subs"]
+            if isinstance(subs_val, (types.FunctionType, float, int)):
+                self._subs = subs_val
+            elif isinstance(subs_val, Material):
+                self._subs = subs_val
+            elif isinstance(subs_val, list):
+                self._subs = Material(list_to_array(subs_val))
+            elif isinstance(subs_val, np.ndarray):
+                self._subs = Material(subs_val)
             else:
                 raise ValueError("The substrate must be a material or a float representing its refractive index.")
         else:
             self._subs = Material(SiO2)
+
 
         if "w" in _in:
             if type(kwargs["w"]) in [int, float] and kwargs["w"] > 0:
@@ -233,10 +235,10 @@ class Waveguide:
             x = np.linspace(XLimits[0],XLimits[1],points)
         # 根据模式类型生成不同的电场和磁场
         if ModeType == "gaussian":
-            E,H,_ = gmode(lambda_c, self._w, self._h, n2, n1, x = x)
+            E,H,_ = gmode(lmbda, self._w, self._h, n2, n1, x = x)
 
             # return Field.Field(x,E,([],H))
-            return Field.Field(x, E, H)  # 直接传递H作为一个数组
+            return Field(x, E, H)  # 直接传递H作为一个数组
 
 
         elif ModeType == "rect":
@@ -247,7 +249,7 @@ class Waveguide:
 
         elif ModeType == "solve":
             E,H, _, _ = wgmode(lmbda,self._w,self._h,self._t,n2,n1,n3,x = x)
-            return Field.Field(x,E,H)
+            return Field(x,E,H)
         else:
             raise ValueError("Unknow mode type")
 
@@ -302,7 +304,7 @@ class Waveguide:
 
     @clad.setter
     def clad(self,clad):
-        if (type(clad) == types.FunctionType) or (str(type(clad)) == "<class 'material.Material.Material'>") or (type(clad) == float) or (type(clad) == int):
+        if (type(clad) == types.FunctionType) or (str(type(clad)) == "<class 'material.material.Material'>") or (type(clad) == float) or (type(clad) == int):
             self._clad = Material(clad)
         elif type(clad) == list:
             self._clad = Material(list_to_array(clad))
@@ -315,7 +317,7 @@ class Waveguide:
 
     @core.setter
     def core(self,core):
-        if (type(core) == types.FunctionType) or (str(type(core)) == "<class 'material.Material.Material'>") or (type(core) == float) or (type(core) == int):
+        if (type(core) == types.FunctionType) or (str(type(core)) == "<class 'material.material.Material'>") or (type(core) == float) or (type(core) == int):
             self._core = Material(core)
         elif type(core) == list:
             self._core = Material(list_to_array(core))
@@ -328,7 +330,7 @@ class Waveguide:
 
     @subs.setter
     def subs(self,subs):
-        if (type(subs) == types.FunctionType) or (str(type(subs)) == "<class 'material.Material.Material'>") or (type(subs) == float) or (type(subs) == int):
+        if (type(subs) == types.FunctionType) or (str(type(subs)) == "<class 'material.material.Material'>") or (type(subs) == float) or (type(subs) == int):
             self._subs = subs
         elif type(subs) == list:
                 self._subs = Material(list_to_array(subs))

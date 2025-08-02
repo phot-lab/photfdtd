@@ -1,13 +1,11 @@
-import numpy as np
-from .AWG import *
 from .core import *
 from .plotfield import plotfield
-import .Simulate import Simulate
-import .SimulationOptions import SimulationOptions
+from .simulate import Simulate
 import matplotlib.pyplot as plt
 import matplotlib
 import os
 from scipy.optimize import curve_fit
+
 
 def gaussian(x, a, x0, sigma):
         return a * np.exp(-(x - x0)**2 / (2 * sigma**2))

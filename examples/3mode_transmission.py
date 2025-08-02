@@ -5,11 +5,12 @@ import matplotlib.pyplot as plt
 import os
 
 if __name__ == "__main__":
+    #计算三模光子灯笼各个截面的模式，并计算两个模式之间的重叠积分
     # 定义不同的taper_ratio值
     taper_ratios = [1, 0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.16]
     background_index = 1.4398
 
-    # 创建主文件夹以保存所有结果
+    # 创建文件夹
     main_folder_path = "test_3mode_transmission_1"
     if not os.path.exists(main_folder_path):
         os.makedirs(main_folder_path)
@@ -17,7 +18,6 @@ if __name__ == "__main__":
     mode_data = {}
 
     for taper_ratio in taper_ratios:
-        # 创建子文件夹以标注taper_ratio，但实际保存结果到主文件夹
         folder_path = os.path.join(main_folder_path, f"taper_ratio_{taper_ratio}")
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
@@ -27,7 +27,7 @@ if __name__ == "__main__":
                     foldername=folder_path,
                     permittivity=background_index ** 2)
 
-        # 实例化Lantern_3Mode对象
+        # 创建Lantern_3Mode对象
         lantern = Lantern_3Mode(
             length=1,
             r_LP01=5.5e-6,
@@ -46,13 +46,13 @@ if __name__ == "__main__":
             name="lantern_3mode"
         )
 
-        # 往grid里添加fiber
+        # 往grid里添加lantern
         grid.add_object(lantern)
 
         # 创建solve对象
         solve = Solve(grid=grid,
                       axis="z",
-                      filepath=folder_path,  # 结果保存到子文件夹
+                      filepath=folder_path,
                       index=0
                       )
         # 绘制折射率分布
@@ -69,7 +69,7 @@ if __name__ == "__main__":
         mode_data[taper_ratio] = data
 
         # 保存模式图像
-        Solve.draw_mode(filepath=solve.filepath, data=data, content="amplitude")
+        solve.draw_mode(filepath=solve.filepath, data=data, content="amplitude")
 
 
     # 提取电场数据并计算重叠积分

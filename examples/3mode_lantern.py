@@ -3,6 +3,20 @@ import matplotlib.pyplot as plt
 
 
 if __name__ == "__main__":
+    """
+    三模光子灯笼在拉锥比为0.16时的截面模式分析：
+    工作波长：1550nm
+    各参数设置：
+    - 单模光纤纤芯折射率：1.4482
+    - 包层折射率：1.444
+    - 套管（环境）折射率：1.438
+    - 包层半径：62.5μm
+    - 各纤芯之间的距离：42μm
+    - 用于激励不同模式的单模光纤纤芯半径：
+      LP01模式：5.5μm
+      LP11a模式：4.325μm
+      LP11b模式：3.275μm
+    """
     # 设置拉锥比和背景折射率
     taper_ratio=0.16
     background_index = 1.4398
@@ -31,7 +45,7 @@ if __name__ == "__main__":
         name="lantern_3mode"
     )
 
-    # 往 grid 里添加fiber
+    # 往 grid 里添加lantern
     grid.add_object(lantern)
     grid.save_fig()
     # 创建solve对象
@@ -41,17 +55,17 @@ if __name__ == "__main__":
                   index=0
                   )
     solve.plot()
-     # 计算这个截面处，波长1.55um，折射率1.4482附近的6个模式，边界条件选择在四个方向上都是pml，
+     # 计算这个截面处，波长1.55um，折射率1.4482附近的2个模式，边界条件选择在四个方向上都是pml，
     data = solve.calculate_mode(lam=1550e-9, neff=1.4482, neigs=2,
                                 x_boundary_low="pml", y_boundary_low="pml",
                                 x_boundary_high="pml",
                                 y_boundary_high="pml",
                                 background_index=background_index)
-    TE_fractions = solve.calculate_TEfraction(data, axis='z', n_levels=2)
+    # 绘制模式场，我们选择绘制amplitude，即幅值
     solve.draw_mode(filepath=solve.filepath,
                     data=data,
                     content="amplitude",
-                    number=30,TE_fractions=TE_fractions )
-    #绘制模式场，我们选择绘制amplitude，即幅值
-    solve.draw_mode(filepath=solve.filepath, data=data, content="amplitude")
+                    number=30)
+
+
 

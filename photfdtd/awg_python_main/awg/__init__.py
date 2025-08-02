@@ -13,19 +13,20 @@ from .AWG import (
     fpr2,
 )
 
-from .Field import Field
-from .Aperture import Aperture
-from .Waveguide import Waveguide
-from .SimulationOptions import SimulationOptions
-from .Simulate import Simulate
-from .Spectrum import Spectrum
-from .Analyse import  Analyse
+from .field import Field
+from .aperture import Aperture
+from .waveguide import Waveguide
+from .simulation_options import SimulationOptions
+from .simulate import Simulate
+from .spectrum import Spectrum
+from .spectral_analysis import  Analyse
 from .plotfield import plotfield
 from .material import *
-from .material.Material import Material
+from .material.material import Material
 from .material.dispersion import dispersion
 from .distribution import Distribution
 from .AWG import AWG
+from .awg_simulation import AWG_Simulation
 
 #from .material import (
 #    Material,
