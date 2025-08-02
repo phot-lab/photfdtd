@@ -16,7 +16,6 @@ from .typing_ import Tuple, Number, ListOrSlice, List
 from numpy import ndarray
 
 # relatvie
-from .grid import Grid
 from .backend import backend as bd
 from .waveforms import *
 from .detectors import CurrentDetector
@@ -77,11 +76,11 @@ class PointSource:
         self.pulse_length = pulse_length
         self.polarization = polarization
 
-    def _register_grid(self, grid: Grid, x: Number, y: Number, z: Number):
+    def _register_grid(self, grid, x: Number, y: Number, z: Number):
         """Register a grid for the source.
 
         Args:
-            grid: the grid to place the source into.
+            grid: fdtd.Grid, the grid to place the source into.
             x: The x-location of the source in the grid
             y: The y-location of the source in the grid
             z: The z-location of the source in the grid
@@ -211,7 +210,7 @@ class LineSource:
         self.polarization = polarization
 
     def _register_grid(
-            self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+            self, grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
         """Register a grid for the source.
 
@@ -434,12 +433,12 @@ class PlaneSource:
         self.axis = axis
 
     def _register_grid(
-            self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+            self, grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
         """Register a grid for the source.
 
         Args:
-            grid: the grid to place the source into.
+            grid: fdtd.Grid, the grid to place the source into.
             x: The x-location of the source in the grid
             y: The y-location of the source in the grid
             z: The z-location of the source in the grid
@@ -687,11 +686,11 @@ class SoftArbitraryPointSource:
         # "field" rather than "voltage" might be more meaningful
         # FIXME: these voltage time histories have a different dimensionality
 
-    def _register_grid(self, grid: Grid, x: Number, y: Number, z: Number):
+    def _register_grid(self, grid, x: Number, y: Number, z: Number):
         """Register a grid for the source.
 
         Args:
-            grid: the grid to place the source into.
+            grid: fdtd.Grid, the grid to place the source into.
             x: The x-location of the source in the grid
             y: The y-location of the source in the grid
             z: The z-location of the source in the grid

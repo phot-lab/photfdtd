@@ -1,5 +1,6 @@
+import photfdtd
 from photfdtd import Arc, Grid, Solve
-
+photfdtd.fdtd.set_backend("numpy")  # 设置后端为torch
 if __name__ == "__main__":
     background_index = 1.5
     # 新建一个 grid 对象
@@ -12,7 +13,7 @@ if __name__ == "__main__":
     #     grid=grid
     # )
     arc = Arc(outer_radius=60 * 20e-9, ylength=10, width=20, refractive_index=3.47, name="arc", angle_phi=0,
-              angle_psi=90, grid=grid)
+              angle_psi=45, grid=grid, angle_unit=True)
     # waveguide2 = Waveguide(
     #     xlength=20, ylength=40, zlength=1, x=150, y=80, z=0, refractive_index=3.47, name="Waveguide2",
     #     grid=grid
@@ -38,26 +39,17 @@ if __name__ == "__main__":
     #                   zlength=waveguide1.zlength
     #                   )
 
-    solve = Solve(grid=grid,
-                  axis='y',
-                  index=10,
-                  filepath=grid.folder
-                  )
-
     # We can plot the geometry now 绘制x=0截面结构图
-    grid.save_fig(axis="y", axis_number=10)
+    grid.save_fig(axis="y", axis_index=10, show_energy=True)
 
     # 绘制任一截面
-    solve.plot()
+    grid.plot_n()
     #
     # # 运行仿真
-    # grid.run()
+    grid.run(time=1000, save=True)
     #
-    # # # 绘制仿真结束时刻空间场分布
-    # Grid.plot_field(grid=grid, field="E", field_axis="y", axis="z", axis_index=0, folder=grid.folder)
-    #
-    # # # 保存仿真结果
-    # # grid.save_simulation()
-    # #
+    # 可视化
+    # grid.visualize()
+
     # # 读取仿真结果
     # data = grid.read_simulation(folder=grid.folder)

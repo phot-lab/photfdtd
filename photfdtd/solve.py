@@ -1,10 +1,9 @@
 # import utils
-import photfdtd.philsol as ps
+from . import philsol as ps
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from os import path
-import photfdtd.fdtd as fdtd
 
 
 class Solve:
@@ -14,7 +13,7 @@ class Solve:
     """
 
     def __init__(self,
-                 grid: fdtd.grid,
+                 grid,
                  axis: str = 'x',
                  axis_index: int = None,
                  index: int = 0,
@@ -26,7 +25,7 @@ class Solve:
         本函数除了作为__init__函数，其主要功能是将fdtd.grid变量及其内部保存的waveguide映射到矩阵self.geometry中。
         self.geometry是一个四维矩阵 [x,y,z,3]，这是因为对于各向异性材料，它们在x，y，z三个方向上折射率不同，所以需要四维才能表现。
         但暂时还不能编辑各向异性材料
-        :param grid: fdtd.grid
+        :param grid: photfdtd.fdtd.grid
         :param: axis: 哪个轴的截面
         :param: axis_index/index: index of the axis choosed 轴上哪点
         :param: filepath: 保存图片的文件夹

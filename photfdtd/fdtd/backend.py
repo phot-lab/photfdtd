@@ -140,6 +140,14 @@ class NumpyBackend(Backend):
     """ floating type for array """
 
     @staticmethod
+    def astype(arr, dtype):
+        """convert array to specified type"""
+        if hasattr(arr, 'astype'):
+            return arr.astype(dtype)
+        else:
+            return numpy.asarray(arr, dtype=dtype)
+
+    @staticmethod
     def to_float(arr):
         """ convert array to float type, same to numpy.float64 """
         if isinstance(arr, numpy.ndarray):
@@ -168,6 +176,23 @@ class NumpyBackend(Backend):
 
     cross = staticmethod(numpy.cross)
     """ cross product of two arrays, only for fourier.FrequencyRountines.FFT """
+
+    arctan2 = staticmethod(numpy.arctan2)
+    """ arctangent of y/x with correct quadrant """
+
+    any = staticmethod(numpy.any)
+    """ test whether any array element along a given axis evaluates to True """
+
+    @staticmethod
+    def shape(x):
+        """return the shape of an array"""
+        if hasattr(x, 'shape'):
+            return x.shape
+        else:
+            return numpy.array(x).shape
+
+    radians = staticmethod(numpy.radians)
+    """ convert degrees to radians """
 
     # 在 NumpyBackend 类中
     @staticmethod
@@ -243,6 +268,9 @@ class NumpyBackend(Backend):
     zeros = _replace_float(numpy.zeros)
     """ create an array filled with zeros """
 
+    meshgrid = staticmethod(numpy.meshgrid)
+    """ create coordinate matrices from coordinate vectors """
+
     @staticmethod
     def zeros_like(arr):
         """create an array filled with zeros with same shape as input
@@ -271,6 +299,8 @@ class NumpyBackend(Backend):
     exp = staticmethod(numpy.exp)
 
     divide = staticmethod(numpy.divide)
+
+    """ create an uninitialized array """
 
     # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     # beware to future people:
@@ -314,6 +344,9 @@ if TORCH_AVAILABLE:
         float = torch.get_default_dtype()
         """ floating type for array """
 
+        empty = staticmethod(numpy.empty)
+        """ create an uninitialized array """
+
         @staticmethod
         def to_float(tensor):
             if hasattr(tensor, 'to'):  # 检查是否是 PyTorch 张量
@@ -329,6 +362,19 @@ if TORCH_AVAILABLE:
         else:
             complex = torch.complex128
         """ complex type for array """
+
+        @staticmethod
+        def astype(arr, dtype):
+            """convert tensor to specified type"""
+            if torch.is_tensor(arr):
+                if dtype == float:
+                    return arr.to(torch.get_default_dtype())
+                elif hasattr(torch, str(dtype)):
+                    return arr.to(getattr(torch, str(dtype)))
+                else:
+                    return arr.to(dtype)
+            else:
+                return torch.tensor(arr, dtype=dtype)
 
         # methods
         asarray = staticmethod(torch.as_tensor)
@@ -378,6 +424,32 @@ if TORCH_AVAILABLE:
             if not torch.is_tensor(b):
                 b = torch.tensor(b)
             return torch.cross(a, b, dim=axis)
+
+        arctan2 = staticmethod(torch.atan2)
+        """ arctangent of y/x with correct quadrant """
+
+        @staticmethod
+        def any(x, axis=None, **kwargs):
+            """test whether any array element along a given axis evaluates to True"""
+            if axis is not None:
+                kwargs['dim'] = axis
+            return torch.any(x, **kwargs)
+
+        @staticmethod
+        def shape(x):
+            """return the shape of an array"""
+            if torch.is_tensor(x):
+                return x.shape
+            else:
+                return torch.tensor(x).shape
+
+        @staticmethod
+        def radians(x):
+            """convert degrees to radians"""
+            if torch.is_tensor(x):
+                return torch.deg2rad(x)
+            else:
+                return torch.deg2rad(torch.tensor(x))
 
         @staticmethod
         def sqrt(x):
@@ -472,6 +544,9 @@ if TORCH_AVAILABLE:
 
         zeros_like = staticmethod(torch.zeros_like)
 
+        meshgrid = staticmethod(torch.meshgrid)
+        """ create coordinate matrices from coordinate vectors """
+
         def linspace(self, start, stop, num=50, endpoint=True):
             """create a linearly spaced array between two points"""
             delta = (stop - start) / float(num - float(endpoint))
@@ -515,6 +590,54 @@ if TORCH_AVAILABLE:
             def zeros(self, shape, dtype=None):
                 """create an array filled with zeros"""
                 return torch.zeros(shape, device="cuda", dtype=dtype)
+
+            def empty(self, shape, dtype=None):
+                """create an uninitialized tensor on CUDA"""
+                if dtype is None:
+                    dtype = torch.get_default_dtype()
+                return torch.empty(shape, device="cuda", dtype=dtype)
+
+            @staticmethod
+            def astype(arr, dtype):
+                """convert tensor to specified type on CUDA"""
+                if torch.is_tensor(arr):
+                    if dtype == float:
+                        return arr.to(torch.get_default_dtype()).cuda()
+                    elif hasattr(torch, str(dtype)):
+                        return arr.to(getattr(torch, str(dtype))).cuda()
+                    else:
+                        return arr.to(dtype).cuda()
+                else:
+                    return torch.tensor(arr, dtype=dtype, device="cuda")
+
+            @staticmethod
+            def arctan2(y, x):
+                """arctangent of y/x with correct quadrant on CUDA"""
+                if not torch.is_tensor(y):
+                    y = torch.tensor(y, device="cuda")
+                if not torch.is_tensor(x):
+                    x = torch.tensor(x, device="cuda")
+                return torch.atan2(y.cuda(), x.cuda())
+
+            @staticmethod
+            def radians(x):
+                """convert degrees to radians on CUDA"""
+                if not torch.is_tensor(x):
+                    x = torch.tensor(x, device="cuda")
+                return torch.deg2rad(x.cuda())
+
+            @staticmethod
+            def meshgrid(*tensors, **kwargs):
+                """create coordinate matrices from coordinate vectors"""
+                # 确保张量在 CUDA 设备上
+                cuda_tensors = []
+                for tensor in tensors:
+                    if torch.is_tensor(tensor):
+                        cuda_tensors.append(tensor.cuda())
+                    else:
+                        cuda_tensors.append(torch.tensor(tensor, device="cuda"))
+                return torch.meshgrid(*cuda_tensors, **kwargs)
+            """ create coordinate matrices from coordinate vectors """
 
             def array(self, arr, dtype=None):
                 """create an array from an array-like sequence"""

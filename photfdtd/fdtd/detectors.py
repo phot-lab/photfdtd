@@ -12,7 +12,11 @@ Available Detectors:
 from .typing_ import ListOrSlice, Tuple, List
 
 # relative
-from .grid import Grid
+# 改为使用 TYPE_CHECKING，防止循环导入：
+# from typing import TYPE_CHECKING
+# if TYPE_CHECKING:
+#     from .grid import Grid
+
 from .backend import backend as bd
 from .constants import X, Y, Z, c
 from .conversions import simE_to_worldE, simH_to_worldH
@@ -37,12 +41,12 @@ class LineDetector:
         self.name = name
 
     def _register_grid(
-            self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+            self, grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
         """Register a grid to the detector
 
         Args:
-            grid: the grid to place the detector into
+            grid, the grid to place the detector into
             x: the x-location of the detector in the grid
             y: the y-location of the detector in the grid
             z: the z-location of the detector in the grid
@@ -267,7 +271,7 @@ class BlockDetector:
         self.name = name
 
     def _register_grid(
-            self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+            self, grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
         """Register a grid to the detector
 
@@ -481,7 +485,7 @@ class CurrentDetector:
         self.name = name
 
     def _register_grid(
-            self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+            self, grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
         """Register a grid to the detector
 

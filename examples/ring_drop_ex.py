@@ -1,6 +1,7 @@
+import photfdtd.fdtd
 import utils
 from photfdtd import Ring, Grid, Index, Waveguide
-
+photfdtd.fdtd.set_backend("torch.cuda")
 if __name__ == "__main__":
     index_Si = Index(material="Si")
     index_Re_Si, index_Im_Si = index_Si.get_refractive_index(wavelength=1.55e-6)
@@ -38,10 +39,10 @@ if __name__ == "__main__":
     grid.save_fig(axis="y", axis_index=6)
     grid.plot_n(axis="y", axis_index=6)
     #
-    # grid.run()
+    grid.run(save=True)
     # # # # #
     # grid.save_simulation()
-    grid = Grid.read_simulation(grid.folder)
+    # grid = Grid.read_simulation(grid.folder)
     # grid.save_fig(axis="y", axis_number=0, show_energy=True)
     # # 绘制仿真结束时刻空间场分布
     # Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0, folder=grid.folder)
@@ -49,7 +50,7 @@ if __name__ == "__main__":
     # grid.detector_profile()
     # grid.calculate_source_profile()
     grid.calculate_Transmission(detector_name_1="detector1", detector_name_2="detector2")
-    grid.plot_structure()
+    grid.visualize()
     freqs, spectrum1 = grid.visualize_single_detector(name_det="detector1")
     freqs, spectrum2 = grid.visualize_single_detector(name_det="detector2")
     freqs, spectrum3 = grid.visualize_single_detector(name_det="detector3")

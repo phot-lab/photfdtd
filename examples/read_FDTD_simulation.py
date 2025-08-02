@@ -4,9 +4,8 @@ if __name__ == "__main__":
     # 读取保存的监视器数据
     filepath = ".\\test_torch"
     grid = Grid.read_simulation(folder=filepath)
-    grid.folder=filepath
     # grid.animate(fps=200)
-    grid.plot_structure()
+    grid.visualize()
     freqs, spectrum2 = grid.visualize_single_detector(name_det="detector1")
 
     #
