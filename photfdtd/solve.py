@@ -293,8 +293,8 @@ class Solve:
 
                 plt.imshow(plot_matrix, cmap=cm.jet, origin="lower",
                            # 由于做了转置，所以这里要交换x， y
-                           extent=[0, plot_matrix.shape[1] * dx,
-                                   0, plot_matrix.shape[0] * dy])
+                           extent=[0, plot_matrix.shape[1] * dx * 1e6,
+                                   0, plot_matrix.shape[0] * dy * 1e6])
                 # plt.axis("tight")
                 plt.clim([np.amin(plot_matrix), np.amax(plot_matrix)])
                 plt.colorbar()
@@ -308,41 +308,54 @@ class Solve:
                     plt.xlabel('x/um')
                     plt.ylabel('y/um')
                 formatted_neff = "{:.6f}".format(effective_index[i])
-                plt.title('%s_of_%s, neff=%s' % (content, j, str(formatted_neff)))
+                plt.title('%s_of_%s\n neff=%s' % (content, j, str(formatted_neff)))
                 # 保存图片
                 plt.tight_layout()
                 plt.savefig(fname='%s\\%s%d_%s_%s.png' % (filepath, 'mode', i + 1, content, j))
                 plt.close()
 
         # Draw E/H intensity
-        # https://innovationspace.ansys.com/forum/forums/topic/e-intensity-and-ex-component-definition/
         for i in range(data["number_of_modes"]):
-            E_intensity = data["Ex"][i].real ** 2 + data["Ey"][i].real ** 2 + data["Ez"][i].real ** 2
-            H_intensity = data["Hx"][i].real ** 2 + data["Hy"][i].real ** 2 + data["Hz"][i].real ** 2
+            if axis == "x":
+                E_intensity = data["Ey"][i].real ** 2 + data["Ez"][i].real ** 2
+                H_intensity = data["Hy"][i].real ** 2 + data["Hz"][i].real ** 2
+                Ex = data["Ey"][i].real
+                Ey = data["Ez"][i].real
+            if axis == "y":
+                E_intensity = data["Ex"][i].real ** 2 + data["Ez"][i].real ** 2
+                H_intensity = data["Hx"][i].real ** 2 + data["Hz"][i].real ** 2
+                Ex = data["Ex"][i].real
+                Ey = data["Ez"][i].real
+            if axis == "z":
+                E_intensity = data["Ex"][i].real ** 2 + data["Ey"][i].real ** 2
+                H_intensity = data["Hx"][i].real ** 2 + data["Hy"][i].real ** 2
+                Ex = data["Ex"][i].real
+                Ey = data["Ey"][i].real
+            # 转置以匹配图像绘制的方式
             E_intensity = np.transpose(E_intensity)
             H_intensity = np.transpose(H_intensity)
+            Ex = np.transpose(Ex)
+            Ey = np.transpose(Ey)
+            # 绘制E强度图
             plt.figure()
             plt.imshow(E_intensity, cmap=cm.jet, origin="lower",
                        # 由于做了转置，所以这里要交换x， y
-                       extent=[0, E_intensity.shape[1] * dx,
-                               0, E_intensity.shape[0] * dy])
+                       extent=[0, E_intensity.shape[1] * dx * 1e6,
+                               0, E_intensity.shape[0] * dy * 1e6])
             plt.clim([np.amin(E_intensity), np.amax(E_intensity)])
             plt.colorbar()
             if axis == "x":
                 plt.xlabel('y/um')
                 plt.ylabel('z/um')
-                Ex = data["Ey"][i].real
-                Ey = data["Ez"][i].real
             elif axis == "y":
                 plt.xlabel('x/um')
                 plt.ylabel('z/um')
-                Ex = data["Ex"][i].real
-                Ey = data["Ez"][i].real
             elif axis == "z":
                 plt.xlabel('x/um')
                 plt.ylabel('y/um')
             #设置标题，增加区分TE/TM模式判断
-            TE_fraction = Solve.calculate_TEfraction(data["Ex"][i], data["Ey"][i], data["Ez"][i], data["axis"],data["grid_spacing"])
+            # TODO: 暂时用grid_spacing_x
+            TE_fraction = Solve.calculate_TEfraction(data["Ex"][i], data["Ey"][i], data["Ez"][i], data["axis"],data["grid_spacing_x"])
             mode_type = "(TE)" if TE_fraction  >= 0.55 else "(TM)"
             plt.title(f'E_intensity {mode_type}\nneff={effective_index[i]}')
 
@@ -365,12 +378,13 @@ class Solve:
             y_points = np.linspace(min_y, max_y, int(np.sqrt(number)), dtype=int)
             # 确定最大箭头长度和宽度，并确保矩形波导和光纤箭头的一致性
             fixed_grid_points = 125#固定的网格点
-            if grid_spacing<100e-9:#todo:在实现非均匀网格时，这个地方的代码想要修改
-                arrow_length = fixed_grid_points * grid_spacing * 6e4
-            elif grid_spacing>400e-9:
-                arrow_length = fixed_grid_points * grid_spacing * 2e5
+            if dx<100e-9:# todo:在实现非均匀网格时，这个地方的代码想要修改
+                # 暂时用dx
+                arrow_length = fixed_grid_points * dx * 6e4
+            elif dx>400e-9:
+                arrow_length = fixed_grid_points * dx * 2e5
             else:
-                arrow_length = fixed_grid_points * dx_in_m * 8e4
+                arrow_length = fixed_grid_points * dx * 8e4
             max_arrow_scale = 1 / arrow_length  #确保max_arrow_scale = 0.08
             max_arrow_width = 0.008
             # 绘制均匀间隔的矢量箭头
@@ -393,7 +407,7 @@ class Solve:
                             Ey_val_normalized = 0
 
                         #绘制箭头，scale掌管箭头整体长度，width掌管箭头宽度
-                        plt.quiver(x * dx * 1e6, y * dx * 1e6,
+                        plt.quiver(x * dx * 1e6, y * dy * 1e6,
                                    Ex_val_normalized, Ey_val_normalized,
                                    angles='xy', scale_units='xy', scale=arrow_scale, width=arrow_width,
                                    color='white', pivot='middle')
@@ -407,7 +421,7 @@ class Solve:
             plt.imshow(H_intensity, cmap=cm.jet, origin="lower",
                        # 由于做了转置，所以这里要交换x， y
                        extent=[0, H_intensity.shape[1] * dx * 1e6,
-                               0, H_intensity.shape[0] * dx * 1e6])
+                               0, H_intensity.shape[0] * dy * 1e6])
             plt.clim([np.amin(H_intensity), np.amax(H_intensity)])
             plt.colorbar()
             if axis == "x":

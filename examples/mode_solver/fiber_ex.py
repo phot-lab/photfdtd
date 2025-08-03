@@ -21,28 +21,28 @@ if __name__ == "__main__":
     # 往 grid 里添加fiber
     grid.add_object(fiber)
 
-    # # 创建solve类变量
-    # solve = Solve(grid=grid,
-    #               axis="z",
-    #               filepath=grid.folder,
-    #               index=0
-    #               )
-    #
-    # # 绘制折射率分布
-    # solve.plot()
-    # # We can plot the geometry now 绘制x=0截面结构图
-    # grid.save_fig(axis="z", axis_number=0)
-    #
-    # # 计算这个截面处，波长1.55um，折射率3.47附近的2个模式，边界条件选择在四个方向上都是pml，厚度均为15格
-    # data = solve.calculate_mode(lam=1550e-9, neff=1.4555, neigs=20,
-    #                             x_boundary_low="pml", y_boundary_low="pml",
-    #                             x_boundary_high="pml",
-    #                             y_boundary_high="pml",
-    #                             background_index=background_index)
-    #
-    # # Solve.save_mode(solve.filepath, data)
-    #
-    # Solve.draw_mode(filepath=solve.filepath, data=data, content="amplitude")
-    # Solve.draw_mode(filepath=solve.filepath, data=data, content="real_part")
-    # Solve.draw_mode(filepath=solve.filepath, data=data, content="imaginary_part")
-    # Solve.draw_mode(filepath=solve.filepath, data=data, content="phase")
+    # 创建solve类变量
+    solve = Solve(grid=grid,
+                  axis="z",
+                  filepath=grid.folder,
+                  index=0
+                  )
+
+    # 绘制折射率分布
+    solve.plot()
+    # We can plot the geometry now 绘制x=0截面结构图
+    grid.save_fig(axis="z", axis_number=0)
+
+    # 计算这个截面处，波长1.55um，折射率3.47附近的2个模式，边界条件选择在四个方向上都是pml，厚度均为15格
+    data = solve.calculate_mode(lam=1550e-9, neff=1.4555, neigs=20,
+                                x_boundary_low="pml", y_boundary_low="pml",
+                                x_boundary_high="pml",
+                                y_boundary_high="pml",
+                                background_index=background_index)
+
+    # Solve.save_mode(solve.filepath, data)
+
+    Solve.draw_mode(filepath=solve.filepath, data=data, content="amplitude")
+    Solve.draw_mode(filepath=solve.filepath, data=data, content="real_part")
+    Solve.draw_mode(filepath=solve.filepath, data=data, content="imaginary_part")
+    Solve.draw_mode(filepath=solve.filepath, data=data, content="phase")
