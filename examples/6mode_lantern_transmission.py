@@ -5,18 +5,18 @@ import matplotlib.pyplot as plt
 import os
 
 if __name__ == "__main__":
+    #计算六模光子灯笼各个截面的模式，并计算两个模式之间的重叠积分
     # 定义不同的taper_ratio值
     taper_ratios = [1, 0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.16]
     background_index = 1.438
 
-    # 创建主文件夹以保存所有结果
-    main_folder_path = "6mode_lantern_transimision_1"
+    # 创建文件夹
+    main_folder_path = "6mode_lantern_transimision"
     if not os.path.exists(main_folder_path):
         os.makedirs(main_folder_path)
     mode_data = {}
 
     for taper_ratio in taper_ratios:
-        # 创建子文件夹以标注taper_ratio，但实际保存结果到主文件夹
         folder_path = os.path.join(main_folder_path, f"taper_ratio_{taper_ratio}")
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
@@ -56,14 +56,14 @@ if __name__ == "__main__":
             name="lantern_6mode"
         )
 
-        # 往grid里添加fiber
+        # 往grid里添加lantern
         grid.add_object(lantern)
 
         # 创建solve对象
         solve = Solve(
             grid=grid,
             axis="z",
-            filepath=folder_path,  # 结果保存到子文件夹
+            filepath=folder_path,
             index=0
         )
 
@@ -78,8 +78,8 @@ if __name__ == "__main__":
             background_index=background_index
         )
 
-        # 保存模式，文件名不包含taper_ratio
-        Solve.draw_mode(filepath=solve.filepath, data=data, content="amplitude")
+        # 保存模式
+        solve.draw_mode(filepath=solve.filepath, data=data, content="amplitude")
 
         # 将模式数据保存到 mode_data 字典中
         mode_data[taper_ratio] = data
@@ -89,5 +89,5 @@ if __name__ == "__main__":
     E2_data = mode_data[0.16]
 
     # 创建并计算重叠积分
-    overlap_calculator = OverlapCalculator(grid_spacing=312.5e-9, E1_data=E1_data, E2_data=E2_data)
+    overlap_calculator = OverlapCalculator(grid_spacing=312.5e-9, E1_data=E1_data, E2_data=E2_data,neigs=2)
 

@@ -1,7 +1,6 @@
-from .core import *
-from . import Waveguide
+from .waveguide import Waveguide
 
-class Aperture(Waveguide.Waveguide):
+class Aperture(Waveguide):
 	"""
 	Represents a waveguide cross section to query normal modes and calculate
 	overlap for but coupling.

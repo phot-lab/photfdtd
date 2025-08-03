@@ -1,7 +1,8 @@
 from photfdtd import Waveguide, Grid, Solve
 
 if __name__ == "__main__":
-    background_index = 1.45
+    # 矩形波导模式分析
+    background_index = 1.444
 
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=4e-6, grid_ylength=4e-6, grid_zlength=1, grid_spacing=20e-9,
@@ -9,7 +10,7 @@ if __name__ == "__main__":
 
     # 设置器件参数
     waveguide = Waveguide(
-        xlength=500e-9, ylength=220e-9, zlength=1, refractive_index=3.47638, name="Waveguide",
+        xlength=600e-9, ylength=440e-9, zlength=1, refractive_index=3.476, name="Waveguide",
         grid=grid
     )
 
@@ -17,7 +18,7 @@ if __name__ == "__main__":
     grid.add_object(waveguide)
     grid.save_fig()
 
-    # 接下来我们绘制z=0截面的折射率分布，并计算在该截面处的五个模式
+
     # 创建solve对象
     solve = Solve(grid=grid,
                   axis='z',
@@ -27,36 +28,21 @@ if __name__ == "__main__":
     # 绘制截面折射率分布
     solve.plot()
 
-    # Now we can calculate modes
-    data = solve.calculate_mode(lam=1550e-9, neff=2.8, neigs=200,
-                                x_boundary_low="zero",
-                                y_boundary_low="zero",
-                                x_boundary_high="zero",
-                                y_boundary_high="zero",
-                                # y_thickness_low=0.5e-6,
-                                # y_thickness_high=0.5e-6,
+    # 计算模式
+    data = solve.calculate_mode(lam=1550e-9, neff=3.476, neigs=20,
+                                x_boundary_low="pml",
+                                y_boundary_low="pml",
+                                x_boundary_high="pml",
+                                y_boundary_high="pml",
                                 background_index=background_index)
 
 
-    # # 也可以是场的相位、实部或虚部
-    # solve.draw_mode(filepath=solve.filepath,
-    #                 data=data,
-    #                 content="phase")
-    # solve.draw_mode(filepath=solve.filepath,
-    #                 data=data,
-    #                 content="real_part")
-    # solve.draw_mode(filepath=solve.filepath,
-    #                 data=data,
-    #                 content="imaginary_part")
 
     # 如果保存了模式的数据，则可以读取它再绘制模式场
-    Solve.save_mode(solve.filepath, data)
+    solve.save_mode(solve.filepath, data)
 
-    # Draw the modes 接下来即可绘制模式场，我们选择绘制amplitude，即幅值。filepath为保存绘制的图片的路径
+    # Draw the modes 接下来即可绘制模式场，我们选择绘制real_part，即实部。filepath为保存绘制的图片的路径，number箭头(电场方向）个数
     solve.draw_mode(filepath=solve.filepath,
                     data=data,
-                    content="real_part")
-    #
-    # data_from_saved_modes = Solve.read_mode(solve.filepath)
-    #
-    # Solve.draw_mode(filepath=solve.filepath, data=data_from_saved_modes, content="real_part")
+                    content="real_part",number=30)
+

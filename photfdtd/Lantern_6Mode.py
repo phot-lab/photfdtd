@@ -5,8 +5,7 @@ import math
 class Lantern_6Mode(Waveguide):
     """
     六模光子灯笼
-     x, y, z: 中心坐标
-    distance   纤芯中心距离
+    x, y, z: 中心坐标
     r_LP01:纤芯1半径
     r_LP11a:纤芯2半径
     r_LP11b:纤芯3半径

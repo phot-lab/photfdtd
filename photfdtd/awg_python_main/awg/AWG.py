@@ -1,12 +1,12 @@
 from .core import *
 from .material import *
-from .material.Material import Material
-from . import Field, Waveguide, Aperture
+from .material.material import Material
+from .field import Field
+from .waveguide import Waveguide
+from .aperture import Aperture
 import types
 from numpy.random import randn
 from tabulate import tabulate
-from scipy.interpolate import interp1d
-import matplotlib.pyplot as plt
 import os
 import numpy as np
 import numbers
@@ -321,33 +321,33 @@ class AWG:
         """
         Return the slab waveguide propreties.平板波导
         """
-        return Waveguide.Waveguide(clad = self._clad,core = self._core,subs = self._subs,h = self._h, t = self._h)
+        return Waveguide(clad = self._clad,core = self._core,subs = self._subs,h = self._h, t = self._h)
     
     def getArrayWaveguide(self):
         """
         Return the arrayed waveguide propreties.脊型波导(t≠0）、条形波导（t=0)
         """
 
-        return Waveguide.Waveguide(clad = self._clad,core = self._core,subs = self._subs,w = self._w,h = self._h, t = self._t)
+        return Waveguide(clad = self._clad,core = self._core,subs = self._subs,w = self._w,h = self._h, t = self._t)
 
     def getInputAperture(self):
         """
         Return the input waveguide aperture.输入波导孔径就是一个条形波导
         """
-        return Aperture.Aperture(clad = self._clad,core = self._core,subs = self._subs,w = self._wi,h = self._h)
+        return Aperture(clad = self._clad,core = self._core,subs = self._subs,w = self._wi,h = self._h)
 
 
     def getArrayAperture(self):
         """
         Return the slab waveguide propreties.
         """
-        return Aperture.Aperture(clad = self._clad,core = self._core,subs = self._subs,w = self._wa,h = self._h)
+        return Aperture(clad = self._clad,core = self._core,subs = self._subs,w = self._wa,h = self._h)
 
     def getOutputAperture(self):
         """
         Return the slab waveguide propreties.
         """
-        return Aperture.Aperture(clad = self._clad,core = self._core,subs = self._subs,w = self._wo,h = self._h)
+        return Aperture(clad = self._clad,core = self._core,subs = self._subs,w = self._wo,h = self._h)
 
     def __str__(self):
         
@@ -761,6 +761,7 @@ def iw(model, lmbda, _input = 0, u = np.array([]),**kwargs):
     points = kwargs["points"] if "points" in _in else 100
     #计算输入波导的中心位置
     x_center = (_input - (model.Ni - 1) / 2) * model.di  # 计算波导中心位置，使其对称分布，左边为-，右边为+
+    print(" x_center:", x_center)
 
     if str(type(u)) == "<class 'awg.Field.Field'>":# 判断u的类型，如果u是Field对象，直接赋值给F
         F = u
@@ -824,7 +825,7 @@ def fpr1(model,lmbda,F0,**kwargs):
     zf = model.defocus + R*np.cos(a)# 计算sf该点在z方向的位置
     uf = diffract(lmbda,ns,up,xp,xf,zf)[0]# 计算衍射后的场uf,lmbda/ns:波导里面传输的波长
 
-    return Field.Field(sf,uf).normalize(F0.power())# 返回归一化后的场
+    return Field(sf,uf).normalize(F0.power())# 返回归一化后的场
 
 def aw(model,lmbda,F0,output_dir=None,**kwargs):
     """
@@ -860,6 +861,7 @@ def aw(model,lmbda,F0,output_dir=None,**kwargs):
     P0 = F0.power()# 输入电场的功率
     # 计算波数 k0 和波导折射率 nc
     k0 = 2*np.pi/lmbda
+    print("lmbda:",lmbda)
     nc = model.getArrayWaveguide().index(lmbda,1)[0]
     print("nc:",nc)
     dl=model.m*model.lambda_c/nc
@@ -887,6 +889,7 @@ def aw(model,lmbda,F0,output_dir=None,**kwargs):
         # 计算波导的传播距离 L 和相位
         L = j *dl+model.L0
         phase = k0*nc*L+pnoise[j]
+        print("phase:",phase)
         ploss = 10**(-abs(PropagationLoss*L*1e-4)/10)
         t = t1*ploss*iloss**2
         # 计算传播后的电场
@@ -895,7 +898,7 @@ def aw(model,lmbda,F0,output_dir=None,**kwargs):
         Ex = Ex + Efield
 
 
-    return Field.Field(x0,Ex)# 返回最终的电场
+    return Field(x0,Ex)# 返回最终的电场
 
 
 def fpr2(model,lmbda,F0,**kwargs):
@@ -940,7 +943,7 @@ def fpr2(model,lmbda,F0,**kwargs):
     xf = r*np.sin(a)#sf对应直线上的坐标xf
     zf = (model.defocus+R-r)+r*np.cos(a)#在z方向传播的距离
     uf = diffract(lmbda,ns,up,xp,xf,zf)[0]# 计算衍射后的电场,用 [0] 是为了取出 uf
-    return Field.Field(sf,uf).normalize(F0.power())# 返回传播后的电场，并归一化功率
+    return Field(sf,uf).normalize(F0.power())# 返回传播后的电场，并归一化功率
 
 
 def ow(model,lmbda,F0,**kwargs):
@@ -982,9 +985,9 @@ def ow(model,lmbda,F0,**kwargs):
          # 归一化电场
         Ek_interp = pnorm(x0, Ek_interp)
         # 计算当前输出波导的传输功率
-        T[i] = P0 * overlap(x0, Ek_interp, u0)**2
+        T[i] =  P0 *overlap(x0, Ek_interp, u0)**2
         # 输出每个输出波导的索引和其对应的功率传输值
         print(f"Output Waveguide {i}, Power Transmission: {abs(T[i]):.4f}")
 
-    return abs(T)# 返回每个输出波导的功率传输值的绝对值
+    return abs(T)# 返回每个输出波导的功率传输值的绝对值和输出波导编号
 

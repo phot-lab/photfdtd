@@ -1,6 +1,7 @@
-import numpy as np
-from . import SimulationOptions, Simulate
+from .simulation_options import SimulationOptions
+from .simulate import Simulate
 from .AWG import *
+import pandas as pd
 
 class Spectrum:
     """
@@ -23,7 +24,12 @@ class Spectrum:
         transmission - Array of transmission for each ouput channel of the AWG at every wavelenght每个输出通道在每个波长下的传输数组
 
     """
-    def __init__(self,model,bandwidth,**kwargs):
+    def __init__(self,model,bandwidth,Ng,d,delta_x,m,foldername="./",**kwargs):
+        self.foldername = foldername
+        self.Ng=Ng
+        self.d=d
+        self.delta_x=delta_x
+        self.m=m
         _in = kwargs.keys()
 
         points = kwargs["Points"] if "Points" in _in else 250# 获取采样点数，默认为250
@@ -43,3 +49,36 @@ class Spectrum:
         # 将波长和传输结果赋值给对象的属性
         self.wavelength = wvl
         self.transmission = T
+    def export_to_excel(self, filename="spectrum_results.xlsx"):
+        """
+        Export the simulation results to an Excel file.把仿真结果导出为excel表格
+        """
+        os.makedirs(self.foldername, exist_ok=True)
+        filepath = os.path.join(self.foldername, filename)
+        data = {
+            "Number of arrayed waveguides": [],
+            "Arrayed waveguide spacing(μm)": [],
+            "Output waveguide spacing(μm)": [],
+            "Diffraction order": [],
+            "Wavelength (um)": [],
+            "Waveguide Index": [],
+            "output_power(dB)": []
+
+        }
+
+        for i, wl in enumerate(self.wavelength):
+            for j in range(self.transmission.shape[1]):
+                T = abs(self.transmission[i, j])
+                T_dB = 10 * np.log10(T + 1e-12)   # 避免 log(0)
+
+                data["Number of arrayed waveguides"].append(self.Ng)
+                data["Arrayed waveguide spacing(μm)"].append(self.d)
+                data["Output waveguide spacing(μm)"].append(self.delta_x)
+                data["Diffraction order"].append(self.m)
+                data["Wavelength (um)"].append(wl)
+                data["Waveguide Index"].append(j)
+                data["output_power(dB)"].append(T_dB)
+
+        df = pd.DataFrame(data)
+        df.to_excel(filepath, index=False)
+        print(f"导出成功：{filepath}")

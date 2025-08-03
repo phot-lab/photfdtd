@@ -10,7 +10,7 @@ if __name__ == "__main__":
     # Pml边界厚度：0.8um
     # 波长：1.55um
 
-    background_index = 1.4437
+    background_index =1.4437
 
     # 新建一个 grid 对象
     grid = Grid(grid_xlength=15e-6, grid_ylength=15e-6, grid_zlength=1, grid_spacing=200e-9,
