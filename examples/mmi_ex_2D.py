@@ -1,5 +1,5 @@
-import utils
-from photfdtd import Mmi, Grid, Solve
+from photfdtd import Mmi, Grid, fdtd
+fdtd.set_backend("numpy")
 
 if __name__ == "__main__":
     n = 1  # 输入端口数
@@ -54,25 +54,10 @@ if __name__ == "__main__":
 
     grid.add_object(mmi)
 
-
-    grid.run(time=5000)
-    # grid.save_simulation()
-    # # 绘制仿真结束时刻空间场分布
-
+    #
+    grid.run(save=True)
+    # grid.visualize()
     # 读取仿真结果
-    # grid = Grid.read_simulation(folder=grid.folder)
-    grid.save_fig(axis="y", axis_number=0)
-    grid.plot_n(axis="y", axis_index=0)
-    grid.source_data()
-    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0, folder=grid.folder,
-                    vmax=1, vmin=-1)
-    grid.save_fig(axis="y",
-                  axis_number=0,
-                  show_energy=True)
-
-    # 由监视器数据绘制Ex场随时间变化的图像
-    Grid.plot_fieldtime(grid=grid, field_axis="x", field="E", index=5, name_det="detector1")
-    wl, spectrum1 = grid.visulize_detector(grid=grid, name_det="detector1", wl_start=1300e-9, wl_end=1800e-9)
-    wl, spectrum2 = grid.visulize_detector(grid=grid, name_det="detector2", wl_start=1300e-9, wl_end=1800e-9)
-    grid.detector_profile()
-    grid.source_data()
+    grid.visualize()
+    # grid.plot_field(field="E", field_axis="x", axis="y", axis_index=0, folder=grid.folder,
+    #                 vmax=1, vmin=-1)

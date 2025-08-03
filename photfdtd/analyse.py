@@ -64,13 +64,13 @@ class Analyse:
 
         # 由坡印廷矢量得到功率Power
         # if self.P.ndim == 4:
-        #     self.P_positive = np.sum(self.P_positive, axis=(1, 2, 3)) / 2 * self.P.shape[1] * self.P.shape[2] \
+        #     self.P_positive = bd.sum(self.P_positive, axis=(1, 2, 3)) / 2 * self.P.shape[1] * self.P.shape[2] \
         #                           * self.P.shape[3] * (self.grid_spacing ** 2)
-        #     self.P_negative = np.sum(self.P_negative, axis=(1, 2, 3)) / 2 * self.P.shape[1] * self.P.shape[2] \
+        #     self.P_negative = bd.sum(self.P_negative, axis=(1, 2, 3)) / 2 * self.P.shape[1] * self.P.shape[2] \
         #                           * self.P.shape[3] * (self.grid_spacing ** 2)
         # elif self.P.ndim == 2:
-        #     self.P_positive = np.sum(self.P_positive, axis=1) / 2 * self.P.shape[1] * self.grid_spacing
-        #     self.P_negative = np.sum(self.P_negative, axis=1) / 2 * self.P.shape[1] * self.grid_spacing
+        #     self.P_positive = bd.sum(self.P_positive, axis=1) / 2 * self.P.shape[1] * self.grid_spacing
+        #     self.P_negative = bd.sum(self.P_negative, axis=1) / 2 * self.P.shape[1] * self.grid_spacing
         # else:
         #     raise ValueError("Invalid shape of E or H!")
 
@@ -102,7 +102,7 @@ class Analyse:
         """
         pass
         # (lumerical官网上是E叉乘H的共轭，而meep是E的共轭叉乘H...)
-        # self.P = np.cross(self.E, self.H, axis=-1)
+        # self.P = bd.cross(self.E, self.H, axis=-1)
 
     def calculate_Power(self):
 
@@ -110,10 +110,10 @@ class Analyse:
         根据lumerical官网，功率=监视器表面的坡印廷矢量的实部的积分/2 （需不需要区分方向？）"""
 
         # TODO: 换算成标准单位
-        # Power = np.zeros(self.P.shape[0])
+        # Power = bd.zeros(self.P.shape[0])
         # axis参数指定在哪些维度上进行求和，这里指定为后四个维度, 或后两个
         pass
-        # half_max_Power = np.max(self.Power) / 2
+        # half_max_Power = bd.max(self.Power) / 2
         # 调用scipy包计算波峰数，保存在peaks中。peaks.shape=[波峰数]，其元素为波峰的索引 （有没有办法不调用scipy包？）
         # 只有波峰大于half_max_Power才会被计算
         # peaks, _ = find_peaks(self.Power, height=half_max_Power)

@@ -1,5 +1,5 @@
-import utils
-from photfdtd import Ysplitter, Grid
+from photfdtd import Ysplitter, Grid, fdtd
+fdtd.set_backend("torch.cuda")  # 使用torch.cuda作为后端
 
 if __name__ == "__main__":
     # 背景空间折射率
@@ -34,21 +34,19 @@ if __name__ == "__main__":
     grid.add_object(ysplitter)
     grid.save_fig(axis="y", axis_index=37)
     grid.save_fig(axis="z", axis_index=50)
-    grid.plot_n(grid=grid, axis="y", axis_index=37)
-    grid.plot_n(grid=grid, axis="z", axis_index=50)
+    grid.plot_n(axis="y", axis_index=37)
+    grid.plot_n(axis="z", axis_index=50)
 
     # 运行仿真
-    grid.run()
+    grid.run(save=True)
 
     grid.save_fig(axis="y", axis_number=37, show_energy=True)
-    grid.source_data()
+    grid.visualize()
     # 绘制空间场分布
-    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=37, folder=grid.folder)
-    Grid.plot_field(grid=grid, field="E", field_axis="y", axis="y", axis_index=37, folder=grid.folder)
-    Grid.plot_field(grid=grid, field="E", field_axis="z", axis="y", axis_index=37, folder=grid.folder)
-    Grid.plot_field(grid=grid, field="H", field_axis="x", axis="y", axis_index=37, folder=grid.folder)
-    Grid.plot_field(grid=grid, field="H", field_axis="y", axis="y", axis_index=37, folder=grid.folder)
-    Grid.plot_field(grid=grid, field="H", field_axis="z", axis="y", axis_index=37, folder=grid.folder)
+    grid.plot_field(field="E", field_axis="x", axis="y", axis_index=37, folder=grid.folder)
+    grid.plot_field(field="E", field_axis="y", axis="y", axis_index=37, folder=grid.folder)
+    grid.plot_field(field="E", field_axis="z", axis="y", axis_index=37, folder=grid.folder)
+    grid.plot_field(field="H", field_axis="x", axis="y", axis_index=37, folder=grid.folder)
+    grid.plot_field(field="H", field_axis="y", axis="y", axis_index=37, folder=grid.folder)
+    grid.plot_field(field="H", field_axis="z", axis="y", axis_index=37, folder=grid.folder)
 
-    # 保存仿真结果
-    grid.save_simulation()

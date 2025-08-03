@@ -1,5 +1,5 @@
-import utils
-from photfdtd import Grating, Grid
+from photfdtd import Grating, Grid, fdtd
+fdtd.set_backend("numpy")
 
 if __name__ == "__main__":
     grid_spacing = 20e-9  # 空间步长
@@ -9,41 +9,36 @@ if __name__ == "__main__":
     grid = Grid(grid_xlength=6e-6, grid_ylength=1, grid_zlength=10e-6, grid_spacing=grid_spacing,
                 permittivity=background_index ** 2, foldername="test_grating")
 
-    # # 制作一个11层厚，650nm波长的增返膜
-    # grt = Grating(
-    #     xlength=5e-6,
-    #     ylength=1,
-    #     x=3e-6,
-    #     y=0,
-    #     z=4.8e-6,
-    #     name="Grating",
-    #     duty_cyle=0.6,
-    #     period=400e-9,
-    #     n_periods=5,
-    #     axis="z",
-    #     refractive_index=3.47,
-    #     grid=grid
-    # )
+    grt = Grating(
+        xlength=5e-6,
+        ylength=1,
+        x=3e-6,
+        y=0,
+        z=4.8e-6,
+        name="Grating",
+        duty_cyle=0.6,
+        period=400e-9,
+        n_periods=5,
+        axis="z",
+        refractive_index=3.47,
+        grid=grid
+    )
     #
-    # grid.set_source(source_type="linesource", wavelength=650e-9, name="source", z=8e-6, xlength=1e-6,
-    #                 ylength=0, zlength=0, polarization="x", pulse_type="gaussian", pulse_length=10e-15,
-    #                 offset=15e-15)
-    # grid.set_detector(detector_type='linedetector',
-    #                   x_start=2.7e-6, y_start=0e-6, z_start=3e-6,
-    #                   x_end=3.2e-6, y_end=0e-6, z_end=3e-6,
-    #                   name='detector1')
+    grid.set_source(source_type="linesource", wavelength=650e-9, name="source", z=8e-6, xlength=1e-6,
+                    ylength=0, zlength=0, polarization="x", pulse_type="gaussian", pulse_length=10e-15,
+                    offset=15e-15)
+    grid.set_detector(detector_type='linedetector',
+                      x_start=2.7e-6, y_start=0e-6, z_start=3e-6,
+                      x_end=3.2e-6, y_end=0e-6, z_end=3e-6,
+                      name='detector1')
     #
-    # grid.add_object(grt)
-    # grid.plot_n()
-    # grid.save_fig()
+    grid.add_object(grt)
+    grid.plot_n()
+    grid.save_fig()
     #
-    # grid.run()
-    # grid.save_fig(show_energy=True)
+    grid.run(save=True)
     # # # 保存仿真结果
-    # grid.save_simulation()
-    grid = Grid.read_simulation("test_grating")
     grid.visualize()
-    # # 绘制仿真结束时刻空间场分布
 
     # for time in range(10):
     #     grid.detector_profile(timesteps=795+time)

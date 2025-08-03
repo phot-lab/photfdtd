@@ -669,7 +669,7 @@ def DomainBorderPML(grid, border_cells=5):
     # Doesn't return anything, unlike other .boundaries functions - is that breaking the API?
     # There might be a more straightforward numpy slicing solution...
     # maybe with
-    # raw = np.pad(raw, [(pcb.pml_cells, pcb.pml_cells), (pcb.pml_cells, pcb.pml_cells),
+    # raw = bd.pad(raw, [(pcb.pml_cells, pcb.pml_cells), (pcb.pml_cells, pcb.pml_cells),
     #    (pcb.pml_cells, pcb.pml_cells)], mode='constant') and then indexing the grid by that?
 
     if(grid.Nx < border_cells*2 or grid.Ny < border_cells*2 or grid.Nz < border_cells*2):

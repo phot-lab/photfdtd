@@ -1,5 +1,5 @@
 from .waveguide import Waveguide
-import numpy as np
+import photfdtd.fdtd.backend as bd
 
 
 class Sbend(Waveguide):
@@ -47,34 +47,34 @@ class Sbend(Waveguide):
     def _compute_permittivity(self):
         """
         """
-        z = np.linspace(0, self.zlength, self.zlength)
-        x = np.linspace(0, self.xlength, self.xlength)
-        Z, X = np.meshgrid(z, x, indexing="ij")  # indexing = 'ij'很重要
-        m = np.zeros((self.xlength, self.ylength, self.zlength))
+        z = bd.linspace(0, self.zlength, self.zlength)
+        x = bd.linspace(0, self.xlength, self.xlength)
+        Z, X = bd.meshgrid(z, x, indexing="ij")  # indexing = 'ij'很重要
+        m = bd.zeros((self.xlength, self.ylength, self.zlength))
 
         if self.direction == 1:
             # direction=1, 波导方向从左下到右上
             m1 = (
                     X
-                    <= 0.5 * (self.xlength - self.width) * np.sin((Z / self.zlength - 0.5) * np.pi)
+                    <= 0.5 * (self.xlength - self.width) * bd.sin((Z / self.zlength - 0.5) * bd.pi)
                     + int(self.width / 2 + 0.5)
                     + self.xlength / 2
             )
             # 上下翻转
-            m2 = np.flipud(m1)
+            m2 = bd.flipud(m1)
             # 左右翻转
-            m2 = np.fliplr(m2)
+            m2 = bd.fliplr(m2)
 
             # m2 = (
             #         X
-            #         <= 0.5 * (self.xlength - self.width) * np.sin((Z / self.zlength - 0.5) * np.pi)
+            #         <= 0.5 * (self.xlength - self.width) * bd.sin((Z / self.zlength - 0.5) * bd.pi)
             #         - int(self.width / 2 + 0.5)
             #         + self.xlength / 2
             # )
 
             # m2 = (
             #     X
-            #     >= 0.5 * (self.xlength - self.width) * np.sin((Z / self.zlength - 0.5) * np.pi)
+            #     >= 0.5 * (self.xlength - self.width) * bd.sin((Z / self.zlength - 0.5) * bd.pi)
             #     - self.width / 2
             #     + self.xlength / 2
             # )
@@ -82,17 +82,17 @@ class Sbend(Waveguide):
             # direction=-1, 波导方向从左上到右下
             m1 = (
                     X
-                    <= -0.5 * (self.xlength - self.width) * np.sin((Z / self.zlength - 0.5) * np.pi)
+                    <= -0.5 * (self.xlength - self.width) * bd.sin((Z / self.zlength - 0.5) * bd.pi)
                     + int(self.width / 2 + 0.5)
                     + self.xlength / 2
             )
             # 上下翻转
-            m2 = np.flipud(m1)
+            m2 = bd.flipud(m1)
             # 左右翻转
-            m2 = np.fliplr(m2)
+            m2 = bd.fliplr(m2)
             # m2 = (
             #     X
-            #     >= -0.5 * (self.xlength - self.width) * np.sin((Z / self.zlength - 0.5) * np.pi)
+            #     >= -0.5 * (self.xlength - self.width) * bd.sin((Z / self.zlength - 0.5) * bd.pi)
             #     - self.width / 2
             #     + self.xlength / 2
             # )
@@ -104,7 +104,7 @@ class Sbend(Waveguide):
                 if m1[i, j] == m2[i, j]:
                     m[j, :, i] = True
 
-        permittivity = np.ones((self.xlength, self.ylength, self.zlength))
+        permittivity = bd.ones((self.xlength, self.ylength, self.zlength))
         permittivity += m[:, :] * (self.refractive_index ** 2 - 1)
         permittivity += (1 - m[:, :]) * (self.background_index ** 2 - 1)
 

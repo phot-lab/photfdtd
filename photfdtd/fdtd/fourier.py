@@ -112,7 +112,7 @@ class FrequencyRoutines:
         # assumes a uniform timestep. It might be useful to add a .times vector to the grid
         # if the timestep is made variable at some point.
         # on the other hand, doing a non-uniform FFT is probably non-trivial at this point anyway
-        # times = np.linspace(0,end_time + (required_padding*dt),
+        # times = bd.linspace(0,end_time + (required_padding*dt),
         #                                         (input_length+required_padding))
 
     def compute_frequencies(self, length_with_padding, dt, freq_window_tuple=None):
@@ -203,7 +203,7 @@ class FrequencyRoutines:
         # # 检查输入数据的维度
         # if input_data.ndim == 1:
         #     # 对 1D 数据进行填充
-        #     input_data = np.cat([
+        #     input_data = bd.cat([
         #         input_data[:1].repeat(required_padding),  # 前填充
         #         input_data,
         #         input_data[-1:].repeat(required_padding)  # 后填充
@@ -265,11 +265,11 @@ class FrequencyRoutines:
         return spectrum_freqs[begin_freq_idx:end_freq_idx], impedance_spectrum[begin_freq_idx:end_freq_idx]
 
         #
-        # voltages = np.pad(voltages, (0, required_length), 'edge')
-        # currents = np.pad(currents, (0, required_length), 'edge')
+        # voltages = bd.pad(voltages, (0, required_length), 'edge')
+        # currents = bd.pad(currents, (0, required_length), 'edge')
         #
-        # voltage_spectrum = np.fft(voltages)
-        # current_spectrum = np.fft(currents)
+        # voltage_spectrum = bd.fft(voltages)
+        # current_spectrum = bd.fft(currents)
         #
         # spectrum_freqs, begin_freq_idx, end_freq_idx = \
         #                         compute_frequencies(length_with_padding, dt, freq_window_tuple=None)
@@ -302,6 +302,6 @@ class FrequencyRoutines:
         # plt.plot(spectrum_freqs[begin_freq:end_freq],(voltage_spectrum[begin_freq:end_freq]/current_spectrum[begin_freq:end_freq]).imag)
 
         plt.show()
-        # power_spectrum = -1.0*((voltage_spectrum[begin_freq:end_freq]*np.conj(current_spectrum[begin_freq:end_freq])).real)
-        # power_spectrum /= np.linalg.norm(power_spectrum)
+        # power_spectrum = -1.0*((voltage_spectrum[begin_freq:end_freq]*bd.conj(current_spectrum[begin_freq:end_freq])).real)
+        # power_spectrum /= bd.linalg.norm(power_spectrum)
         # plt.plot(spectrum_freqs[begin_freq:end_freq],power_spectrum)

@@ -1,5 +1,5 @@
-import utils
-from photfdtd import Ysplitter, Grid, Solve, Taper
+from photfdtd import Grid, Taper, fdtd
+fdtd.set_backend("numpy")
 
 if __name__ == "__main__":
     background_index = 1.4447
@@ -9,31 +9,37 @@ if __name__ == "__main__":
                 permittivity=background_index ** 2, foldername="test_taper")
 
     # 设置器件参数
-    taper = Taper(xlength=2000e-9, width=6, ylength=500e-9, zlength=20, name="taper", refractive_index=3.47, grid=grid)
+    taper = Taper(xlength_upper=2000e-9, xlength_lower=400e-9, ylength=500e-9, zlength=2e-6,
+                  name="taper", refractive_index=3.47, grid=grid)
 
     grid.add_object(taper)
-    grid.save_fig(axis="x", axis_number=51)
-    grid.save_fig(axis="x", axis_number=149)
-    grid.save_fig(axis="z", axis_number=100)
+    grid.save_fig(axis="x", axis_index=51)
+    grid.save_fig(axis="x", axis_index=149)
+    grid.save_fig(axis="z", axis_index=100)
+
+    grid.set_source(source_type="planesource", wavelength=1550e-9, name="source",
+                    x=None, y=None, z=1e-6,
+                    axis="z",
+                    xlength=400e-9, ylength=500e-9, zlength=0, polarization="x")
+
+    # run the FDTD simulation 运行仿真
+    grid.run(time=1000, save=True)
+    grid.visualize()
+    
+    # 绘制仿真结束时刻空间场分布
+    grid.plot_field(field="E", field_axis="y", axis="z", axis_index=0, folder=grid.folder)
+    grid.plot_field(field="E", field_axis="y", axis="x", axis_index=51, folder=grid.folder)
+    grid.plot_field(field="E", field_axis="y", axis="x", axis_index=149, folder=grid.folder)
+
+    grid.save_fig(axis="x", axis_index=51, show_energy=True)
+    grid.save_fig(axis="x", axis_index=149, show_energy=True)
+    grid.save_fig(axis="z", axis_index=100, show_energy=True)
+
     # # 创建solve对象
     # solve_fiber_side = Solve(grid=grid,
     #                          axis='x',
     #                          index=51,
     #                          filepath=grid.folder)
-    grid.set_source(source_type="planesource", wavelength=1550e-9, name="source", x=3.1e-6, y=2e-6, z=2e-6,
-                    xlength=0, ylength=30, zlength=30, polarization="y")
-
-    # run the FDTD simulation 运行仿真
-    grid.run(time=1000)
-
-    # 绘制仿真结束时刻空间场分布
-    Grid.plot_field(grid=grid, field="E", field_axis="y", axis="z", axis_index=0, folder=grid.folder)
-    Grid.plot_field(grid=grid, field="E", field_axis="y", axis="x", axis_index=51, folder=grid.folder)
-    Grid.plot_field(grid=grid, field="E", field_axis="y", axis="x", axis_index=149, folder=grid.folder)
-
-    grid.save_fig(axis="x", axis_number=51, show_energy=True)
-    grid.save_fig(axis="x", axis_number=149, show_energy=True)
-    grid.save_fig(axis="z", axis_number=100, show_energy=True)
 
     # # 绘制任一截面折射率分布
     # solve_fiber_side.plot()

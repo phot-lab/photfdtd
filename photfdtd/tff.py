@@ -1,5 +1,5 @@
 from .waveguide import Waveguide
-import numpy as np
+import photfdtd.fdtd.backend as bd
 
 
 class TFF(Waveguide):
@@ -28,18 +28,20 @@ class TFF(Waveguide):
         """
         # TODO:不需要xlength, ylength, zlength这几个参数？
         高折射率、低折射率交替排布的多层薄膜
-        @param xlength:
-        @param ylength:
-        @param zlength:
-        @param x, y, z: 在传播方向上取最底端坐标，非传播方向上取中心坐标
-        @param low_index:
-        @param high_index:
-        @param dl:
-        @param dh:
-        @param layers:
-        @param axis:
-        @param name:
-        @param grid:
+        @param xlength: xlength in total
+        @param ylength: ylength in total
+        @param zlength: zlength in total
+        @param x, y, z: 在传播方向上取最底端坐标，非传播方向上取中心坐标.
+        In the propagation direction, take the bottom coordinate,
+        and in the non-propagation direction, take the center coordinate.
+        @param low_index: lower refractive index
+        @param high_index: higher refractive index
+        @param dl: the thickness of the layer with low refractive index
+        @param dh: the thickness of the layer with high refractive index
+        @param layers: number of layers.
+        @param axis: x, y, z, the propagation direction of the waveguide.
+        @param name: the name of the waveguide.
+        @param grid: photfdtd.Grid object, the grid to which the waveguide belongs.
         @param priority: the priority of the waveguide( high index indicates high priority).
         """
         xlength, x = grid._handle_unit([xlength, x], grid_spacing=grid._grid.grid_spacing_x)
@@ -53,12 +55,12 @@ class TFF(Waveguide):
         if z == None:
             z = int(grid._grid_zlength / 2)
 
-        x, y, z = np.full(layers, x), np.full(layers, y), np.full(layers, z)
-        xlength_l, ylength_l, zlength_l = np.full(layers, xlength), np.full(layers, ylength), np.full(layers, zlength)
+        x, y, z = bd.full(layers, x), bd.full(layers, y), bd.full(layers, z)
+        xlength_l, ylength_l, zlength_l = bd.full(layers, xlength), bd.full(layers, ylength), bd.full(layers, zlength)
         for i in range(len(xlength_l)):
             xlength_l[i] = int(xlength_l[i])
-        ylength_l = ylength_l.astype(int)
-        zlength_l = zlength_l.astype(int)
+        ylength_l = bd.astype(ylength_l, int)
+        zlength_l = bd.astype(zlength_l, int)
 
         # xlength_l, ylength_l, zlength_l = int(xlength_l), int(ylength_l), int(zlength_l)
         if axis == "z":

@@ -1,6 +1,6 @@
 from .waveguide import Waveguide
 from . import sbend
-import numpy as np
+import photfdtd.fdtd.backend as bd
 
 
 class Taper(Waveguide):
@@ -48,11 +48,11 @@ class Taper(Waveguide):
 
     def _compute_permittivity(self):
 
-        z = np.linspace(0, self.zlength, self.zlength)
-        x = np.linspace(0, self.xlength, self.xlength)
-        Z, X = np.meshgrid(z, x, indexing="ij")
+        z = bd.linspace(0, self.zlength, self.zlength)
+        x = bd.linspace(0, self.xlength, self.xlength)
+        Z, X = bd.meshgrid(z, x, indexing="ij")
 
-        m = np.zeros((self.xlength, self.ylength, self.zlength))
+        m = bd.zeros((self.xlength, self.ylength, self.zlength))
 
         if self.direction:
             # 开口向z正方向
@@ -84,7 +84,7 @@ class Taper(Waveguide):
                     ):
                         m[j, :, i] = True
 
-        permittivity = np.ones((self.xlength, self.ylength, self.zlength))
+        permittivity = bd.ones((self.xlength, self.ylength, self.zlength))
         permittivity += m * (self.refractive_index ** 2 - 1)
         permittivity += (1 - m) * (self.background_index ** 2 - 1)
 

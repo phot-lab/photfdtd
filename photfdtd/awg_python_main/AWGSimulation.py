@@ -177,7 +177,7 @@ class AWG_Simulation:
         excel_path = os.path.join(self.foldername, "性能参数结果.xlsx")
         df_results.to_excel(excel_path, index=False, engine='openpyxl')
         print("性能参数结果已导出为 Excel 文件：", excel_path)
-        # average_values = np.mean(processed_values_list, axis=0)
+        # average_values = bd.mean(processed_values_list, axis=0)
         #
         # df = pd.DataFrame({
         #     "性能指标": labels,

@@ -1,4 +1,4 @@
-import numpy as np
+import photfdtd.fdtd.backend as bd
 from .arc import Arc
 
 
@@ -48,7 +48,7 @@ class FWG(Arc):
         #         raise ValueError("Parameter 'period' and 'duty_cycle' of FWG must be set!")
         #     else:
         #         continue
-        # TODO: FIXME: NOTE: python中赋值后面加逗号代表创建元组
+        # NOTE: python中赋值后面加逗号代表创建元组
 
         period, width, gap = grid._handle_unit([period, width, gap], grid_spacing=grid._grid.grid_spacing)
         if period and duty_cycle:
@@ -56,7 +56,7 @@ class FWG(Arc):
                 duty_cycle = 1
             if duty_cycle <= 0:
                 raise ValueError("FWG's parameter duty_cycle must larger than 0.")
-            width = int(np.round(period * duty_cycle))
+            width = int(bd.round(period * duty_cycle))
             gap = period - width
         elif not width or not gap:
                 raise ValueError("FWG's parameter 'period' and 'duty_cycle' have not been set yet.")
@@ -74,7 +74,7 @@ class FWG(Arc):
             arc = Arc(outer_radius=self.outer_radius - (self.gap + self.width) * i, ylength=self.ylength,
                       x=self.x_center, y=self.y_center, z=self.z_center, width=self.width,
                       refractive_index=self.refractive_index, name="%s_arc%d" % (self.name, i + 1), angle_phi=self.phi,
-                      angle_psi=self.psi, grid=self.grid, priority=self.priority)
+                      angle_psi=self.psi, angle_unit=False, grid=self.grid, priority=self.priority)
             self._internal_objects.append(arc)
 
     def _compute_permittivity(self):

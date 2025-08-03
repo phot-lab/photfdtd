@@ -20,6 +20,7 @@ from .fiber import Fiber
 from .ellipsoid_fiber import Ellipsoid
 from .cone import Cone
 from .tff import TFF
+from .grating import Grating
 from .fwg import FWG
 from .pc import Hexagonal_PC
 from .overlap_calculator import OverlapCalculator

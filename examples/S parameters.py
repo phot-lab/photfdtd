@@ -14,7 +14,9 @@ if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
 
-    plt.plot(freqs, spectrum2 / spectrum1)
+    # For S parameters: abs(spectrum2 / spectrum1)
+    # For Power transmission: abs(spectrum2 / spectrum1) ** 2
+    plt.plot(freqs, abs(spectrum2 / spectrum1))
     plt.ylabel("S parameter")
     plt.xlabel("frequency (THz)")
     plt.title("S21(f)")
@@ -23,7 +25,7 @@ if __name__ == "__main__":
     plt.savefig(f"{grid.folder}/{file_name}.png")
     plt.close()
 
-    plt.plot(freqs, (spectrum3 / spectrum1) ** 2)
+    plt.plot(freqs, abs(spectrum3 / spectrum1))
     plt.ylabel("S parameter")
     plt.xlabel("frequency (THz)")
     plt.title("S31(f)")

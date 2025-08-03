@@ -404,18 +404,29 @@ class Grid:
         else:
             # 3d仿真，自动绘制grid中心面上的场分布。3D simulation, plot the field distribution on the center plane of the grid.
             axis_index = int(self.E.shape[letter_to_number(axis)] / 2)
+
+        # 添加张量到numpy转换的辅助函数
+        def tensor_to_numpy(data):
+            """Convert tensor to numpy array for matplotlib"""
+            if hasattr(data, 'cpu'):  # PyTorch tensor
+                return data.cpu().numpy()
+            elif hasattr(data, 'numpy'):  # numpy array or other
+                return data.numpy() if hasattr(data, 'numpy') else data
+            else:
+                return data
+
         if axis == "x":
-            im = ax.imshow(simE_to_worldE(bd.transpose(self.E[axis_index, :, :, self._Epol])), cmap="RdBu", interpolation="nearest", aspect="auto",
+            im = ax.imshow(simE_to_worldE(tensor_to_numpy(bd.transpose(self.E[axis_index, :, :, self._Epol]))), cmap="RdBu", interpolation="nearest", aspect="auto",
                            origin="lower", vmin=-self.max_abs, vmax=self.max_abs)
             ax.set_xlabel("y")
             ax.set_ylabel("z")
         elif axis == "y":
-            im = ax.imshow(simE_to_worldE(bd.transpose(self.E[:, axis_index, :, self._Epol])), cmap="RdBu", interpolation="nearest", aspect="auto",
+            im = ax.imshow(simE_to_worldE(tensor_to_numpy(bd.transpose(self.E[:, axis_index, :, self._Epol]))), cmap="RdBu", interpolation="nearest", aspect="auto",
                            origin="lower", vmin=-self.max_abs, vmax=self.max_abs)
             ax.set_xlabel("x")
             ax.set_ylabel("z")
         elif axis == "z":
-            im = ax.imshow(simE_to_worldE(bd.transpose(self.E[:, :, axis_index, self._Epol])), cmap="RdBu", interpolation="nearest", aspect="auto",
+            im = ax.imshow(simE_to_worldE(tensor_to_numpy(bd.transpose(self.E[:, :, axis_index, self._Epol]))), cmap="RdBu", interpolation="nearest", aspect="auto",
                            origin="lower", vmin=-self.max_abs, vmax=self.max_abs)
             ax.set_xlabel("x")
             ax.set_ylabel("y")

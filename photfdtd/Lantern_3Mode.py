@@ -85,7 +85,7 @@ class Lantern_3Mode(Waveguide):
     def compute_permittivity(self, grid, length, x_center, y_center, x1, y1, x2, y2, x3, y3, actual_r_LP01,
                          actual_r_LP11a, actual_r_LP11b, actual_r_cladding, n_LP01, n_LP11a, n_LP11b, n_cladding):
         # 初始化介电常数矩阵
-        #permittivity = np.full((self.xlength, self.ylength, self.zlength), self.background_index ** 2)
+        #permittivity = bd.full((self.xlength, self.ylength, self.zlength), self.background_index ** 2)
         permittivity = np.zeros((self.xlength, self.ylength, self.zlength)) + self.background_index ** 2
 
 

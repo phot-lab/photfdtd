@@ -58,7 +58,7 @@ def eigen_build(k0, n, dx, dy, x_boundary_low=None, y_boundary_low=None, x_thick
     print('Assembling matrix for {} grid points...\n'.format(nx * ny))
 
     # construct finite difference operators single row of FD grid
-    # Ax_temp = ( - np.eye(nx, k = 0) + np.eye(nx, k = 1) ) / dx
+    # Ax_temp = ( - bd.eye(nx, k = 0) + bd.eye(nx, k = 1) ) / dx
     # Ax = sps.block_diag([Ax_temp for i in range(ny)], format='csr')
     Ax = (- sps.eye(nx * ny, k=0, format="csr") + sps.eye(nx * ny, k=1, format="csr")) / dx
     Ay = (- sps.eye(nx * ny, k=0, format="csr") + sps.eye(nx * ny, k=nx, format="csr")) / dy
@@ -125,16 +125,16 @@ def eigen_build(k0, n, dx, dy, x_boundary_low=None, y_boundary_low=None, x_thick
         # By = Ay
 
         # 处理Cx
-        # s = calculate_s(vect=np.arange(x_thickness, 0, -1.0), k0=k0)
-        # s_flip = np.flip(s)
+        # s = calculate_s(vect=bd.arange(x_thickness, 0, -1.0), k0=k0)
+        # s_flip = bd.flip(s)
         # for i in range(nx):
-        #     Cx[nx * i: nx * i + x_thickness, :] = Cx[nx * i: nx * i + x_thickness, :] / s[:, np.newaxis]
+        #     Cx[nx * i: nx * i + x_thickness, :] = Cx[nx * i: nx * i + x_thickness, :] / s[:, bd.newaxis]
         #     Cx[nx * (i + 1) - x_thickness: nx * (i + 1), :] = Cx[nx * (i + 1) - x_thickness: nx * (i + 1), :] / s_flip[
         #                                                                                                         :,
-        #                                                                                                         np.newaxis]
+        #                                                                                                         bd.newaxis]
 
         # 处理Cy
-        # s = calculate_s(vect=np.arange(y_thickness, 0, -1.0), k0=k0)
+        # s = calculate_s(vect=bd.arange(y_thickness, 0, -1.0), k0=k0)
         # for i in range(nx):
         #     if i < y_thickness:
         #         Cy[nx * i:nx * (i + 1), :] = Cy[nx * i:nx * (i + 1), :] / s[i]

@@ -1,9 +1,10 @@
-import utils
-from photfdtd import DirectionalCoupler, Grid, Solve
+import photfdtd.fdtd
+from photfdtd import DirectionalCoupler, Grid
+photfdtd.fdtd.set_backend("torch.cuda")
 
 if __name__ == "__main__":
     background_index = 1.4555
-
+    # TODO: PML边界似乎出了点问题，不能吸收光
     grid = Grid(grid_xlength=8e-6, grid_ylength=1, grid_zlength=12e-6, grid_spacing=20e-9,
                 permittivity=background_index ** 2, foldername="test_dc_2D")
 
@@ -19,10 +20,10 @@ if __name__ == "__main__":
         gap=0.06e-6,
         grid=grid
     )
-    #
+    grid.set_PML(pml_width=1.5e-6)
     grid.set_source(source_type="linesource", wavelength=1550e-9,
-                    x_start=5.4e-6, y_start=0, z_start=0.9e-6,
-                    x_end=6e-6, y_end=0, z_end=0.9e-6, pulse_type="gaussian",
+                    x_start=5.4e-6, y_start=0, z_start=1.6e-6,
+                    x_end=6e-6, y_end=0, z_end=1.6e-6, pulse_type="gaussian",
                     polarization="x")
 
     grid.set_detector(detector_type='linedetector',
@@ -35,27 +36,12 @@ if __name__ == "__main__":
                       name='detector2')
 
     grid.add_object(dc)
-    grid.plot_n(grid=grid, axis="y", axis_index=0)
-    grid.save_fig(axis="y", axis_number=0)
+    grid.plot_n(axis="y", axis_index=0)
+    grid.save_fig(axis="y", axis_index=0)
 
-    grid.run(time=300e-15)
+    grid.run(time=300e-15, save=True, animate=True)
 
-    # # 保存仿真结果
-    grid.save_simulation()
     # grid = Grid.read_simulation(folder=grid.folder)
-    grid.save_fig(axis="y", axis_number=0, show_energy=True)
-    # # 绘制仿真结束时刻空间场分布
-    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0, folder=grid.folder,
-                    vmax=1, vmin=-1)
-    grid.detector_profile()
-    source_data = grid.source_data()
-    # 由监视器数据绘制Ex场随时间变化的图像
-    Grid.plot_fieldtime(grid=grid, field_axis="x", field="E", index=5, name_det="detector1")
-
-    wl, spectrum1 = grid.visulize_detector(grid=grid, name_det="detector1", wl_start=1300e-9, wl_end=1800e-9)
-    wl, spectrum2 = grid.visulize_detector(grid=grid, name_det="detector2", wl_start=1300e-9, wl_end=1800e-9)
-    wl, spectrum_source = grid.visulize_detector(grid=grid, input_data=source_data[:, 15, 0], wl_start=1300e-9, wl_end=1800e-9)
-    grid.calculate_Transmission(field_axis="x", wl_start=1300e-9, wl_end=1800e-9, detector_name="detector1")
-    grid.calculate_Transmission(field_axis="x", wl_start=1300e-9, wl_end=1800e-9, detector_name="detector2")
+    grid.visualize()
 
 

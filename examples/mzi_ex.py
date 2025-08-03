@@ -1,6 +1,5 @@
-import utils
-from photfdtd import Mzi, Grid, Solve, Ysplitter, Index
-import photfdtd.fdtd.constants as constants
+from photfdtd import Mzi, Grid, Index, fdtd
+fdtd.set_backend("numpy")
 
 if __name__ == "__main__":
     background_index = 1.4447
@@ -43,10 +42,7 @@ if __name__ == "__main__":
 
     # # run the FDTD simulation 运行仿真
     grid.plot_n()
-    grid.run()
-    grid.save_simulation()
-    # 读取仿真结果
-    # grid = Grid.read_simulation(folder=grid.folder)
+    grid.run(save=True)
 
     grid.visualize()
 

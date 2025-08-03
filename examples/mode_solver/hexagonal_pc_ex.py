@@ -1,4 +1,5 @@
-from photfdtd import Hexagonal_PC, Grid, Solve, Fiber
+from photfdtd import Hexagonal_PC, Grid, Solve, Fiber, fdtd
+fdtd.set_backend("numpy")
 
 if __name__ == "__main__":
     background_index = 1.445

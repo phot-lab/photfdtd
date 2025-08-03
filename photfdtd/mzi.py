@@ -1,6 +1,5 @@
 from .waveguide import Waveguide
 from .directional_coupler import DirectionalCoupler
-from .arc import Arc
 
 
 class Mzi(Waveguide):

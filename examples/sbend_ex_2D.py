@@ -1,6 +1,6 @@
 import photfdtd.fdtd.constants as constants
-
-from photfdtd import Sbend, Grid, Solve, Waveguide
+from photfdtd import Sbend, Grid, Solve, Waveguide,fdtd
+fdtd.set_backend("numpy")
 
 if __name__ == "__main__":
     background_index = 1.4447
@@ -30,12 +30,12 @@ if __name__ == "__main__":
     # 添加器件
     grid.add_object(sbend)
     grid.save_fig(axis="y", axis_index=0)
-    grid.plot_n(grid=grid, axis="y", axis_index=0)
+    grid.plot_n(axis="y", axis_index=0)
 
 
     grid.add_object(waveguide)
 
-    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0, folder=grid.folder)
+    grid.plot_field(field="E", field_axis="x", axis="y", axis_index=0, folder=grid.folder)
 
     # 设置光源
     grid.set_source(source_type="linesource", period=1550e-9 / constants.c, name="source",x=1.2e-6, y=0, z=1.4e-6,
@@ -54,28 +54,7 @@ if __name__ == "__main__":
                       zlength=1
                       )
 
-
-    # 创建solve对象
-    solve = Solve(grid=grid,
-                  axis='y',
-                  index=0,
-                  filepath=grid.folder)
-
-    # 绘制截面
-    solve.plot()
-
     # 运行仿真
-    grid.run()
-    grid.save_simulation()
-    Grid.plot_field(grid=grid, field="E", field_axis="x", axis="y", axis_index=0, folder=grid.folder, vmin=-1, vmax=1)
-    grid.save_fig(axis="y", axis_number=0, show_energy=True)
-
-    # 如果添加了监视器，还可以绘制某一点时域场变化曲线，这里选择index=30即监视器中心
-    Grid.plot_fieldtime(folder=grid.folder, grid=grid, field_axis="z", index=10, name_det="detector")
-    grid.source_data()
-    # 绘制频谱
-    grid.source_data()
-    grid.detector_profile()
-    Grid.visulize_detector(grid=grid, wl_start=1000e-9, wl_end=2000e-9, name_det="detector",
-                           index=10, field_axis="x", field="E", folder=None)
+    grid.run(save=True)
+    grid.visualize()
 

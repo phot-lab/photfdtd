@@ -1,4 +1,4 @@
-# import numpy as np
+# import numpy as bd
 from copy import copy
 import photfdtd.fdtd as fdtd
 import photfdtd.fdtd.backend as bd
@@ -112,26 +112,26 @@ class Waveguide:
     #     shape = matrix.shape
     #     if len(shape) == 2:
     #
-    #         non_zero_rows = np.any(matrix != 0, axis=1)
-    #         non_zero_columns = np.any(matrix != 0, axis=0)
+    #         non_zero_rows = bd.any(matrix != 0, axis=1)
+    #         non_zero_columns = bd.any(matrix != 0, axis=0)
     #         # 使用布尔掩码筛选原始矩阵
     #         matrix = matrix[non_zero_rows][:, non_zero_columns]
-    #         xx_position, yy_position = np.where(non_zero_rows), np.where(non_zero_columns)
+    #         xx_position, yy_position = bd.where(non_zero_rows), bd.where(non_zero_columns)
     #
     #         zz_position = [0]
     #
     #     else:
     #
-    #         zero_slices_x = np.where(np.all(matrix == 0, axis=(1, 2)))
-    #         zero_slices_y = np.where(np.all(matrix == 0, axis=(0, 2)))
-    #         zero_slices_z = np.where(np.all(matrix == 0, axis=(0, 1)))
+    #         zero_slices_x = bd.where(bd.all(matrix == 0, axis=(1, 2)))
+    #         zero_slices_y = bd.where(bd.all(matrix == 0, axis=(0, 2)))
+    #         zero_slices_z = bd.where(bd.all(matrix == 0, axis=(0, 1)))
     #
-    #         matrix = np.delete(matrix, zero_slices_x, axis=0)
-    #         matrix = np.delete(matrix, zero_slices_y, axis=1)
-    #         matrix = np.delete(matrix, zero_slices_z, axis=2)
-    #         xx_position = np.delete(np.arange(shape[0]), zero_slices_x)
-    #         yy_position = np.delete(np.arange(shape[1]), zero_slices_y)
-    #         zz_position = np.delete(np.arange(shape[2]), zero_slices_z)
+    #         matrix = bd.delete(matrix, zero_slices_x, axis=0)
+    #         matrix = bd.delete(matrix, zero_slices_y, axis=1)
+    #         matrix = bd.delete(matrix, zero_slices_z, axis=2)
+    #         xx_position = bd.delete(bd.arange(shape[0]), zero_slices_x)
+    #         yy_position = bd.delete(bd.arange(shape[1]), zero_slices_y)
+    #         zz_position = bd.delete(bd.arange(shape[2]), zero_slices_z)
     #
     #     return matrix, xx_position, yy_position, zz_position
     #
@@ -166,33 +166,33 @@ class Waveguide:
     #         center = [center[0] - self.x, center[1] - self.y, center[2] - self.z]
     #     elif center is None:
     #         # 这里的center是波导原点坐标系，输入的center也是
-    #         center = np.array([shape[0] // 2, shape[1] // 2, shape[2] // 2])
+    #         center = bd.array([shape[0] // 2, shape[1] // 2, shape[2] // 2])
     #
     #     # 角度转弧度
     #     if angle_unit:
-    #         angle = np.radians(angle)
+    #         angle = bd.radians(angle)
     #
     #     # Rotation matrix 创建绕 z 轴的旋转矩阵
     #     if axis == "z":
-    #         rotation_matrix = np.array([[np.cos(angle), -np.sin(angle), 0],
-    #                                     [np.sin(angle), np.cos(angle), 0],
+    #         rotation_matrix = bd.array([[bd.cos(angle), -bd.sin(angle), 0],
+    #                                     [bd.sin(angle), bd.cos(angle), 0],
     #                                     [0, 0, 1]])
     #     elif axis == "y":
-    #         rotation_matrix = np.array([[np.cos(angle), 0, -np.sin(angle)],
+    #         rotation_matrix = bd.array([[bd.cos(angle), 0, -bd.sin(angle)],
     #                                     [0, 1, 0],
-    #                                     [np.sin(angle), 0, np.cos(angle)]])
+    #                                     [bd.sin(angle), 0, bd.cos(angle)]])
     #     elif axis == "x":
-    #         rotation_matrix = np.array([[1, 0, 0],
-    #                                     [0, np.cos(angle), -np.sin(angle)],
-    #                                     [0, np.sin(angle), np.cos(angle)]])
+    #         rotation_matrix = bd.array([[1, 0, 0],
+    #                                     [0, bd.cos(angle), -bd.sin(angle)],
+    #                                     [0, bd.sin(angle), bd.cos(angle)]])
     #     else:
     #         raise ValueError("Parameter 'axis' need to be set")
     #     # Coordinates relative to center相对坐标 center坐标系
-    #     relative_coords = np.array(np.meshgrid(range(shape[0]), range(shape[1]), range(shape[2]))).T.reshape(-1, 3)
+    #     relative_coords = bd.array(bd.meshgrid(range(shape[0]), range(shape[1]), range(shape[2]))).T.reshape(-1, 3)
     #     relative_coords -= center
     #
     #     # Rotate  rotated_coords也是center坐标系
-    #     rotated_coords = np.empty_like(relative_coords)
+    #     rotated_coords = bd.empty_like(relative_coords)
     #     for i in range(relative_coords.shape[0]):
     #         rotated_coords[i] = rotation_matrix @ relative_coords[i]
     #     #
@@ -215,7 +215,7 @@ class Waveguide:
     #     relative_coords += center
     #
     #     # Mapping the rotated coordinates according to the original matrix 将旋转后的坐标映射到新矩阵
-    #     rotated_matrix = np.zeros(
+    #     rotated_matrix = bd.zeros(
     #         [max(abs(rotated_coords[:, 0])) + 1, max(abs(rotated_coords[:, 1])) + 1,
     #          max(abs(rotated_coords[:, 2])) + 1],
     #         dtype=matrix.dtype)

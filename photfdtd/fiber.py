@@ -1,4 +1,4 @@
-import numpy as np
+import photfdtd.fdtd.backend as bd
 from .waveguide import Waveguide
 
 
@@ -41,17 +41,17 @@ class Circle(Waveguide):
 
         # 这里+2的原因：稍微扩大一点矩阵的大小，可以保证水平和竖直方向最边上的点不被丢出
         # TODO: 给其他带圆弧的波导相同的操作？
-        x = y = np.linspace(1, 2 * self.radius + 2, 2 * self.radius + 2)
-        X, Y = np.meshgrid(x, y, indexing="ij")  # indexing = 'ij'很重要
+        x = y = bd.linspace(1, 2 * self.radius + 2, 2 * self.radius + 2)
+        X, Y = bd.meshgrid(x, y, indexing="ij")  # indexing = 'ij'很重要
         # m = (X - len(x) / 2) ** 2 + (Y - len(y) / 2) ** 2 <= self.radius[0] ** 2
-        matrix = np.zeros((len(x), len(y)), dtype=float)
+        matrix = bd.zeros((len(x), len(y)), dtype=float)
 
         if self.axis.lower() == 'x':
             # 波导沿x轴
             self.xlength = self.length
             self.ylength = 2 * self.radius + 2
             self.zlength = 2 * self.radius + 2
-            self.permittivity = np.zeros((self.xlength, self.ylength, self.zlength))
+            self.permittivity = bd.zeros((self.xlength, self.ylength, self.zlength))
 
             mask = (X - self.ylength // 2) ** 2 + (Y - self.ylength // 2) ** 2 <= self.radius ** 2
             matrix[mask] = 1
@@ -66,7 +66,7 @@ class Circle(Waveguide):
             self.xlength = 2 * self.radius + 2
             self.ylength = self.length
             self.zlength = 2 * self.radius + 2
-            self.permittivity = np.zeros((self.xlength, self.ylength, self.zlength))
+            self.permittivity = bd.zeros((self.xlength, self.ylength, self.zlength))
 
             mask = (X - self.xlength // 2) ** 2 + (Y - self.xlength // 2) ** 2 <= self.radius ** 2
             matrix[mask] = 1
@@ -81,7 +81,7 @@ class Circle(Waveguide):
             self.xlength = 2 * self.radius + 2
             self.ylength = 2 * self.radius + 2
             self.zlength = self.length
-            self.permittivity = np.zeros((self.xlength, self.ylength, self.zlength))
+            self.permittivity = bd.zeros((self.xlength, self.ylength, self.zlength))
 
             mask = (X - self.ylength // 2) ** 2 + (Y - self.ylength // 2) ** 2 <= self.radius ** 2
             matrix[mask] = 1

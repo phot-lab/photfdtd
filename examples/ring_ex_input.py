@@ -1,5 +1,4 @@
-import utils
-from photfdtd import Ring, Grid, Index, Waveguide
+from photfdtd import Grid, Index, Waveguide
 
 if __name__ == "__main__":
     index_Si = Index(material="Si")
@@ -8,7 +7,7 @@ if __name__ == "__main__":
     index_Re_SiO2, index_Im_SiO2 = index_SiO2.get_refractive_index(wavelength=1.55e-6)
 
     grid = Grid(grid_xlength=2e-6, grid_ylength=1, grid_zlength=2e-6, grid_spacing=20e-9, permittivity=1 ** 2,
-                foldername="test_ring_0401_input")
+                foldername="test_ring_input")
     grid.set_PML(pml_width_y=0e-6, pml_width_x=0.8e-6, pml_width_z=0.8e-6)
     grid.set_source(source_type="linesource", wavelength=1550e-9, pulse_type="gaussian",waveform="gaussian",
                     x_start=0.8e-6,x_end=1.2e-6,
@@ -23,8 +22,10 @@ if __name__ == "__main__":
     grid.add_object(input_waveguide)
     grid.save_fig()
     grid.plot_n()
-    #
-    grid.run(animate=False, time=10000e-15, save=True, interval=100)
+
+    # 总时间需与ring_ex.py中设置的时间一致
+    # The total time should match the time set in ring_ex.py
+    grid.run(animate=False, time=10000, save=True, interval=100)
     # grid.animate()
     # grid = grid.read_simulation(grid.folder)
 

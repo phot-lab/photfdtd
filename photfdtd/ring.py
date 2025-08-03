@@ -1,6 +1,6 @@
 from .waveguide import Waveguide
 from .arc import Arc
-import numpy as np
+import photfdtd.fdtd.backend as bd
 
 
 class Ring(Waveguide):
@@ -56,13 +56,13 @@ class Ring(Waveguide):
                          reset_xyz=False, priority=priority)
 
     def _compute_permittivity(self):
-        # y = np.linspace(1, 2 * self.outer_r, 2 * self.outer_r)
-        # z = np.linspace(1, 2 * self.outer_r + self.length, 2 * self.outer_r + self.length)
+        # y = bd.linspace(1, 2 * self.outer_r, 2 * self.outer_r)
+        # z = bd.linspace(1, 2 * self.outer_r + self.length, 2 * self.outer_r + self.length)
         # # TODO: 把这个语句改成从1开始？
-        # Z, Y = np.meshgrid(z, y, indexing="ij")  # indexing = 'ij'很重要
+        # Z, Y = bd.meshgrid(z, y, indexing="ij")  # indexing = 'ij'很重要
         #
 
-        delta_z = int(np.round(self.length / 2))
+        delta_z = int(bd.round(self.length / 2))
 
         arc1 = Arc(outer_radius=self.outer_r, ylength=self.ylength, x=self.x, y=self.y, z=self.z + delta_z,
                    width=self.width_r, refractive_index=self.refractive_index, name="%s_arc1" % self.name, angle_phi=0,
@@ -148,7 +148,7 @@ class Ring(Waveguide):
         #
         # else:
         #
-        #     m = np.zeros((self.outer_r * 2, self.zlength, self.outer_r * 2 + self.length))
+        #     m = bd.zeros((self.outer_r * 2, self.zlength, self.outer_r * 2 + self.length))
         #
         #     for j in range(2 * self.outer_r):
         #         for i in range(self.outer_r):

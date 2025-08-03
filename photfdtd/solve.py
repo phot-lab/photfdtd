@@ -39,7 +39,7 @@ class Solve:
         # for i in range(len(self.grid.objects)):
         #     self.geometry[self.grid.objects[i].x.start:self.grid.objects[i].x.stop,
         #     self.grid.objects[i].y.start:self.grid.objects[i].y.stop,
-        #     self.grid.objects[i].z.start:self.grid.objects[i].z.stop] = np.sqrt(self.grid.objects[i].permittivity)
+        #     self.grid.objects[i].z.start:self.grid.objects[i].z.stop] = bd.sqrt(self.grid.objects[i].permittivity)
 
         self.axis = axis.lower()
         self.index = index
@@ -185,7 +185,7 @@ class Solve:
 
         # Discard dispersion modes 丢掉耗散模
         for i in range(len(self.beta)):
-            # if abs(self.beta[i].imag * self.lam / (2 * np.pi)) > 1e-5:
+            # if abs(self.beta[i].imag * self.lam / (2 * bd.pi)) > 1e-5:
             #     flag_deleted.append(i)
             #     neigs -= 1
             if abs(self.beta[i].real * self.lam / (2 * np.pi)) < self.grid.background_index or abs(
@@ -436,20 +436,20 @@ class Solve:
         # https://optics.ansys.com/hc/en-us/articles/360034395354-Calculating-the-effective-mode-area-of-a-waveguide-mode
 
         # Draw neff plot
-        # plt.plot(np.linspace(1, len(effective_index), len(effective_index)), effective_index.real, label='Line',
+        # plt.plot(bd.linspace(1, len(effective_index), len(effective_index)), effective_index.real, label='Line',
         #          marker="o")
         # plt.title('neff plot')
-        # plt.xticks(np.arange(1, len(effective_index), 1))
+        # plt.xticks(bd.arange(1, len(effective_index), 1))
         # plt.xlabel('mode')
         # plt.savefig(fname='%s\\%s.png' % (filepath, 'neff_plot'))
         # plt.close()
 
         # Draw loss plot
-        # loss = -20 * np.log10(np.e ** (-2 * np.pi * effective_index.imag / lam))
-        # plt.plot(np.linspace(1, len(effective_index), len(effective_index)), loss, label='Line',
+        # loss = -20 * bd.log10(bd.e ** (-2 * bd.pi * effective_index.imag / lam))
+        # plt.plot(bd.linspace(1, len(effective_index), len(effective_index)), loss, label='Line',
         #          marker="o")
         # plt.title('loss plot')
-        # plt.xticks(np.arange(1, len(effective_index), 1))
+        # plt.xticks(bd.arange(1, len(effective_index), 1))
         # plt.xlabel('mode')
         # plt.ylabel('dB/m')
         # plt.savefig(fname='%s\\%s.png' % (filepath, 'loss_plot'))
@@ -587,10 +587,10 @@ class Solve:
         #     f[i] = self.Ey_fields[i].real / self.Ex_fields[i].real
         #     plt.figure()
         #     plt.pcolor(self.x, self.y, self.n[:, :, 0], cmap=cm.Blues_r)
-        #     plt.clim([1, np.amax(self.n)])
+        #     plt.clim([1, bd.amax(self.n)])
         #
-        #     plot_matrix = np.transpose(f[i].real)
-        #     levels = np.linspace(np.min(plot_matrix), np.max(plot_matrix), n_levels + 2)
+        #     plot_matrix = bd.transpose(f[i].real)
+        #     levels = bd.linspace(bd.min(plot_matrix), bd.max(plot_matrix), n_levels + 2)
         #     plt.pcolor(self.x, self.y, plot_matrix, cmap=cm.jet)
         #
         #     plt.savefig(fname='%s\\%s%f.png' % (self.filepath, 'EyEz', self.effective_index[i]))
@@ -606,16 +606,16 @@ class Solve:
         # phisol包在这里使用了一个函数来猜测扫描区间内折射率随波长的变化，但由于我们已经有材料库，所以应该用材料库的数据来估算。
         # TODO：这段代码暂时没用，有时间完成它
         # A = 2.17954368571
-        # B = np.log(2.17954368571 / 1.75292972992) / 0.7
-        # self.n_guess = A * np.exp(- B * (self.lam - 0.3))
+        # B = bd.log(2.17954368571 / 1.75292972992) / 0.7
+        # self.n_guess = A * bd.exp(- B * (self.lam - 0.3))
         # 暂时用下式估算（只是测试代码是否可用，在物理上没有意义！）
 
         pass
-        # n = np.zeros((steps, self.n.shape[0], self.n.shape[1], self.n.shape[2]))
+        # n = bd.zeros((steps, self.n.shape[0], self.n.shape[1], self.n.shape[2]))
         # for i in range(steps):
         #     n[i] = self.n
-        #     env_index = np.zeros((self.n.shape[0], self.n.shape[1], self.n.shape[2]))
-        #     env_index += np.sqrt(np.amax(self.grid.inverse_permittivity) * np.amax(self.grid.inverse_permeability))
+        #     env_index = bd.zeros((self.n.shape[0], self.n.shape[1], self.n.shape[2]))
+        #     env_index += bd.sqrt(bd.amax(self.grid.inverse_permittivity) * bd.amax(self.grid.inverse_permeability))
         #     # mask.shape=(self.n.shape[0], self.n.shape[1], self.n.shape[2]), 其元素为True或False
         #     mask = n[i] != env_index
         #     # 若折射率!=环境折射率，则减去波长/10（仅为测试）
@@ -625,13 +625,13 @@ class Solve:
         # neigs = 5
         #
         # # 由self.Ex_fields还原calculate_mode函数中的Ex
-        # Ex = np.array([np.ravel(E_field) for E_field in self.Ex_fields])
-        # Ex = np.reshape(Ex, (self.neigs, self.Ex_fields[0].shape[0] * self.Ex_fields[0].shape[1]))
-        # Ey = np.array([np.ravel(E_field) for E_field in self.Ey_fields])
-        # Ey = np.reshape(Ex, (self.neigs, self.Ey_fields[0].shape[0] * self.Ey_fields[0].shape[1]))
+        # Ex = bd.array([bd.ravel(E_field) for E_field in self.Ex_fields])
+        # Ex = bd.reshape(Ex, (self.neigs, self.Ex_fields[0].shape[0] * self.Ex_fields[0].shape[1]))
+        # Ey = bd.array([bd.ravel(E_field) for E_field in self.Ey_fields])
+        # Ey = bd.reshape(Ex, (self.neigs, self.Ey_fields[0].shape[0] * self.Ey_fields[0].shape[1]))
         #
         # # E_in将作为E_trial输入到函数ps.solve.solve中，其作用是作为迭代的起始向量，它是(self.neigs, self.grid.xlength*self.grid.ylength)的ndarray
-        # E_in = np.concatenate((Ex[0], Ey[0]))
+        # E_in = bd.concatenate((Ex[0], Ey[0]))
         #
         # # Now we have a go sweeping
         # beta_out = []
@@ -640,24 +640,24 @@ class Solve:
         #
         # # n_trial是一个规格为（steps)的一维矩阵，其值为材料在对应波长的折射率
         # # 这句代码仅作测试，没有物理意义！
-        # n_trial = np.amax(self.n) - lams / 10
+        # n_trial = bd.amax(self.n) - lams / 10
         #
         # # TODO: Fix complex casting warning （这是phisol包原作者留下的TODO，看不懂什么意思）
         # for i in range(steps):
-        #     k = 2. * np.pi / lams[i]
+        #     k = 2. * bd.pi / lams[i]
         #     P, _ = ps.eigen_build(k, n[i], self.grid.grid_spacing * 1e6, self.grid.grid_spacing * 1e6)
         #
         #     # TODO: Fix complex casting warning
         #     # 为什么要计算neigs个模式
         #     beta, Ex, Ey = ps.solve.solve(P,
-        #                                   2. * n_trial[i] * np.pi / lams[i],
+        #                                   2. * n_trial[i] * bd.pi / lams[i],
         #                                   E_trial=E_in,
         #                                   neigs=neigs)
         #
         #     Ey_plot.append(
-        #         [np.reshape(E_vec, (self.Ex_fields[0].shape[0], self.Ex_fields[0].shape[1])) for E_vec in Ey])
+        #         [bd.reshape(E_vec, (self.Ex_fields[0].shape[0], self.Ex_fields[0].shape[1])) for E_vec in Ey])
         #     Ex_plot.append(
-        #         [np.reshape(E_vec, (self.Ex_fields[0].shape[0], self.Ex_fields[0].shape[1])) for E_vec in Ex])
+        #         [bd.reshape(E_vec, (self.Ex_fields[0].shape[0], self.Ex_fields[0].shape[1])) for E_vec in Ex])
         #     beta_out.append(beta)
         #
         # index = 0  # Select starting mode
@@ -672,9 +672,9 @@ class Solve:
         #
         # # Plot selected mode for testing
         # # plt.figure()
-        # # xend = np.size(x)
-        # # yend = np.size(y)
-        # # plt.pcolor(x, y, np.transpose(Eyplottrace[0].real), cmap=cm.jet)
+        # # xend = bd.size(x)
+        # # yend = bd.size(y)
+        # # plt.pcolor(x, y, bd.transpose(Eyplottrace[0].real), cmap=cm.jet)
         # # plt.title("Initial selected mode")
         # # plt.show()
         #
@@ -683,16 +683,16 @@ class Solve:
         # for i in range(steps - 1):
         #     # Takes product of all modes with all next modes the largest value should be the same mode!
         #     # 使用了 numpy.einsum() 函数来计算两个电场 Ey_plot[i] 和 Ey_plot[i+1] 的张量积
-        #     prod_next = abs(np.einsum('kij, lij', Ey_plot[i], Ey_plot[i + 1]))
+        #     prod_next = abs(bd.einsum('kij, lij', Ey_plot[i], Ey_plot[i + 1]))
         #
-        #     # 将当前时刻的电场矩阵（Ey_plot[i]）与下一时刻的电场矩阵的内积（prod_next）进行乘积运算（np.einsum('kij, kl', Ey_plot[i], prod_next)），
+        #     # 将当前时刻的电场矩阵（Ey_plot[i]）与下一时刻的电场矩阵的内积（prod_next）进行乘积运算（bd.einsum('kij, kl', Ey_plot[i], prod_next)），
         #     # 并将结果添加到电场轨迹列表 E_trace 中
-        #     E_trace.append(np.einsum('kij, kl', Ey_plot[i], prod_next))  # New reordering method. WIP
+        #     E_trace.append(bd.einsum('kij, kl', Ey_plot[i], prod_next))  # New reordering method. WIP
         #
         #     # 找到一个多维数组prod_next中指定行index中的最大值，然后返回这个最大值在该行的列索引
         #     # 我估计这是在找不同波长下的基模，假如想看其他模式的扫描图，就得更改代码
         #     # TODO:完成它
-        #     index = np.argmax(prod_next[index, :])
+        #     index = bd.argmax(prod_next[index, :])
         #     indices.append(index)  # Append the index, for debugging
         #
         #     beta_trace.append(beta_out[i + 1][index])
@@ -703,7 +703,7 @@ class Solve:
         #
         # # Now we can plot the dispersion and e field
         # plt.figure()
-        # plt.plot(lams, np.real(beta_trace))
+        # plt.plot(lams, bd.real(beta_trace))
         # plt.xlabel('$/lambda / /mu m$')
         # plt.ylabel(r'$/beta [ /mu m^{-1} ]$')
         # plt.title("Structure dispersion")
@@ -713,8 +713,8 @@ class Solve:
         # # Finally plot the mode at some sweep position 'some_random_point', for testing
         # # plt.figure()
         # # some_random_point = -1  # Last value in sweep
-        # # xend = np.size(x)
-        # # yend = np.size(y)
-        # # plt.pcolor(x, y, np.transpose(Eyplottrace[some_random_point].real), cmap=cm.inferno)
+        # # xend = bd.size(x)
+        # # yend = bd.size(y)
+        # # plt.pcolor(x, y, bd.transpose(Eyplottrace[some_random_point].real), cmap=cm.inferno)
         # # plt.title("Selected mode")
         # plt.show()

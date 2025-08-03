@@ -403,7 +403,7 @@ def plot_structure(
         
 def save_fig(grid,
              axis=None,
-             axis_index=0,
+             axis_index=None,
              axis_number=None,
              animate=False,
              geo=None,
@@ -1175,7 +1175,8 @@ def visualize(grid, axis: object = None, axis_index: int = None, field: str = "E
 
     # 获取 field_axis
     if field_axis is None:
-        field_axis = getattr(source, "polarization", None)
+        if grid._grid.sources:
+            field_axis = getattr(source, "polarization", None)
         if field_axis is None:
             print("Grid.visualize: No source found in grid")
 

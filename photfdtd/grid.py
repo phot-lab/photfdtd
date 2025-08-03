@@ -120,14 +120,23 @@ class Grid:
         Examples:
             xlength, x, = grid._handle_unit([xlength, x], grid_spacing=grid._grid.grid_spacing_x)
             xlength = grid._handle_unit([xlength], grid_spacing=grid._grid.grid_spacing_x)[0]
-            """
+        """
         if grid_spacing is None:
             grid_spacing = self._grid.grid_spacing
         # 把SI单位变成空间步长单位 SI unit -> grid spacing unit
         for i in range(len(lengths)):
-            if not isinstance(lengths[i], int) and lengths[i] is not None:
-                # if not isinstance(lengths[i], int):
-                lengths[i] = int(bd.round(lengths[i] / grid_spacing))
+            if lengths[i] is not None:
+                # 检查是否为张量类型的整数
+                if hasattr(lengths[i], 'dtype') and 'int' in str(lengths[i].dtype):
+                    # 如果是整数张量，跳过单位转换
+                    continue
+                # 检查是否为Python整数
+                elif isinstance(lengths[i], int):
+                    # 如果是整数，跳过单位转换
+                    continue
+                else:
+                    # 如果是浮点数或浮点张量，进行单位转换
+                    lengths[i] = int(bd.round(lengths[i] / grid_spacing))
 
         return lengths
 
@@ -145,7 +154,7 @@ class Grid:
                           object_to_check=None, name=None) -> None:
         """检查参数是否在网格范围内
         Check if the parameters are within the grid range.
-            """
+        """
         if object_to_check:
             obj = object_to_check  # 缓存引用
             x_start, x_end = obj.x, obj.xlength + obj.x
@@ -161,7 +170,7 @@ class Grid:
                              % (name, x_start, x_end, grid_x))
         if max(y_start, y_end) > grid_y or min(y_start, y_end) < 0:
             raise ValueError("Y range of %s (%i, %i) has exceeded the simulation region (0, %i)!"
-                             % (name, y_start, y_end, grid_x))
+                             % (name, y_start, y_end, grid_y))
         if max(z_start, z_end) > grid_z or min(z_start, z_end) < 0:
             raise ValueError("Z range of %s (%i, %i) has exceeded the simulation region (0, %i)!"
                              % (name, z_start, z_end, grid_z))
@@ -530,7 +539,8 @@ class Grid:
                                                                          pulselength=found_source.pulse_length,
                                                                          offset=found_source.offset)
             else:
-                vect = source_profile * bd.sin(2 * bd.pi * q / found_source.period + found_source.phase_shift)
+                angle = bd.asarray(2 * bd.pi * q / found_source.period + found_source.phase_shift)
+                vect = source_profile * bd.sin(angle)
 
             if isinstance(found_source, fdtd.PlaneSource):
                 source_field[q, :, :, :, _Epol] = bd.array(vect)
@@ -585,7 +595,7 @@ class Grid:
                 raise ValueError("No single dimension found, or more than one dimension is 1")
 
             # 绘制 2D 颜色图
-            im = axes[0][0].imshow(source_profile_2d, cmap="viridis", aspect="auto", origin="lower")
+            im = axes[0][0].imshow(bd.numpy(source_profile_2d), cmap="viridis", aspect="auto", origin="lower")
             # 添加颜色条
             plt.colorbar(im, ax=axes[0][0])
             # 设置标题和标签
@@ -1277,34 +1287,92 @@ class Grid:
         import gc
         from photfdtd.fdtd.backend import NumpyBackend
 
-        # 使用 HDF5 保存大型数组数据
-        grid_copy = copy.deepcopy(self)
-        if bd.__class__ != NumpyBackend:
-            # 如果不是 NumpyBackend，则将grid中的tensor转换为 ndarray
-            grid_copy._convert_tensors_to_numpy(grid_copy)
-
         try:
             with h5py.File(os.path.join(self.folder, "saved_grid.h5"), 'w') as f:
-                # 保存大型数组数据
-                if hasattr(grid_copy._grid, 'E'):
-                    f.create_dataset('E', data=grid_copy._grid.E, compression='gzip')
-                    grid_copy._grid.E = None
-                if hasattr(grid_copy._grid, 'H'):
-                    f.create_dataset('H', data=grid_copy._grid.H, compression='gzip')
-                    grid_copy._grid.H = None
-                if hasattr(grid_copy._grid, 'inverse_permittivity'):
-                    f.create_dataset('inverse_permittivity',
-                                     data=grid_copy._grid.inverse_permittivity, compression='gzip')
-                    grid_copy._grid.inverse_permittivity = None
+                # 1. 首先保存大型数组数据
+                if hasattr(self._grid, 'E') and self._grid.E is not None:
+                    E_data = self._grid.E
+                    if bd.__class__ != NumpyBackend and hasattr(E_data, 'cpu'):
+                        E_data = E_data.cpu().detach().numpy()
+                    f.create_dataset('E', data=E_data, compression='gzip')
 
-                # 将剩余对象序列化并保存为数据集
-                metadata = pickle.dumps(grid_copy)
+                if hasattr(self._grid, 'H') and self._grid.H is not None:
+                    H_data = self._grid.H
+                    if bd.__class__ != NumpyBackend and hasattr(H_data, 'cpu'):
+                        H_data = H_data.cpu().detach().numpy()
+                    f.create_dataset('H', data=H_data, compression='gzip')
 
-                # 将序列化数据保存为二进制数据集，而不是属性
-                f.create_dataset('metadata', data=np.frombuffer(metadata, dtype=np.uint8), compression='gzip')
+                if hasattr(self._grid, 'inverse_permittivity') and self._grid.inverse_permittivity is not None:
+                    inv_perm_data = self._grid.inverse_permittivity
+                    if bd.__class__ != NumpyBackend and hasattr(inv_perm_data, 'cpu'):
+                        inv_perm_data = inv_perm_data.cpu().detach().numpy()
+                    f.create_dataset('inverse_permittivity', data=inv_perm_data, compression='gzip')
 
+                # 2. 创建轻量级副本用于序列化
+                grid_copy = copy.deepcopy(self) # 深拷贝，避免修改原始对象
+
+                # 3. 移除大型数据引用
+                grid_copy._grid.E = None
+                grid_copy._grid.H = None
+                grid_copy._grid.inverse_permittivity = None
+
+                # 4. 清理检测器和源的历史数据
+                if hasattr(grid_copy._grid, 'detectors'):
+                    for detector in grid_copy._grid.detectors:
+                        if hasattr(detector, 'E'):
+                            detector.E = None
+                        if hasattr(detector, 'H'):
+                            detector.H = None
+                        if hasattr(detector, 'detector_values'):
+                            # 清理检测器的历史数据
+                            try:
+                                detector._detector_values = None
+                            except:
+                                pass
+
+                # 5. 转换剩余的张量
+                if bd.__class__ != NumpyBackend:
+                    grid_copy._convert_tensors_to_numpy(grid_copy)
+
+                # 6. 强制垃圾回收
+                gc.collect()
+
+                # 7. 序列化轻量级对象
+                try:
+                    metadata = pickle.dumps(grid_copy)
+                    f.create_dataset('metadata', data=np.frombuffer(metadata, dtype=np.uint8), compression='gzip')
+                except MemoryError:
+                    # 如果仍然内存不足，尝试保存更少的数据
+                    essential_data = {
+                        'grid_xlength': grid_copy._grid_xlength,
+                        'grid_ylength': grid_copy._grid_ylength,
+                        'grid_zlength': grid_copy._grid_zlength,
+                        'grid_spacing_x': grid_copy._grid.grid_spacing_x,
+                        'grid_spacing_y': grid_copy._grid.grid_spacing_y,
+                        'grid_spacing_z': grid_copy._grid.grid_spacing_z,
+                        'folder': grid_copy.folder,
+                        'background_index': grid_copy.background_index
+                    }
+                    metadata = pickle.dumps(essential_data)
+                    f.create_dataset('essential_metadata', data=np.frombuffer(metadata, dtype=np.uint8),
+                                     compression='gzip')
+                    print("Warning: Saved essential data only due to memory constraints")
+
+        except Exception as e:
+            print(f"Error saving simulation: {e}")
+            # 尝试保存到 NPZ 格式作为备选
+            try:
+                essential_data = {
+                    'grid_xlength': self._grid_xlength,
+                    'grid_ylength': self._grid_ylength,
+                    'grid_zlength': self._grid_zlength,
+                    'folder': self.folder
+                }
+                np.savez(os.path.join(self.folder, "saved_grid_essential.npz"), **essential_data)
+                print("Saved essential data to NPZ format as fallback")
+            except:
+                print("Failed to save simulation data")
         finally:
-            del grid_copy
             gc.collect()
 
     @staticmethod
@@ -1339,18 +1407,13 @@ class Grid:
         h5_path = os.path.join(folder, "saved_grid.h5")
         if os.path.exists(h5_path):
             with h5py.File(h5_path, 'r') as f:
-                # 恢复对象结构
-                if 'metadata_bytes' in f:
-                    # 从二进制数据集恢复
-                    metadata_bytes = f['metadata_bytes'][...].tobytes()
+                # 恢复对象结构 - 从数据集读取而不是属性
+                if 'metadata' in f:
+                    # 从数据集恢复
+                    metadata_bytes = f['metadata'][...].tobytes()
                     grid_obj = pickle.loads(metadata_bytes)
                 else:
-                    # 从属性恢复
-                    metadata = f.attrs['metadata']
-                    if hasattr(metadata, 'tobytes'):
-                        grid_obj = pickle.loads(metadata.tobytes())
-                    else:
-                        grid_obj = pickle.loads(metadata)
+                    raise KeyError("No metadata found in the HDF5 file")
 
                 # 恢复大型数据
                 if 'E' in f:
@@ -1361,6 +1424,14 @@ class Grid:
                     grid_obj._grid.inverse_permittivity = f['inverse_permittivity'][...]
 
             return grid_obj
+
+        # 兼容旧格式
+        npz_path = os.path.join(folder, "saved_grid.npz")
+        if os.path.exists(npz_path):
+            readings = np.load(npz_path, allow_pickle=True)
+            return pickle.loads(readings['serialized_instance'])
+
+        raise FileNotFoundError("No saved simulation found in the specified folder")
 
         # 兼容旧格式
         npz_path = os.path.join(folder, "saved_grid.npz")
@@ -1904,8 +1975,8 @@ class Grid:
         # fig, axes = plt.subplots(2, 2, figsize=(12, 6))  # 1行2列的子图
         #
         # # 左侧子图: Space distribution at when the field is maximum
-        # flattened_index = np.argmax(data)
-        # time_step_max_field = np.unravel_index(flattened_index, data.shape)[0]
+        # flattened_index = bd.argmax(data)
+        # time_step_max_field = bd.unravel_index(flattened_index, data.shape)[0]
         # if data.ndim == 3:
         #     axes[0][0].plot(length * 1e6, data[time_step_max_field, :, field_axis])
         #     # axes[0][0].set_xticks()  # 每隔10个显示一个刻度

@@ -183,6 +183,12 @@ class NumpyBackend(Backend):
     any = staticmethod(numpy.any)
     """ test whether any array element along a given axis evaluates to True """
 
+    flipud = staticmethod(numpy.flipud)
+    """ flip array in up/down direction """
+
+    fliplr = staticmethod(numpy.fliplr)
+    """ flip array in left/right direction """
+
     @staticmethod
     def shape(x):
         """return the shape of an array"""
@@ -346,6 +352,22 @@ if TORCH_AVAILABLE:
 
         empty = staticmethod(numpy.empty)
         """ create an uninitialized array """
+
+        @staticmethod
+        def flipud(arr):
+            """flip array in up/down direction"""
+            if torch.is_tensor(arr):
+                return torch.flip(arr, dims=[0])
+            else:
+                return torch.flip(torch.tensor(arr), dims=[0])
+
+        @staticmethod
+        def fliplr(arr):
+            """flip array in left/right direction"""
+            if torch.is_tensor(arr):
+                return torch.flip(arr, dims=[1])
+            else:
+                return torch.flip(torch.tensor(arr), dims=[1])
 
         @staticmethod
         def to_float(tensor):
@@ -596,6 +618,22 @@ if TORCH_AVAILABLE:
                 if dtype is None:
                     dtype = torch.get_default_dtype()
                 return torch.empty(shape, device="cuda", dtype=dtype)
+
+            @staticmethod
+            def flipud(arr):
+                """flip array in up/down direction on CUDA"""
+                if torch.is_tensor(arr):
+                    return torch.flip(arr.cuda(), dims=[0])
+                else:
+                    return torch.flip(torch.tensor(arr, device="cuda"), dims=[0])
+
+            @staticmethod
+            def fliplr(arr):
+                """flip array in left/right direction on CUDA"""
+                if torch.is_tensor(arr):
+                    return torch.flip(arr.cuda(), dims=[1])
+                else:
+                    return torch.flip(torch.tensor(arr, device="cuda"), dims=[1])
 
             @staticmethod
             def astype(arr, dtype):

@@ -69,9 +69,9 @@ class Field:
     """
     def __init__(self,X, E, H = []):
         # print("Type of X:", type(X))  # 打印 X 的类型
-        # print("Shape of X:", np.shape(X))
-        # print("Shape of E:", np.shape(E))
-        # print("Shape of H:", np.shape(H))
+        # print("Shape of X:", bd.shape(X))
+        # print("Shape of E:", bd.shape(E))
+        # print("Shape of H:", bd.shape(H))
 
         self.scalar = True# 默认电场是标量场
         if len(X) < 1:# 检查坐标 X 的长度，必须提供坐标数据
@@ -106,7 +106,7 @@ class Field:
            self._y0 = np.zeros_like(self._x)
 
         self.Xdata = np.array([self._x,self._y0])# 将 x 和 y 坐标数据组合成一个二维数组
-        # print("Shape of self.Xdata:",np.shape(self.Xdata))
+        # print("Shape of self.Xdata:",bd.shape(self.Xdata))
 
         # 设置数据的形状
         sz = [max([1,1][i],[len(self._y),len(self._x)][i]) for i in range(2)]
@@ -213,7 +213,7 @@ class Field:
                 epsilon = 1e-10#添加小偏移量避免零除
                 self.Edata[j][i] = self.Edata[j][i] * np.sqrt(P / (P0 + epsilon))
 
-                # self.Edata[j][i] = self.Edata[j][i]*np.sqrt(P/P0)
+                # self.Edata[j][i] = self.Edata[j][i]*bd.sqrt(P/P0)
         for j in range(len(self.Hdata)):
             for i in range(len(self.Hdata[j])):
                 self.Hdata[j][i] = self.Hdata[j][i]*np.sqrt(P/P0)

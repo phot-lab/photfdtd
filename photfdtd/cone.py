@@ -1,4 +1,4 @@
-import numpy as np
+import photfdtd.fdtd.backend as bd
 from .waveguide import Waveguide
 
 
@@ -78,15 +78,15 @@ class Cone(Waveguide):
 
         # 这里+2的原因：稍微扩大一点矩阵的大小，可以保证水平和竖直方向最边上的点不被丢出
         # TODO: 给其他带圆弧的波导相同的操作？
-        x = y = np.linspace(1, 2 * self.radius + 2, 2 * self.radius + 2)
-        z = np.linspace(1, self.length, self.length)
-        X, Y, Z = np.meshgrid(x, y, z, indexing="ij")  # indexing = 'ij'很重要
+        x = y = bd.linspace(1, 2 * self.radius + 2, 2 * self.radius + 2)
+        z = bd.linspace(1, self.length, self.length)
+        X, Y, Z = bd.meshgrid(x, y, z, indexing="ij")  # indexing = 'ij'很重要
         # m = (X - len(x) / 2) ** 2 + (Y - len(y) / 2) ** 2 <= self.radius[0] ** 2
-        matrix = np.zeros((len(x), len(y), len(z)), dtype=float)
+        matrix = bd.zeros((len(x), len(y), len(z)), dtype=float)
         # self.xlength = 2 * self.radius + 2
         # self.ylength = 2 * self.radius + 2
         # self.zlength = self.length
-        self.permittivity = np.zeros((2 * self.radius + 2, 2 * self.radius + 2, self.length))
+        self.permittivity = bd.zeros((2 * self.radius + 2, 2 * self.radius + 2, self.length))
 
         mask = (X - self.permittivity.shape[0] // 2) ** 2 + (Y - self.permittivity.shape[1] // 2) ** 2 <= \
                (self.radius_lower + (self.radius_upper - self.radius_lower) * Z / self.length) ** 2
@@ -99,12 +99,12 @@ class Cone(Waveguide):
 
         if self.axis.lower() == 'x':
             # 波导沿x轴
-            self.permittivity = np.transpose(self.permittivity, axes=(2, 0, 1))
+            self.permittivity = bd.transpose(self.permittivity, axes=(2, 0, 1))
 
             # self.xlength = self.length
             # self.ylength = 2 * self.radius[-1] + 2
             # self.zlength = 2 * self.radius[-1] + 2
-            # self.permittivity = np.zeros((self.xlength, self.ylength, self.zlength))
+            # self.permittivity = bd.zeros((self.xlength, self.ylength, self.zlength))
             #
             # for i in range(len(self.radius)):
             #     i = len(self.radius) - i - 1
@@ -120,11 +120,11 @@ class Cone(Waveguide):
 
         elif self.axis.lower() == 'y':
             # 波导沿y轴
-            self.permittivity = np.transpose(self.permittivity, axes=(0, 2, 1))
+            self.permittivity = bd.transpose(self.permittivity, axes=(0, 2, 1))
             # self.xlength = 2 * self.radius[-1] + 2
             # self.ylength = self.length
             # self.zlength = 2 * self.radius[-1] + 2
-            # self.permittivity = np.zeros((self.xlength, self.ylength, self.zlength))
+            # self.permittivity = bd.zeros((self.xlength, self.ylength, self.zlength))
             #
             # for i in range(len(self.radius)):
             #     i = len(self.radius) - i - 1
