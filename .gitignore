@@ -54,3 +54,6 @@ examples/Nonuniform_ex/
 examples/planesource_ex/
 
 examples/pointsource_ex/
+
+# readthedoc
+build/
