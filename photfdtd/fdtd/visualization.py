@@ -20,7 +20,7 @@ from scipy.signal import hilbert  # TODO: Write hilbert function to replace usin
 
 # relative
 from .backend import backend as bd
-from .backend import TorchCudaBackend
+# from .backend import TorchCudaBackend
 from . import conversions
 from .fourier import FrequencyRoutines
 from .detectors import *
@@ -322,10 +322,10 @@ def plot_structure(
     # 只显示波导结构的轮廓，而不显示整个波导
     if show_structure:
         if geo is None:
-            if bd.__class__ == TorchCudaBackend:
-                inv_eps = bd.numpy(grid.inverse_permittivity)
-            else:
-                inv_eps = grid.inverse_permittivity
+            # if bd.__class__ == TorchCudaBackend:
+            inv_eps = bd.numpy(grid.inverse_permittivity)
+            # else:
+            #     inv_eps = grid.inverse_permittivity
             geo = bd.sqrt(1 / inv_eps)
 
         # geo是四维矩阵
@@ -775,7 +775,6 @@ def plot_field(grid=None, axis="y", axis_index=0, field="E", field_axis=None, fo
     @param cmap: Optional. matplotlib.pyplot.imshow(cmap)
     @param vmax: Optional. Max value of the color bar. 颜色条的最大、最小值
     @param vmin: Optional. Min value of the color bar.
-
     """
 
     if not show_field:
@@ -984,7 +983,7 @@ def visualize_single_detector(grid,
     @param index_3d: 用于面监视器，选择读取数据的点
     @param field_axis: "x", "y", "z"
     @param field: ”E"或"H"
-    @return frequency, spectrum: 频率和频谱
+    @return frequency, original spectrum (complex): 频率和频谱
     关于傅里叶变换后的单位：有的人说是原单位，有的人说是原单位乘以积分时积的单位(s)
     https://stackoverflow.com/questions/1523814/units-of-a-fourier-transform-fft-when-doing-spectral-analysis-of-a-signal
     """
@@ -1121,7 +1120,7 @@ def visualize_single_detector(grid,
 
     return spectrum_freqs * 1e-12, spectrum
 
-def visulize_detector(grid,
+def visualize_detectors(grid,
                       field_axis="x",
                       field="E"):
     """
@@ -1142,6 +1141,7 @@ def visulize_detector(grid,
         freqs, spectrum = visualize_single_detector(grid=grid, detector=d, field=field, field_axis=field_axis)
         plt.plot(freqs, abs(spectrum), linestyle='-', label=d.name)
     source, __, spectrum_source = grid.source_data()
+    spectrum_source = abs(spectrum_source)
     plt.plot(freqs, spectrum_source, linestyle='-', label=source.name)
 
     plt.ylabel('%s%s' % (field, conversions.number_to_letter(field_axis)))
@@ -1186,7 +1186,7 @@ def visualize(grid, axis: object = None, axis_index: int = None, field: str = "E
     plot_field(grid=grid, field=field, field_axis=field_axis, axis=axis, axis_index=axis_index)
 
     if grid._grid.detectors:  # 检查是否为空
-        visulize_detector(grid=grid, field_axis=field_axis, field=field)
+        visualize_detectors(grid=grid, field_axis=field_axis, field=field)
 
         for detector in grid._grid.detectors:
             # grid.detector_profile(detector_name=detector.name, field=field, field_axis=field_axis)

@@ -1,7 +1,7 @@
 from photfdtd import Grid
 
 if __name__ == "__main__":
-    # 读取保存的监视器数据
+    # 读取保存的grid
     filepath = ".\\test_torch"
     grid = Grid.read_simulation(folder=filepath)
     # grid.animate(fps=200)

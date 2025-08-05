@@ -2,7 +2,7 @@
 Floris Laporte (https://github.com/flaport/fdtd) and Philip Main (https://github.com/philmain28/philsol?tab=readme-ov-file)"""
 
 __author__ = "Tao Jia", "Li Yang", "Zhenjie Wei", "Chunyu Li"
-__version__ = "0.1.1"
+__version__ = "1.0.0"
 
 from .sbend import Sbend
 from .ysplitter import Ysplitter, Taper

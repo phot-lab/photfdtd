@@ -13,7 +13,7 @@ from .AWG import (
     fpr2,
 )
 
-from .field import Field
+from .Field import Field
 from .aperture import Aperture
 from .waveguide import Waveguide
 from .simulation_options import SimulationOptions

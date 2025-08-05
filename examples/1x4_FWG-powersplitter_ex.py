@@ -1,5 +1,6 @@
 import utils
 from photfdtd import FWG, Taper, Grid, Solve, Waveguide
+# FIXME: Make this functional
 
 if __name__ == "__main__":
     background_index = 1.444

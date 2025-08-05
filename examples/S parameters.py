@@ -2,7 +2,7 @@ from photfdtd import Grid
 
 if __name__ == "__main__":
     # 读取保存的监视器数据
-    filepath = ".\\test_ring"
+    filepath = ".\\test_ring_0401_linesource"
     grid = Grid.read_simulation(folder=filepath)
     grid.folder=filepath
     # grid.animate(fps=200)
@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     # For S parameters: abs(spectrum2 / spectrum1)
     # For Power transmission: abs(spectrum2 / spectrum1) ** 2
-    plt.plot(freqs, abs(spectrum2 / spectrum1))
+    plt.plot(freqs, abs(spectrum2 / spectrum1) ** 2)
     plt.ylabel("S parameter")
     plt.xlabel("frequency (THz)")
     plt.title("S21(f)")
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     plt.savefig(f"{grid.folder}/{file_name}.png")
     plt.close()
 
-    plt.plot(freqs, abs(spectrum3 / spectrum1))
+    plt.plot(freqs, abs(spectrum3 / spectrum1) ** 2)
     plt.ylabel("S parameter")
     plt.xlabel("frequency (THz)")
     plt.title("S31(f)")
@@ -33,28 +33,5 @@ if __name__ == "__main__":
     file_name = "S31"
     plt.savefig(f"{grid.folder}/{file_name}.png")
     plt.close()
-    # plt.plot(freqs, (spectrum2 / spectrum1) ** 2)
-    # plt.ylabel("Transmission")
-    # plt.xlabel("frequency (THz)")
-    # plt.title("Transmission calculated by Ex^2")
-    # plt.legend()
-    # file_name = "Transmission_detector_2"
-    # plt.savefig(f"{grid.folder}/{file_name}.png")
-    # plt.close()
-    #
-    # plt.plot(freqs, (spectrum3 / spectrum1) ** 2)
-    # plt.ylabel("Transmission")
-    # plt.xlabel("frequency (THz)")
-    # plt.title("Transmission calculated by Ex^2")
-    # plt.legend()
-    # file_name = "Transmission_detector_3"
-    # plt.savefig(f"{grid.folder}/{file_name}.png")
-    # plt.close()
-
-
-    # 由监视器数据绘制Ex场随时间变化的图像
-    # grid.calculate_Transmission(detector_data=detector_data, source_data=source_data, wl_start=wl_start, wl_end=wl_end)
-
-
 
 

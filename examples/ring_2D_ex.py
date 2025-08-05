@@ -1,9 +1,5 @@
-import torch
-print(torch.cuda.is_available())  # 应该返回 True
-print(torch.cuda.device_count())
 from photfdtd import Ring, Grid, Index, fdtd, Waveguide
 # It's recommended to use torch.cuda to simulate a ring.
-
 fdtd.set_backend("torch.cuda")
 
 if __name__ == "__main__":
@@ -12,16 +8,13 @@ if __name__ == "__main__":
     index_SiO2 = Index(material="SiO2")
     index_Re_SiO2, index_Im_SiO2 = index_SiO2.get_refractive_index(wavelength=1.55e-6)
 
-    grid = Grid(grid_xlength=11e-6, grid_ylength=2.5e-6, grid_zlength=10e-6, grid_spacing=40e-9, permittivity=1 ** 2,
-                foldername="test_ring")
+    grid = Grid(grid_xlength=11e-6, grid_ylength=1, grid_zlength=10e-6, grid_spacing=40e-9, permittivity=1 ** 2,
+                foldername="test_ring_2D")
 
     # Pml will be automatically set to wavelength/2 in all directions when set source. One can also set PML manually.
     # 当设置光源时，PML会自动设置为所有方向上的波长的一半。也可以手动设置PML。
-    # grid.set_PML(pml_width_y=0.8e-6, pml_width_x=0.8e-6, pml_width_z=0.8e-6)
-    ring = Ring(outer_radius=3.3e-6, ylength=0.20e-6, width_s=400e-9, width_r=400e-9, length=0e-6, length_s=10e-6,
+    ring = Ring(outer_radius=3.3e-6, ylength=1, width_s=400e-9, width_r=400e-9, length=0e-6, length_s=10e-6,
                 gap=100e-9, name="ring", refractive_index=index_Re_Si, grid=grid)
-    substrate = Waveguide(xlength=11e-6, ylength=1.15e-6, zlength=10e-6, y=1.15e-6 / 2, refractive_index=index_Re_SiO2,
-                          grid=grid)
 
     grid.set_source(source_type="linesource", wavelength=1550e-9, pulse_type="gaussian",waveform="gaussian",
                     x_start=1.7e-6,x_end=2.1e-6, z=1.0e-6,
@@ -44,11 +37,9 @@ if __name__ == "__main__":
                       ylength=1, zlength=1,
                       name='detector4')
     grid.add_object(ring)
-    grid.add_object(substrate)
 
     grid.save_fig()
     grid.plot_n()
-    grid.plot_n(axis="z", axis_index=int(grid._grid.Nz / 2))
     #
     grid.run(animate=True, time=4000e-15, save=True, interval=20)
 

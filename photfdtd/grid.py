@@ -337,23 +337,38 @@ class Grid:
         """
         Set a source in the grid.
         Args:
-            @param source_type: 光源种类：点或线或面 "pointsource", "linesource", "planesource"
-            @param wavelength: 波长(m)
-            @param period:周期
-            @param amplitude: 振幅
-            @param phase_shift: 相移
-            @param name: 名称
-            @param waveform: default to "gaussian" 波形 "plane":平面波 "gaussian": 高斯波
-            @param cycle: number of cycles of Hanning window pulse汉宁窗脉冲的周期数（仅使用汉宁hanning脉冲时有用）
-            @param hanning_dt: 汉宁窗宽度（仅使用汉宁hanning脉冲时有用）
-            @param polarization: 偏振
-            @param pulse_type: 脉冲类型 "gaussian" 或 "hanning" 或 "CW"
-            @param pulse_length: 脉宽(s)（仅用于高斯脉冲）
-            @param offset: 脉冲中心(s)（仅用于高斯脉冲）
-            @param x_start, y_start, z_start, x_end, y_end, z_end: parameters for 'linesource'
-            @param x, y, z: center position, parameters for 'linesource' & pointsource
-            @param xlength, ylength, zlength: cross length, parameters for '"planesource"
-            @param axis: "x", "y", "z", only for "planesource"
+            source_type (str): 光源种类：点或线或面。Source type: "pointsource", "linesource", "planesource".
+            wavelength (float): 波长(m)。Wavelength in meters.
+            period (float): 周期。Period of the source.
+            amplitude (float): 振幅。Amplitude of the source.
+            phase_shift (float): 相移。Phase shift of the source.
+            name (str): 名称。Name of the source.
+            waveform (str): 波形，默认为"gaussian"。Waveform type, default to "gaussian".
+                Options: "plane" (平面波/plane wave), "gaussian" (高斯波/Gaussian wave).
+            cycle (int): 汉宁窗脉冲的周期数（仅使用汉宁hanning脉冲时有用）。
+                Number of cycles of Hanning window pulse (only used for Hanning pulse).
+            hanning_dt (float): 汉宁窗宽度（仅使用汉宁hanning脉冲时有用）。
+                Hanning window width (only used for Hanning pulse).
+            polarization (str): 偏振。Polarization direction.
+            pulse_type (str): 脉冲类型。Pulse type. Options: "gaussian", "hanning", "CW".
+            pulse_length (float): 脉宽(s)（仅用于高斯脉冲）。Pulse length in seconds (only for Gaussian pulse).
+            offset (float): 脉冲中心(s)（仅用于高斯脉冲）。Pulse center in seconds (only for Gaussian pulse).
+            x_start (int or float): 线光源x起始位置。X start position for line source.
+            y_start (int or float): 线光源y起始位置。Y start position for line source.
+            z_start (int or float): 线光源z起始位置。Z start position for line source.
+            x_end (int or float): 线光源x结束位置。X end position for line source.
+            y_end (int or float): 线光源y结束位置。Y end position for line source.
+            z_end (int or float): 线光源z结束位置。Z end position for line source.
+            x (int or float): 中心位置x坐标，用于线光源和点光源。X center position for line source and point source.
+            y (int or float): 中心位置y坐标，用于线光源和点光源。Y center position for line source and point source.
+            z (int or float): 中心位置z坐标，用于线光源和点光源。Z center position for line source and point source.
+            xlength (int or float): 面光源x方向长度。Cross length in x direction for plane source.
+            ylength (int or float): 面光源y方向长度。Cross length in y direction for plane source.
+            zlength (int or float): 面光源z方向长度。Cross length in z direction for plane source.
+            axis (str): 面光源的传播方向。Propagation axis for plane source. Options: "x", "y", "z".
+        Note:
+            Knowable bug: spectrum may not be correctly generated when pulselength is too short.
+            已知bug：当脉冲长度过短时，频谱可能无法正确生成。
         """
 
         if pulse_type == "cw" or pulse_type == "CW" or pulse_type == "cW" or pulse_type == "Cw":
@@ -480,7 +495,7 @@ class Grid:
         Get the source data from the grid.
         :param time: if None, use the current time steps passed in the grid. Or in timesteps(int) or in second(float).
         :param source_name: If None, try to find a source automatically. If specified, find the source with the name.
-        :return: found_source, source_field, spectrum
+        :return: found_source, source_field, spectrum (original complex spectrum)
         """
         if time is None:
             if self._grid.time_steps_passed != 0:
@@ -648,7 +663,7 @@ class Grid:
 
         plt.close()
 
-        return found_source, source_field, spectrum
+        return found_source, source_field, fourier
 
     def set_detector(self,
                      detector_type: str = 'linedetector',
@@ -802,9 +817,9 @@ class Grid:
             ):
         """
         @param time: int for timesteps or float for seconds
-        @param save: save the grid?
-        @param animate: 是否生成动画？ ffmpeg required
-        @param interval: 每隔多少个时间步保存一次图
+        @param save: Bool: save the grid?
+        @param animate: Bool: 是否生成动画？ ffmpeg required
+        @param interval: Int: animation interval每隔多少个时间步保存一次图
         """
         if time is None:
             time = self._calculate_time()
@@ -837,6 +852,7 @@ class Grid:
         import subprocess
         import re
         # 获取文件夹下的所有文件名
+
         if not folder_path:
             folder_path = self.folder + "/frames"
         if not output_video_path:
@@ -852,11 +868,21 @@ class Grid:
         sorted_file_names = sorted(file_names, key=extract_number)
 
         # 生成图片列表文件
-        list_file_path = "image_list.txt"
+        list_file_path = self.folder + "/image_list.txt"
         with open(list_file_path, "w") as f:
             for file_name in sorted_file_names:
                 if file_name.startswith("E_") and file_name.endswith(".png"):
                     f.write(f"file '{os.path.join(folder_path, file_name)}'\n")
+
+        # See if ffmpeg is installed
+        try:
+            subprocess.run(["ffmpeg", "-version"],
+                           stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL,
+                           check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print("FFmpeg is not installed or not found in PATH. Please install FFmpeg to animate.")
+            return
 
         # 构建 FFmpeg 命令
         command = [
@@ -890,7 +916,6 @@ class Grid:
                                save_to_txt: bool = True,
                                grid=None) -> None:
         """
-        # TODO:
         Calculate transmission spectrum, detector required.
 
         @param detector_name: The name of detector whose data will be calculated, can be None if there is only 1 detector in grid.
@@ -906,11 +931,11 @@ class Grid:
         """
         # Spectrum
         # TODO: Not finished yet. Not sure if the right way has been used. Or if it's not that complex?
-
+        return
         if grid is None:
             grid = self
         source, _, source_spectrum = self.source_data()
-
+        source_spectrum = abs(source_spectrum)
         # True先对坡印廷矢量傅里叶变换再积分
         # False: 先积分算功率再傅里叶变换
         integral_poynting = True
@@ -2039,7 +2064,7 @@ class Grid:
         #
         # return spectrum_freqs * 1e-12, spectrum
 
-    def visulize_detector(self,
+    def visualize_detectors(self,
                           field_axis="x",
                           field="E"):
         """
@@ -2051,7 +2076,7 @@ class Grid:
             using visualize_single_detector() for each one.
             这个函数使用 visualize_single_detector() 绘制网格中所有监视器的频谱。
         """
-        return viz.visualize_detector(grid=self, field_axis=field_axis, field=field)
+        return viz.visualize_detectors(grid=self, field_axis=field_axis, field=field)
         # # TODO: axis参数与其他可视化参数一致
         # if field_axis is not None:
         #     field_axis = conversions.letter_to_number(field_axis)

@@ -4,17 +4,21 @@ import photfdtd.fdtd.backend as bd
 
 
 class Ring(Waveguide):
-    """环形谐振腔，继承自Waveguide
-    outer_radius: 外环半径
-    ylength: 波导厚度
-    x,y,z: 环中心坐标
-    width: 波导宽度
-    length: 耦合长度
-    gap: 环与直波导间距
-    refractive_index:折射率
-    name: 名称
-    direction: 方向
-    priority: the priority of the waveguide( high index indicates high priority).
+    """
+    微环谐振器参数说明 / Ring Resonator Parameters:
+
+    Args:
+        outer_radius (float): 外环半径 / Outer radius of the ring
+        ylength (float): 波导厚度 / Waveguide thickness (height)
+        x, y, z (float): 环中心坐标 / Center coordinates of the ring
+        width (float): 波导宽度 / Waveguide width
+        length (float): 耦合长度 / Coupling length
+        gap (float): 环与直波导间距 / Gap between ring and straight waveguide
+        refractive_index (float): 折射率 / Refractive index
+        name (str): 名称 / Name identifier
+        direction (str): 方向 / Direction
+        priority (int): 波导优先级，数值越高优先级越高 / Priority of the waveguide (higher value = higher priority)
+
     """
 
     def __init__(

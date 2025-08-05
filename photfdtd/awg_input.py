@@ -1,4 +1,4 @@
-import numpy as np
+import photfdtd.fdtd.backend as bd
 from .arc import Arc
 from .fiber import Circle
 from .waveguide import Waveguide  # 确保导入各种波导类
@@ -102,8 +102,8 @@ class AWG_input:
 
     # 添加罗兰圆
     def add_roland_circle(self):
-        angle0=np.radians(-120)
-        angle1=np.radians(60)
+        angle0=bd.radians(-120)
+        angle1=bd.radians(60)
         roland_circle = Arc(x=self.x,
                y=self.y,
                z=self.z,
@@ -123,7 +123,7 @@ class AWG_input:
           x2=self.x
           z2=int(self.z-self.L_FPR0/2)
           angle=(1.25*self.Ng)*self.d/self.L_FPR
-          angle0=np.pi/2-angle/2#用阵列波导数目来控制光栅圆展开角度
+          angle0= bd.pi / 2 - angle / 2#用阵列波导数目来控制光栅圆展开角度
           arc_grating = Arc(
                x=x2,
                y=self.y,
@@ -144,14 +144,14 @@ class AWG_input:
     def add_trapezoid(self):
           #计算梯形的各个参数
           angle=(1.25*self.Ng)*self.d/self.L_FPR#光栅圆展开角度（圆心角）,弧度
-          xlength_upper=2*self.L_FPR*np.sin(angle/2)#梯形上底
+          xlength_upper= 2 * self.L_FPR * bd.sin(angle / 2)#梯形上底
           xlength_lower=self.L_FPR/2#梯形下底边
-          zlength = self.L_FPR * np.cos(angle / 2) + (np.sqrt(3)/2 - 1) * self.L_FPR / 2#梯形的高
+          zlength = self.L_FPR * bd.cos(angle / 2) + (bd.sqrt(3) / 2 - 1) * self.L_FPR / 2#梯形的高
 
           #梯形的中心位置
           x_trapezoid=self.x
           y_trapezoid=self.y
-          z_trapezoid=int((self.L_FPR0 * np.cos(angle / 2) -self.L_FPR0 / 2-(np.sqrt(3)/2) * self.L_FPR0 / 2)/2+self.z)
+          z_trapezoid=int((self.L_FPR0 * bd.cos(angle / 2) - self.L_FPR0 / 2 - (bd.sqrt(3) / 2) * self.L_FPR0 / 2) / 2 + self.z)
           # 创建倒梯形
           trapezoid = Taper(
                xlength_upper=xlength_upper,
@@ -216,9 +216,9 @@ class AWG_input:
            self.N_taper = int(self.Ng / 2)
            for n in range(1, self.N_taper+1):  # n 从 1 到 N_taper
                # 计算每个 taper 的坐标
-               x_n = int(self.x - (self.L_FPR0 + self.L_taper_array0 / 2) * np.sin(np.radians(self.delta_angle_1 / 2 + (n - 1) * self.delta_angle_1)))
+               x_n = int(self.x - (self.L_FPR0 + self.L_taper_array0 / 2) * bd.sin(bd.radians(self.delta_angle_1 / 2 + (n - 1) * self.delta_angle_1)))
                y_n = self.y
-               z_n = int(self.z + (self.L_FPR0 + self.L_taper_array0 / 2) * np.cos(np.radians(self.delta_angle_1 / 2 + (n - 1) * self.delta_angle_1)) -self.L_FPR0 / 2)  # 计算 z 坐标
+               z_n = int(self.z + (self.L_FPR0 + self.L_taper_array0 / 2) * bd.cos(bd.radians(self.delta_angle_1 / 2 + (n - 1) * self.delta_angle_1)) - self.L_FPR0 / 2)  # 计算 z 坐标
 
                # 创建一个新的 Taper 实例并添加到列表中
                taper = Taper(
@@ -248,9 +248,9 @@ class AWG_input:
 
              for n in range(self.N_taper + 1):  # n 从 0 到 N_taper
                  # 计算每个 taper 的坐标
-                  x_n = int(self.x - (self.L_FPR0 + self.L_taper_array0 / 2) * np.sin(n * np.radians(self.delta_angle_1)))
+                  x_n = int(self.x - (self.L_FPR0 + self.L_taper_array0 / 2) * bd.sin(n * bd.radians(self.delta_angle_1)))
                   y_n = self.y
-                  z_n = int(self.z + (self.L_FPR0 + self.L_taper_array0 / 2) * np.cos(n * np.radians(self.delta_angle_1)) - self.L_FPR0 / 2)  # 计算 z 坐标
+                  z_n = int(self.z + (self.L_FPR0 + self.L_taper_array0 / 2) * bd.cos(n * bd.radians(self.delta_angle_1)) - self.L_FPR0 / 2)  # 计算 z 坐标
 
                    # 创建一个新的 Taper 实例并添加到列表中
                   taper = Taper(
@@ -285,9 +285,9 @@ class AWG_input:
            self.N_taper = int(self.Ng / 2)
            for n in range(1, self.N_taper+1):  # n 从 1 到 N_taper
                # 计算每个 taper 的坐标
-               x_n = int(self.x + (self.L_FPR0 + self.L_taper_array0 / 2) * np.sin(np.radians(self.delta_angle_1 / 2 + (n - 1) * self.delta_angle_1)))
+               x_n = int(self.x + (self.L_FPR0 + self.L_taper_array0 / 2) * bd.sin(bd.radians(self.delta_angle_1 / 2 + (n - 1) * self.delta_angle_1)))
                y_n = self.y
-               z_n = int(self.z + (self.L_FPR0 + self.L_taper_array0 / 2) * np.cos(np.radians(self.delta_angle_1 / 2 + (n - 1) * self.delta_angle_1)) - self.L_FPR0 / 2)  # 计算 z 坐标
+               z_n = int(self.z + (self.L_FPR0 + self.L_taper_array0 / 2) * bd.cos(bd.radians(self.delta_angle_1 / 2 + (n - 1) * self.delta_angle_1)) - self.L_FPR0 / 2)  # 计算 z 坐标
 
                # 创建一个新的 Taper 实例并添加到列表中
                taper = Taper(
@@ -317,9 +317,9 @@ class AWG_input:
 
              for n in range(self.N_taper + 1):  # n 从 0 到 N_taper
                  # 计算每个 taper 的坐标
-                  x_n = int(self.x + (self.L_FPR0 + self.L_taper_array0 / 2) * np.sin(n * np.radians(self.delta_angle_1)))
+                  x_n = int(self.x + (self.L_FPR0 + self.L_taper_array0 / 2) * bd.sin(n * bd.radians(self.delta_angle_1)))
                   y_n = self.y
-                  z_n = int(self.z + (self.L_FPR0 + self.L_taper_array0 / 2) * np.cos(n * np.radians(self.delta_angle_1)) - self.L_FPR0 / 2)  # 计算 z 坐标
+                  z_n = int(self.z + (self.L_FPR0 + self.L_taper_array0 / 2) * bd.cos(n * bd.radians(self.delta_angle_1)) - self.L_FPR0 / 2)  # 计算 z 坐标
 
                    # 创建一个新的 Taper 实例并添加到列表中
                   taper = Taper(
@@ -354,9 +354,9 @@ class AWG_input:
            self.N_taper = int(self.Ng / 2)
            for n in range(1, self.N_taper + 1):  # n 从 1 到 N_taper
                # 计算每个波导的坐标
-               x_n = int(self.x - (self.L_FPR0 + self.L_taper_array0 + self.L_array0 / 2) * np.sin(np.radians(self.delta_angle_1 / 2 + (n - 1) * self.delta_angle_1)))
+               x_n = int(self.x - (self.L_FPR0 + self.L_taper_array0 + self.L_array0 / 2) * bd.sin(bd.radians(self.delta_angle_1 / 2 + (n - 1) * self.delta_angle_1)))
                y_n = self.y
-               z_n = int(self.z + (self.L_FPR0 + self.L_taper_array0 + self.L_array0 / 2) * np.cos(np.radians(self.delta_angle_1 / 2 + (n - 1) * self.delta_angle_1)) - self.L_FPR0 / 2)
+               z_n = int(self.z + (self.L_FPR0 + self.L_taper_array0 + self.L_array0 / 2) * bd.cos(bd.radians(self.delta_angle_1 / 2 + (n - 1) * self.delta_angle_1)) - self.L_FPR0 / 2)
 
                # 创建 Waveguide 实例
                waveguide = Waveguide(
@@ -386,9 +386,9 @@ class AWG_input:
              self.N_taper = int((self.Ng - 1) / 2)  # 奇数情况下的 taper 数量
              for n in range(self.N_taper + 1):  # 因为中间也是算一个，所以要加1
                  # 计算每个波导的坐标
-                 x_n = int(self.x - (self.L_FPR0 + self.L_taper_array0 + self.L_array0 / 2) * np.sin(n * np.radians(self.delta_angle_1)))
+                 x_n = int(self.x - (self.L_FPR0 + self.L_taper_array0 + self.L_array0 / 2) * bd.sin(n * bd.radians(self.delta_angle_1)))
                  y_n = self.y
-                 z_n = int(self.z + (self.L_FPR0 + self.L_taper_array0 + self.L_array0 / 2) * np.cos(n * np.radians(self.delta_angle_1)) - self.L_FPR0 / 2)
+                 z_n = int(self.z + (self.L_FPR0 + self.L_taper_array0 + self.L_array0 / 2) * bd.cos(n * bd.radians(self.delta_angle_1)) - self.L_FPR0 / 2)
 
                 # 创建 Waveguide 实例
                  waveguide = Waveguide(
@@ -425,9 +425,9 @@ class AWG_input:
            self.N_taper = int(self.Ng / 2)
            for n in range(1, self.N_taper + 1):  # n 从 1 到 N_taper
                # 计算每个波导的坐标
-               x_n = int(self.x + (self.L_FPR0 + self.L_taper_array0 + self.L_array0 / 2) * np.sin(np.radians(self.delta_angle_1 / 2 + (n - 1) * self.delta_angle_1)))
+               x_n = int(self.x + (self.L_FPR0 + self.L_taper_array0 + self.L_array0 / 2) * bd.sin(bd.radians(self.delta_angle_1 / 2 + (n - 1) * self.delta_angle_1)))
                y_n = self.y
-               z_n = int(self.z + (self.L_FPR0 + self.L_taper_array0 + self.L_array0 / 2) * np.cos(np.radians(self.delta_angle_1 / 2 + (n - 1) * self.delta_angle_1)) - self.L_FPR0 / 2)
+               z_n = int(self.z + (self.L_FPR0 + self.L_taper_array0 + self.L_array0 / 2) * bd.cos(bd.radians(self.delta_angle_1 / 2 + (n - 1) * self.delta_angle_1)) - self.L_FPR0 / 2)
 
                # 创建 Waveguide 实例
                waveguide = Waveguide(
@@ -457,9 +457,9 @@ class AWG_input:
              self.N_taper = int((self.Ng - 1) / 2)  # 奇数情况下的 taper 数量
              for n in range(self.N_taper + 1):  # 因为中间也是算一个，所以要加1
                  # 计算每个波导的坐标
-                x_n = int(self.x + (self.L_FPR0 + self.L_taper_array0 + self.L_array0 / 2) * np.sin(n * np.radians(self.delta_angle_1)))
+                x_n = int(self.x + (self.L_FPR0 + self.L_taper_array0 + self.L_array0 / 2) * bd.sin(n * bd.radians(self.delta_angle_1)))
                 y_n = self.y
-                z_n = int(self.z + (self.L_FPR0 + self.L_taper_array0 + self.L_array0 / 2) * np.cos(n * np.radians(self.delta_angle_1)) - self.L_FPR0 / 2)
+                z_n = int(self.z + (self.L_FPR0 + self.L_taper_array0 + self.L_array0 / 2) * bd.cos(n * bd.radians(self.delta_angle_1)) - self.L_FPR0 / 2)
 
                 # 创建 Waveguide 实例
                 waveguide = Waveguide(
@@ -492,8 +492,8 @@ class AWG_input:
     def add_arc_and_waveguide_S2_left(self):
         self.arc_left = []
         self.waveguide_S2_left = []
-        H0 = (self.L_array0 + self.L_taper_array0+self.L_FPR0) * np.tan(np.radians(self.delta_angle_1))#计算坐标
-        H = (self.L_array+self.L_taper_array+ self.L_FPR) * np.tan(np.radians(self.delta_angle_1))#计算长度
+        H0 = (self.L_array0 + self.L_taper_array0+self.L_FPR0) * bd.tan(bd.radians(self.delta_angle_1))#计算坐标
+        H = (self.L_array+self.L_taper_array+ self.L_FPR) * bd.tan(bd.radians(self.delta_angle_1))#计算长度
         xC_0=self.x#中间直波导S2的坐标
         zC_0=int(self.z+(self.L_array0 +self.L_taper_array0+ self.L_FPR0)- self.L_FPR0 / 2)
         #中间直波导S2
@@ -513,7 +513,7 @@ class AWG_input:
         self._internal_objects.append(waveguide_S2_left0)
         #阵列波导左侧弯曲连接波导和直波导S2
         xA_1=self.x#左侧第一个歪曲波导的圆心坐标
-        zA_1=int(self.z+(self.L_array0 +self.L_taper_array0+ self.L_FPR0) * np.cos( np.radians(self.delta_angle_1)) - self.L_FPR0 / 2+ H0 * np.sin(np.radians(self.delta_angle_1)))
+        zA_1=int(self.z + (self.L_array0 +self.L_taper_array0+ self.L_FPR0) * bd.cos(bd.radians(self.delta_angle_1)) - self.L_FPR0 / 2 + H0 * bd.sin(bd.radians(self.delta_angle_1)))
         xC_1=int(xA_1-H0)#左侧第一个直波导S2的坐标
         zC_1=int(zA_1 + self.L_array0 / 2)
 
@@ -538,8 +538,8 @@ class AWG_input:
                     y=self.y,
                     z=zA_1,
                     ylength=self.h,
-                    angle_phi=np.pi,
-                    angle_psi=np.radians(self.delta_angle_1),
+                    angle_phi=bd.pi,
+                    angle_psi=bd.radians(self.delta_angle_1),
                     name="arc_left1",
                     refractive_index=self.refractive_index,
                     grid=self.grid,
@@ -550,8 +550,8 @@ class AWG_input:
 
 
         for n in range(2,self.N_taper+1):
-            xB = int(self.x-(self.L_array0 +self.L_taper_array0+ self.L_FPR0) * np.sin((n-1) * np.radians(self.delta_angle_1)))
-            zB = int(self.z+(self.L_array0 +self.L_taper_array0+ self.L_FPR0) * np.cos((n-1) * np.radians(self.delta_angle_1)) - self.L_FPR0 / 2)
+            xB = int(self.x - (self.L_array0 +self.L_taper_array0+ self.L_FPR0) * bd.sin((n - 1) * bd.radians(self.delta_angle_1)))
+            zB = int(self.z + (self.L_array0 +self.L_taper_array0+ self.L_FPR0) * bd.cos((n - 1) * bd.radians(self.delta_angle_1)) - self.L_FPR0 / 2)
             xA = xB#弯曲波导的圆心坐标
             zA = zB
             xC = int(xA -H0)#直波导S2的中心坐标
@@ -580,8 +580,8 @@ class AWG_input:
                     y=self.y,
                     z=zA,
                     ylength=self.h,
-                    angle_phi=np.pi,
-                    angle_psi=np.radians(n*self.delta_angle_1),
+                    angle_phi=bd.pi,
+                    angle_psi=bd.radians(n * self.delta_angle_1),
                     name=f"arc_left{n}",
                     refractive_index=self.refractive_index,
                     grid=self.grid,
@@ -596,10 +596,10 @@ class AWG_input:
     def add_arc_and_waveguide_S2_right(self):
         self.arc_right = []
         self.waveguide_S2_right = []
-        H0 = (self.L_array0 + self.L_taper_array0+self.L_FPR0) * np.tan(np.radians(self.delta_angle_1))#计算坐标
-        H = (self.L_array+self.L_taper_array+ self.L_FPR) * np.tan(np.radians(self.delta_angle_1))#计算长度
+        H0 = (self.L_array0 + self.L_taper_array0+self.L_FPR0) * bd.tan(bd.radians(self.delta_angle_1))#计算坐标
+        H = (self.L_array+self.L_taper_array+ self.L_FPR) * bd.tan(bd.radians(self.delta_angle_1))#计算长度
         xA_1=self.x
-        zA_1=int(self.z+(self.L_array0 +self.L_taper_array0+ self.L_FPR0) * np.cos(np.radians(self.delta_angle_1)) - self.L_FPR0 / 2+ H0 * np.sin(np.radians(self.delta_angle_1)))
+        zA_1=int(self.z + (self.L_array0 +self.L_taper_array0+ self.L_FPR0) * bd.cos(bd.radians(self.delta_angle_1)) - self.L_FPR0 / 2 + H0 * bd.sin(bd.radians(self.delta_angle_1)))
         xC_1=int(xA_1+H0)
         zC_1=int(zA_1 + self.L_array0 / 2)
         waveguide_S2_right1 = Waveguide(
@@ -623,8 +623,8 @@ class AWG_input:
                     y=self.y,
                     z=zA_1,
                     ylength=self.h,
-                    angle_phi=-np.radians(self.delta_angle_1),
-                    angle_psi=np.radians(self.delta_angle_1),
+                    angle_phi=-bd.radians(self.delta_angle_1),
+                    angle_psi=bd.radians(self.delta_angle_1),
                     name="arc_right1",
                     refractive_index=self.refractive_index,
                     grid=self.grid,
@@ -635,8 +635,8 @@ class AWG_input:
 
 
         for n in range(2,self.N_taper+1):
-            xB = int(self.x+(self.L_array0 +self.L_taper_array0+ self.L_FPR0) * np.sin((n-1) * np.radians(self.delta_angle_1)))
-            zB = int(self.z+(self.L_array0 +self.L_taper_array0+ self.L_FPR0) * np.cos((n-1) * np.radians(self.delta_angle_1)) - self.L_FPR0 / 2)
+            xB = int(self.x + (self.L_array0 +self.L_taper_array0+ self.L_FPR0) * bd.sin((n - 1) * bd.radians(self.delta_angle_1)))
+            zB = int(self.z + (self.L_array0 +self.L_taper_array0+ self.L_FPR0) * bd.cos((n - 1) * bd.radians(self.delta_angle_1)) - self.L_FPR0 / 2)
             xA = xB
             zA = zB
             xC = int(xA+H0)
@@ -666,8 +666,8 @@ class AWG_input:
                     y=self.y,
                     z=zA,
                     ylength=self.h,
-                    angle_phi=-np.radians(n*self.delta_angle_1),
-                    angle_psi=np.radians(n*self.delta_angle_1),
+                    angle_phi=-bd.radians(n * self.delta_angle_1),
+                    angle_psi=bd.radians(n * self.delta_angle_1),
                     name=f"arc_right{n}",
                     refractive_index=self.refractive_index,
                     grid=self.grid,

@@ -132,9 +132,9 @@ class FrequencyRoutines:
             # closest frequencies
             begin_freq_idx = np.abs(spectrum_freqs - self.begin_freq).argmin()
             end_freq_idx = np.abs(spectrum_freqs - self.end_freq).argmin()
-        print(self.begin_freq, self.end_freq)
-        print(begin_freq_idx, end_freq_idx)
-        print(spectrum_freqs.min(), spectrum_freqs.max())
+        # print(self.begin_freq, self.end_freq)
+        # print(begin_freq_idx, end_freq_idx)
+        # print(spectrum_freqs.min(), spectrum_freqs.max())
         return spectrum_freqs, begin_freq_idx, end_freq_idx
 
     # UNTESTED
