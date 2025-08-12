@@ -36,17 +36,17 @@ tqdm
 pathlib  
 tabulate  
 pandas  
-pytorch
-h5py
-ffmpeg (optional, for video generation；可选，视频生成)
-cuda (optional, for GPU acceleration；可选，GPU加速)
+pytorch  
+h5py  
+ffmpeg (optional, for video generation；可选，视频生成)  
+cuda (optional, for GPU acceleration；可选，GPU加速)  
 
 
 To install torch with CUDA support, please refer to [PyTorch official website](https://pytorch.org/get-started/locally/).  
 要安装支持CUDA的torch，请参考[PyTorch官网](https://pytorch.org/get-started/locally/)。
 
 ## Contributing
-All improvements or additions are welcome. Please make a pull-request 😊. 
+All improvements or additions are welcome. Please make a pull-request 😊.   
 所有的改进或添加都欢迎。请提交pull-request 😊。
 
 ## Components/Examples 结构/示例 
@@ -76,7 +76,7 @@ This example shows a 3D simulation of a microring resonator.
 ### Set backend
 Import required classes
 ```
-from photfdtd import Grid, Index, Ring, Waveguide
+from photfdtd import Grid, Index, Ring, Waveguide, fdtd
 ```
 Photfdtd has 3 backends: numpy, torch and torch.cuda. The last one requires a GPU with CUDA support that can greatly accelerate the simulation.
 It is always recommended to use the torch.cuda backend to simulate a ring resonator.  
